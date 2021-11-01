@@ -1,0 +1,6 @@
+tensorflow>=2.4.1
+scipy
+numpy
+sympy>=1.8
+joblib
+wolframclient
