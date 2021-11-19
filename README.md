@@ -27,14 +27,9 @@ Then install with pip directly from github
 
 ```console
 conda activate cymetric
-pip install git+https://github.com/robin-schneider/cymetric.git
+pip install git+https://github.com/pythoncymetric/cymetric.git
 ```
 
-or if you want to have a more stable release with
-
-```console
-pip install cymetric
-```
 
 ## Tutorials
 
