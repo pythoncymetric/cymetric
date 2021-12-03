@@ -99,7 +99,7 @@ class FSModel(tfk.Model):
             else:
                 # need to padd if there are less than nTransitions.
                 all_patches = np.tile(all_patches,
-                    int(self.nTransitions/len(all_patches))+1)
+                    (int(self.nTransitions/len(all_patches))+1,1))
                 fixed_patches += [all_patches[0:self.nTransitions]]
         fixed_patches = np.array(fixed_patches)
         return tf.cast(fixed_patches, dtype=tf.int64)
