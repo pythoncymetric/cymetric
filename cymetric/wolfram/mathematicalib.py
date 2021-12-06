@@ -90,8 +90,8 @@ def generate_points(my_args):
 # 		PG = PointGenerator
 # 		point_gen = PG([np.array(x) for x in args['monomials']], [np.array(x) for x in args['coeffs']], args['k_moduli'], args['ambient_dims'])
 
-	point_gen = PointGeneratorMathematica([np.array(x) for x in args['monomials']], [np.array(x) for x in args['coeffs']], args['k_moduli'], args['ambient_dims'], precision=args['precision'], vol_j_norm=args['vol_j_norm'], point_file_path=args['point_file_path'])
-		
+	point_gen = PointGeneratorMathematica([np.array(x) for x in args['monomials']], [np.array(x) for x in args['coeffs']], args['k_moduli'], args['ambient_dims'], precision=args['precision'], vol_j_norm=args['vol_j_norm'], point_file_path=args['point_file_path'], selected_t=args['selected_t'])
+
 	# save point generator to pickle
 	mcy_logger.info("Saving point generator to {:}".format(os.path.join(os.path.abspath(args['outdir']), "point_gen.pickle")))
 	with open(os.path.join(os.path.abspath(args['outdir']), "point_gen.pickle"), 'wb') as hnd:
@@ -240,7 +240,8 @@ def get_weights(my_args):
 			
 	with open(os.path.join(os.path.abspath(args['outdir']), "point_gen.pickle"), 'rb') as hnd:
 		point_gen = pickle.load(hnd)
-	return point_gen.point_weight_vec(pts, normalize_to_vol_j=True)
+# 	return point_gen.point_weight_vec(pts, normalize_to_vol_j=True)
+	return point_gen.point_weight(pts, normalize_to_vol_j=True)
 	
 def get_omegas(my_args):
 	def point_vec_to_complex(p):
