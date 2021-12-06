@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[    156426,       3288]
-NotebookOptionsPosition[    155637,       3266]
-NotebookOutlinePosition[    156079,       3283]
-CellTagsIndexPosition[    156036,       3280]
+NotebookDataLength[    156752,       3295]
+NotebookOptionsPosition[    155958,       3273]
+NotebookOutlinePosition[    156405,       3290]
+CellTagsIndexPosition[    156362,       3287]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -315,13 +315,19 @@ run again with option ForceReinstall->True\>\"", "]"}], ";"}]}],
          RowBox[{"ExternalEvaluate", "[", 
           RowBox[{
           "\"\<Python\>\"", ",", 
-           "\"\<import os;os.path.dirname(os.__file__)\>\""}], "]"}]}], ";", 
-        "\[IndentingNewLine]", 
+           "\"\<import cymetric;os.path.dirname(cymetric.__file__)\>\""}], 
+          "]"}]}], ";", "\[IndentingNewLine]", 
         RowBox[{"(*", 
          RowBox[{
          "Import", " ", "the", " ", "mathematica", " ", "point", " ", 
           "generation", " ", "functions", " ", "into", " ", "the", " ", 
           "current", " ", "session"}], "*)"}], "\[IndentingNewLine]", 
+        RowBox[{"Print", "[", 
+         RowBox[{"FileNameJoin", "[", 
+          RowBox[{"{", 
+           RowBox[{
+           "packageDir", ",", "\"\<wolfram/PointGeneratorMathematica.m\>\""}],
+            "}"}], "]"}], "]"}], ";", "\[IndentingNewLine]", 
         RowBox[{"Import", "[", 
          RowBox[{"FileNameJoin", "[", 
           RowBox[{"{", 
@@ -3252,8 +3258,9 @@ installed.\>\"", ",", "session"}], "}"}], "]"}]}], "]"}], ";",
    3.841488012448674*^9, 3.841488016238076*^9}, {3.8478092396153708`*^9, 
    3.847809276621814*^9}, {3.8478102982832813`*^9, 3.847810308558158*^9}, {
    3.847810342551093*^9, 3.8478104462553062`*^9}, {3.847810476768764*^9, 
-   3.847810510909605*^9}, {3.847811124177286*^9, 
-   3.847811134942083*^9}},ExpressionUUID->"b6039133-1016-473e-b566-\
+   3.847810510909605*^9}, {3.847811124177286*^9, 3.847811134942083*^9}, {
+   3.8478130607263412`*^9, 
+   3.847813094614151*^9}},ExpressionUUID->"b6039133-1016-473e-b566-\
 8b2e266ea331"],
 
 Cell[BoxData[
@@ -3265,7 +3272,7 @@ Cell[BoxData[
 a20019c0f147"]
 },
 WindowSize->{1440, 801},
-WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowMargins->{{Automatic, -138}, {-45, Automatic}},
 TaggingRules->Association["TryRealOnly" -> False],
 FrontEndVersion->"12.3 for Mac OS X ARM (64-bit) (July 9, 2021)",
 StyleDefinitions->"Default.nb",
@@ -3286,9 +3293,9 @@ Cell[558, 20, 288, 6, 46, "Input",ExpressionUUID->"b7c0a472-a1ce-4fc3-84c0-7ff1a
  InitializationCell->True],
 Cell[849, 28, 796, 18, 87, "Input",ExpressionUUID->"0d1c205d-9948-4aa4-a8e4-3bd5ead1ac02",
  InitializationCell->True],
-Cell[1648, 48, 153752, 3208, 13231, "Input",ExpressionUUID->"b6039133-1016-473e-b566-8b2e266ea331",
+Cell[1648, 48, 154073, 3215, 13251, "Input",ExpressionUUID->"b6039133-1016-473e-b566-8b2e266ea331",
  InitializationCell->True],
-Cell[155403, 3258, 230, 6, 46, "Input",ExpressionUUID->"e038966a-26b6-495e-9a70-a20019c0f147",
+Cell[155724, 3265, 230, 6, 46, "Input",ExpressionUUID->"e038966a-26b6-495e-9a70-a20019c0f147",
  InitializationCell->True]
 }
 ]
