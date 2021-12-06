@@ -66,7 +66,7 @@ If[FileExistsQ[$SETTINGSFILE],Print["Settings file does not contain a path to a 
 exec=DiscoverPython[True];
 res=SetupPythonVENV[exec,"Patch"->True];
 ChangeSetting["Python",res];
-packageDir=ExternalEvaluate["Python","import cymetric;os.path.dirname(cymetric.__file__)"];
+packageDir=ExternalEvaluate["Python","import cymetric;import os;os.path.dirname(cymetric.__file__)"];
 (*Import the mathematica point generation functions into the current session*)
 Print[FileNameJoin[{packageDir,"wolfram/PointGeneratorMathematica.m"}]];
 Import[FileNameJoin[{packageDir,"wolfram/PointGeneratorMathematica.m"}]];
