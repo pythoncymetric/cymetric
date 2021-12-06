@@ -9,7 +9,7 @@ The current version is an alpha-release so not all features mentioned below
 are on the main branch yet. Features with an (*) will be released soonish.
 
 * Point Generators for Complete Intersection Calabi-Yau manifolds and hypersurfaces
- from the Kreuzer-Skarke list (requires SageMath).
+ from the Kreuzer-Skarke list (requires SageMath and Mathematica).
 * A collection of custom TensorFlow models with different metric Ansätze.
 * A matehmatica API for the point generators and TensorFlow models(*).
 * Custom models for the bundle metric(*).
