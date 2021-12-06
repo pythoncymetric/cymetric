@@ -124,7 +124,7 @@ If[installPackages["ExitCode"]!=0,Print["An error occurred. Here's the output"];
 ];
 (*Install CY package*)
 Print["Installing cymetric..."];
-installPackages=RunProcess["pip install git+https://github.com/pythoncymetric/cymetric.git"];
+installPackages=RunProcess[{pip,"install","git+https://github.com/pythoncymetric/cymetric.git"}];
 If[installPackages["ExitCode"]!=0,Print["An error occurred. Here's the output"];Print[installPackages["StandardOutput"]];Print[installPackages["StandardError"]];Return[python];
 ];
 (*Register for use with Mathematica*)
