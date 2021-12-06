@@ -68,7 +68,6 @@ res=SetupPythonVENV[exec,"Patch"->True];
 ChangeSetting["Python",res];
 packageDir=ExternalEvaluate["Python","import cymetric;import os;os.path.dirname(cymetric.__file__)"];
 (*Import the mathematica point generation functions into the current session*)
-Print[FileNameJoin[{packageDir,"wolfram/PointGeneratorMathematica.m"}]];
 Import[FileNameJoin[{packageDir,"wolfram/PointGeneratorMathematica.m"}]];
 Return[res];
 )];
