@@ -229,7 +229,7 @@ If[verbose >1,
 Print["Variables have been assigned to the ambient space factors as follows:"];
 startPos=1;
 For[i=1,i<=Length[dimPs],i++,
-Print[i,".) ",SymbolName[P]^ToString[dimPs[[i]]],": ",vars[[startPos;;startPos+dimPs[[i]]]]];
+Print[i,".) ",SymbolName[P]^ToString[dimPs[[i]]],": ",SymbolName[vars[[startPos;;startPos+dimPs[[i]]]]]];
 startPos+=dimPs[[i]]+1;
 ];
 ,
