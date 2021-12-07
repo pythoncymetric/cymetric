@@ -59,7 +59,11 @@ forceReinstall=OptionValue["ForceReinstall"];
 (*Auto-detect whether venv is already set up in the folder*)
 If[!forceReinstall,
 python=Quiet[Check[GetSetting["Python"],Null]];
-If[!python===Null,Return[python];];
+If[!python===Null,
+session=StartExternalSession[<|"System"->"Python","Executable"->python|>];
+packageDir=ExternalEvaluate[session,"import cymetric;import os;os.path.dirname(cymetric.__file__)"];
+Import[FileNameJoin[{packageDir,"wolfram/PointGeneratorMathematica.m"}]];
+Return[python];];
 If[FileExistsQ[$SETTINGSFILE],Print["Settings file does not contain a path to a Python environment. Please set one with changeSettings[Python-><path/to/python>], or run again with option ForceReinstall->True"];
 ];
 ];
