@@ -51,6 +51,8 @@ class KaehlerCallback(tfk.callbacks.Callback):
         """
         super(KaehlerCallback, self).__init__()
         self.X_val, self.y_val = validation_data
+        self.X_val = tf.cast(self.X_val, tf.float32)
+        self.y_val = tf.cast(self.y_val, tf.float32)
         self.weights = tf.cast(self.y_val[:, -2], tf.float32)
         self.omega = tf.cast(self.y_val[:, -1], tf.float32)
         self.nth = nth
@@ -123,6 +125,8 @@ class RicciCallback(tfk.callbacks.Callback):
         """
         super(RicciCallback, self).__init__()
         self.X_val, self.y_val = validation_data
+        self.X_val = tf.cast(self.X_val, tf.float32)
+        self.y_val = tf.cast(self.y_val, tf.float32)
         self.weights = tf.cast(self.y_val[:, -2], tf.float32)
         self.vol_cy = tf.math.reduce_mean(self.weights, axis=-1)
         self.omega = tf.cast(self.y_val[:, -1], tf.float32)
@@ -243,6 +247,7 @@ class TransitionCallback(tfk.callbacks.Callback):
         super(TransitionCallback, self).__init__()
         self.X_val, self.y_val = validation_data
         self.X_val = tf.cast(self.X_val, tf.float32)
+        self.y_val = tf.cast(self.y_val, tf.float32)
         
     def on_epoch_end(self, epoch, logs=None):
         r"""Computes transition measure.
@@ -288,6 +293,8 @@ class VolkCallback(tfk.callbacks.Callback):
         """
         super(VolkCallback, self).__init__()
         self.X_val, self.y_val = validation_data
+        self.X_val = tf.cast(self.X_val, tf.float32)
+        self.y_val = tf.cast(self.y_val, tf.float32)
         self.weights = tf.cast(self.y_val[:, -2], dtype=tf.float32)
         self.omega = tf.cast(self.y_val[:, -1], dtype=tf.float32)
         self.nfold = tf.cast(nfold, dtype=tf.float32)
