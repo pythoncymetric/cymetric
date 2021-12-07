@@ -44,7 +44,7 @@ GeneratePointsM[numPts_, dimPs_, coefficients_, exponents_, precision_:20,verbos
     vars=Flatten[varsUnflat];
     (*Reconstruct equations*)
     eqns=Table[Sum[coefficients[[i,j]] Times@@(Power[vars,exponents[[i,j]]]),{j,Length[coefficients[[i]]]}],{i,Length[coefficients]}];
-    Print[eqns];
+    (*Print[eqns];*)
 (*Reconstruct the transpose configuration matrix / multi-degrees of each equation*)
     conf= {};
     For[i=1,i<=Length[coefficients],i++,
