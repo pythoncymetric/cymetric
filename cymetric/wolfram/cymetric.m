@@ -11,7 +11,7 @@ This package provides a Mathematica interface for the Python cymetric paper. Aut
 
 
 (* ::Input::Initialization:: *)
-$SETTINGSFILE=Quiet[Check[FileNameJoin[{NotebookDirectory[],"settings.txt"}],"~/"]];
+$SETTINGSFILE=Quiet[Check[FileNameJoin[{NotebookDirectory[],"settings.txt"}],FileNameJoin[{$HomeDirectory,"settings.txt"}]]];
 $WORKDIR=Quiet[Check[NotebookDirectory[],"~/"]];
 GetSetting::usage="GetSetting[k] retrieves the value of k from $SETTINGSFILE.\n* Input:\n  - k (string): The entry whose value shall be retrieved\n* Return:\n  - The value v (string) of entry k, or Null if entry k not found\n* Example:\n  - GetSetting[\"Python\"]";
 GetSetting::fileNotFound="Could not retrieve `1`. No settings file found.";
