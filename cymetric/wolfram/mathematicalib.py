@@ -142,10 +142,10 @@ def train_NN(my_args):
 	# callbacks
 	if args['callbacks']:
 		scb = SigmaCallback((data['X_val'], data['y_val']))
-		kcb = KaehlerCallback((data['X_val'], data['y_val']), data['val_pullbacks'], nfold=nfold)
+		kcb = KaehlerCallback((data['X_val'], data['y_val']), data['val_pullbacks'])
 		tcb = TransitionCallback((data['X_val'], data['y_val']))
 		rcb = RicciCallback((data['X_val'], data['y_val']), data['val_pullbacks'])
-		volkck = VolkCallback((data['X_val'], data['y_val']), nfold=nfold)
+		volkck = VolkCallback((data['X_val'], data['y_val']))
 		cb_list = [scb, kcb, tcb, rcb, volkck]
 	else:
 		cb_list = []
