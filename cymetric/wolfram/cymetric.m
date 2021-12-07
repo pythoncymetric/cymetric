@@ -68,7 +68,7 @@ If[FileExistsQ[$SETTINGSFILE],Print["Settings file does not contain a path to a 
 ];
 ];
 exec=DiscoverPython[True];
-res=SetupPythonVENV[exec,"Patch"->True];
+res=SetupPythonVENV[exec,"Patch"->True,"VENVPath"->path];
 ChangeSetting["Python",res];
 session=StartExternalSession[<|"System"->"Python","Executable"->res|>];
 packageDir=ExternalEvaluate[session,"import cymetric;import os;os.path.dirname(cymetric.__file__)"];
