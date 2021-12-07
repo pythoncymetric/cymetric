@@ -132,7 +132,7 @@ pip=FileNameJoin[{path,"bin","pip"}];
 If[!FileExistsQ[pip],pip=FileNameJoin[{path,"bin","pip3"}];];
 If[!FileExistsQ[pip],Print["Error: Couldn't find pip at ",FileNameJoin[{path,"bin"}]];Return[python];];
 (*Install packages*);
-packages={ "h5py","joblib","numpy","pyyaml","pyzmq","scipy","sympy","tensorflow","wolframclient"};
+packages={ "h5py","joblib","numpy","pyyaml","pyzmq","scipy","sympy","tensorflow==2.4.1","wolframclient"};
 Print["Upgrading pip..."];
 installPackages=RunProcess[{pip,"install", "--upgrade", "pip"}];
 If[installPackages["ExitCode"]!=0,Print["An error occurred. Here's the output"];Print[installPackages["StandardOutput"]];Print[installPackages["StandardError"]];Return[python];];
@@ -229,7 +229,7 @@ If[verbose >1,
 Print["Variables have been assigned to the ambient space factors as follows:"];
 startPos=1;
 For[i=1,i<=Length[dimPs],i++,
-Print[i,".) ",P^ToString[dimPs[[i]]],": ",vars[[startPos;;startPos+dimPs[[i]]]]];
+Print[i,".) ",SymbolName[P]^ToString[dimPs[[i]]],": ",vars[[startPos;;startPos+dimPs[[i]]]]];
 startPos+=dimPs[[i]]+1;
 ];
 ,
