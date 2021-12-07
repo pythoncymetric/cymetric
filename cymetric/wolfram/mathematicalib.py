@@ -144,7 +144,7 @@ def train_NN(my_args):
 		scb = SigmaCallback((data['X_val'], data['y_val']))
 		kcb = KaehlerCallback((data['X_val'], data['y_val']))
 		tcb = TransitionCallback((data['X_val'], data['y_val']))
-		rcb = RicciCallback((data['X_val'], data['y_val']))
+		rcb = RicciCallback((data['X_val'], data['y_val']), data['val_pullbacks'])
 		volkck = VolkCallback((data['X_val'], data['y_val']))
 		cb_list = [scb, kcb, tcb, rcb, volkck]
 	else:
