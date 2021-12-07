@@ -54,7 +54,7 @@ Return[StringReplace[ToString[InputForm[input,NumberMarks->False]], {"{"->"[","}
 
 Setup::usage="Setup[path, Options] finds a valid Python executable; if setup has been run before, it uses the path from global settings. Else it finds a good Python 3 interpreter and creates a virtual environment and patches mathematica to work with python >= 3.7.\n* Input:\n  - path (string): Sets up a python venv in path (defaults to ./venv).\n* Options (run Options[Setup] to see default values):\n  - ForceReinstall (bool): Whether the venv should be reinstalled if it already exists\n* Return:\n  - python (string): path to python venv executable\n* Example:\n  - Setup[]";
 Options[Setup]={"ForceReinstall"->False};
-Setup[path_String:FileNameJoin[{$WORKDIR,"venv"}],OptionsPattern[]]:=Module[{exec,res,settings,forceReinstall,python, packageDir},(
+Setup[path_String:FileNameJoin[{$WORKDIR,"venv"}],OptionsPattern[]]:=Module[{exec,res,settings,forceReinstall,python, packageDir,session},(
 forceReinstall=OptionValue["ForceReinstall"];
 (*Auto-detect whether venv is already set up in the folder*)
 If[!forceReinstall,
@@ -66,7 +66,8 @@ If[FileExistsQ[$SETTINGSFILE],Print["Settings file does not contain a path to a 
 exec=DiscoverPython[True];
 res=SetupPythonVENV[exec,"Patch"->True];
 ChangeSetting["Python",res];
-packageDir=ExternalEvaluate["Python","import cymetric;import os;os.path.dirname(cymetric.__file__)"];
+session=StartExternalSession[<|"System"->"Python","Executable"->res|>];
+packageDir=ExternalEvaluate[session,"import cymetric;import os;os.path.dirname(cymetric.__file__)"];
 (*Import the mathematica point generation functions into the current session*)
 Import[FileNameJoin[{packageDir,"wolfram/PointGeneratorMathematica.m"}]];
 Return[res];
