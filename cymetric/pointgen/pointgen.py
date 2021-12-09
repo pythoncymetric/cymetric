@@ -667,7 +667,7 @@ class PointGenerator:
         #do antisymmetric tensor contraction. is there a nice way to do this
         # in arbitrary dimensions? Not that anyone would study 6-folds ..
         if self.nfold == 1:
-            detg_norm = fs_pbs[0]
+            detg_norm = fs_pbs[:][0][0]
         elif self.nfold == 2:
             detg_norm = np.einsum('xab,xcd,ac,bd->x',
                                   fs_pbs[0], fs_pbs[1],
