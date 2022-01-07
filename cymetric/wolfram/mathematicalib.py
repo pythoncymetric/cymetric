@@ -223,6 +223,30 @@ def get_g(my_args):
 	gs = fsmodel(pts)
 	
 	return [[point_vec_to_complex(x), g] for x, g in zip(pts.numpy(), gs.numpy())]
+
+def get_g_fs(my_args):
+	def point_vec_to_complex(p):
+			plen = len(p)//2
+			return p[:plen] + 1.j*p[plen:]
+	global mcy_logger
+	mcy_logger.setLevel(logging.DEBUG)
+	# don't process points to save time
+	my_args = eval(my_args)
+	pts = np.array([point_vec_to_complex(p) for p in np.array(my_args['points'])])
+	del my_args['points']
+	
+	# parse arguments
+	args = to_numpy_arrays(my_args)
+			
+	with open(os.path.join(os.path.abspath(args['outdir']), "point_gen.pickle"), 'rb') as hnd:
+		point_gen = pickle.load(hnd)
+	
+	pbs = point_gen.pullbacks(pts)
+	ts = args['ts'] if args['ts'] != [] else point_gen.kmoduli
+	fs = point_gen.fubini_study_metrics(pts, vol_js=ts)
+	fs_pbs = np.einsum('xai,xij,xbj->xab', pbs, fs, np.conj(pbs))
+	return fs_pbs
+
 	
 def get_weights(my_args):
 	def point_vec_to_complex(p):
