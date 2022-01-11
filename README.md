@@ -17,13 +17,13 @@ are on the main branch yet. Features with an (*) will be released soonish.
 
 ## Installation
 
-### Just install it with python
+### 1. Just install it with python
 If you want to use any existing python installation (note that we recommend using a virtual environment, see below), just run
 ```console
 pip install git+https://github.com/pythoncymetric/cymetric.git
 ```
 
-### Install with virtual environment
+### 2. Install with virtual environment
 #### Using standard virtual environment
 Create a new virtual environment with
 
@@ -52,6 +52,34 @@ conda activate cymetric
 pip install git+https://github.com/pythoncymetric/cymetric.git
 ```
 
+### 3. Install within sage
+Since sage comes with python, all you need to do is run 
+```console
+pip install git+https://github.com/pythoncymetric/cymetric.git
+```
+from within a sage notebook. If you'd rather keep ML and sage separate, you can just install the package (without tensorflow etc.) using 
+```console
+pip install --no-dependencies git+https://github.com/pythoncymetric/cymetric.git
+```
+Then you can use the function ```prepare_toric_cy_data(tv, "toric_data.pickle"))``` to create and store all the toric data needed, and then run the ML algorithms with this data file from a separate package installation (with tensorflow).
+
+### 4. Install with Mathematica
+The whole installation process is fully automatic in the [Mathematica notebook](/notebooks/4.Mathematica_integration_example.nb). Just download it and follow the instructions in the notebook. In a nutshell, you run
+```console
+Get["https://raw.githubusercontent.com/pythoncymetric/cymetric/main/\
+cymetric/wolfram/cymetric.m"];
+PathToVenv = FileNameJoin[{$HomeDirectory, "cymetric"}];
+python = Setup[PathToVenv];
+```
+You can also use an already existing installation. To do so, you run
+```console
+Get["https://raw.githubusercontent.com/pythoncymetric/cymetric/main/\
+cymetric/wolfram/cymetric.m"];
+PathToVenv = FileNameJoin[{$HomeDirectory, "cymetric"}];
+ChangeSetting["Python", PathToVenv]
+python = Setup[PathToVenv];
+```
+
 
 ## Tutorials
 Once you have installed the package (either in python, or in sage, or in Mathematica), you are probably looking for some examples on how to use it. We provide some tutorials/examples for each case. Just download the example file somewhere on your computer and run it:
@@ -59,7 +87,7 @@ Once you have installed the package (either in python, or in sage, or in Mathema
 1. In [1.PointGenerator.ipynb](notebooks/1.PointGenerator.ipynb) we explore the three different PointGenerators for codimension-1 CICY, general CICYs and CY in toric varieties on the Fermat Quintic. 
 2. In [2.TensorFlow_models.ipynb](notebooks/2.TensorFlow_models.ipynb) we explore some of the TF custom models with the data generated in the first notebook. 
 3. In [3.Sage_integration_.ipynb](notebooks/3.Sage_integration_example.ipynb) we illustrate how to run the package from within Sage to compute the CY metric on a Kreuzer-Skarke model.
-4. In [Mathematica_integration_example](/notebooks/4.Mathematica_integration_example.nb), we illustrate how to call the PointGenerators and the TensorFlow models for training and evaluation. Furthermore, there are arbitrary precision PointGenerators based on the wolfram language.
+4. In [Mathematica_integration_example.nb](/notebooks/4.Mathematica_integration_example.nb), we illustrate how to call the PointGenerators and the TensorFlow models for training and evaluation. Furthermore, there are arbitrary precision PointGenerators based on the wolfram language.
 
 ## Contributing
 
