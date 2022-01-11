@@ -66,15 +66,13 @@ Then you can use the function ```prepare_toric_cy_data(tv, "toric_data.pickle"))
 ### 4. Install with Mathematica
 The whole installation process is fully automatic in the [Mathematica notebook](/notebooks/4.Mathematica_integration_example.nb). Just download it and follow the instructions in the notebook. In a nutshell, you run
 ```console
-Get["https://raw.githubusercontent.com/pythoncymetric/cymetric/main/\
-cymetric/wolfram/cymetric.m"];
+Get["https://raw.githubusercontent.com/pythoncymetric/cymetric/main/cymetric/wolfram/cymetric.m"];
 PathToVenv = FileNameJoin[{$HomeDirectory, "cymetric"}];
 python = Setup[PathToVenv];
 ```
 You can also use an already existing installation. To do so, you run
 ```console
-Get["https://raw.githubusercontent.com/pythoncymetric/cymetric/main/\
-cymetric/wolfram/cymetric.m"];
+Get["https://raw.githubusercontent.com/pythoncymetric/cymetric/main/cymetric/wolfram/cymetric.m"];
 PathToVenv = FileNameJoin[{$HomeDirectory, "cymetric"}];
 ChangeSetting["Python", PathToVenv]
 python = Setup[PathToVenv];
