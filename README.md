@@ -1,6 +1,6 @@
 # cymetric
 
-![CYMetric plots](/assets/images/plots.pdf)
+![CYMetric plots](/assets/plots.pdf)
 
 cymetric is a Python package for learning of moduli-dependent Calabi-Yau metrics
 using neural networks implemented in TensorFlow. 
@@ -19,7 +19,7 @@ are on the main branch yet. Features with an (*) will be released soonish.
 
 ## Installation
 
-### 1. Just install it with python
+### 1. Install it with Python
 If you want to use any existing python installation (note that we recommend using a virtual environment, see below), just run
 ```console
 pip install git+https://github.com/pythoncymetric/cymetric.git
@@ -54,7 +54,7 @@ conda activate cymetric
 pip install git+https://github.com/pythoncymetric/cymetric.git
 ```
 
-### 3. Install within sage
+### 3. Install within Sage
 Since sage comes with python, all you need to do is run 
 ```console
 pip install git+https://github.com/pythoncymetric/cymetric.git
@@ -65,7 +65,7 @@ pip install --no-dependencies git+https://github.com/pythoncymetric/cymetric.git
 ```
 Then you can use the function ```prepare_toric_cy_data(tv, "toric_data.pickle"))``` to create and store all the toric data needed, and then run the ML algorithms with this data file from a separate package installation (with tensorflow).
 
-### 4. Install with Mathematica
+### 4. Install within Mathematica
 The whole installation process is fully automatic in the [Mathematica notebook](/notebooks/4.Mathematica_integration_example.nb). Just download it and follow the instructions in the notebook. In a nutshell, you run
 ```console
 Get["https://raw.githubusercontent.com/pythoncymetric/cymetric/main/cymetric/wolfram/cymetric.m"];
