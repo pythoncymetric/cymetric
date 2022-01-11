@@ -1,6 +1,6 @@
 # cymetric
 
-![CYMetric plots](/assets/plots.pdf)
+![CYMetric plots](/assets/plots.jpg)
 
 cymetric is a Python package for learning of moduli-dependent Calabi-Yau metrics
 using neural networks implemented in TensorFlow. 
