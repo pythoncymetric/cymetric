@@ -26,7 +26,7 @@ FSMetric::usage="FSMetric[points,Options] computes the pullback of the Fubini-St
 
 (* ::Input::Initialization:: *)
 Begin["`Private`"];
-$SETTINGSFILE=Quiet[Check[FileNameJoin[{NotebookDirectory[],"settings.txt"}],FileNameJoin[{$HomeDirectory,"settings.txt"}]]];
+$SETTINGSFILE=Quiet[Check[FileNameJoin[{NotebookDirectory[],FileBaseName[NotebookFileName[]]<>"-cymetricsettings.txt"}],FileNameJoin[{$HomeDirectory,"cymetricsettings.txt"}]]];
 $WORKDIR=Quiet[Check[NotebookDirectory[],"~/"]];
 GetSetting::fileNotFound="Could not retrieve `1`. No settings file found.";
 GetSetting[k_]:=Module[{settings},(
@@ -73,13 +73,15 @@ forceReinstall=OptionValue["ForceReinstall"];
 If[!forceReinstall,
 python=Quiet[Check[GetSetting["Python"],Null]];
 If[!python===Null,
+If[!FileExistsQ[python],Print["Found settings file for this notebook, but the path to the virtual environment specified in this file does not exist. Please set a new one with changeSettings[Python-><path/to/python>], or run again with option ForceReinstall->True"];Return[""];
+];
 session=StartExternalSession[<|"System"->"Python","Executable"->python|>];
 packageDir=ExternalEvaluate[session,"import cymetric;import os;os.path.dirname(cymetric.__file__)"];
 Begin["cymetric`Private`"];
 Get[FileNameJoin[{packageDir,"wolfram/PointGeneratorMathematica.m"}]];
 End[];
 Return[python];];
-If[FileExistsQ[$SETTINGSFILE],Print["Settings file does not contain a path to a Python environment. Please set one with changeSettings[Python-><path/to/python>], or run again with option ForceReinstall->True"];
+If[FileExistsQ[$SETTINGSFILE],Print["Settings file does not contain a path to a Python environment. Please set one with changeSettings[Python-><path/to/python>], or run again with option ForceReinstall->True"];Return[""];
 ];
 ];
 exec=DiscoverPython[True];
