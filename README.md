@@ -20,14 +20,19 @@ are on the main branch yet. Features with an (*) will be released soonish.
 ## Installation
 
 ### 1. Install it with Python
-If you want to use any existing python installation (note that we recommend using a virtual environment, see below), just run
+If you want to use any existing python installation (note that we recommend using a virtual environment, see below), just run in a terminal
 ```console
 pip install git+https://github.com/pythoncymetric/cymetric.git
 ```
 
+To run the example notebooks, you need jupyter. You can install it with
+```console
+pip install jupyter notebook
+```
+
 ### 2. Install with virtual environment
 #### Using standard virtual environment
-Create a new virtual environment with
+Create a new virtual environment in a terminal with
 
 ```console
 python3 -m venv ~/cymetric
@@ -37,7 +42,10 @@ Then install with pip directly from github
 
 ```console
 source ~/cymetric/bin/activate
+pip install --upgrade pip
 pip install git+https://github.com/pythoncymetric/cymetric.git
+pip install jupyter notebook
+python -m ipykernel install --user --name=cymetric
 ```
 
 #### Using anaconda
@@ -82,7 +90,11 @@ python = Setup[PathToVenv];
 
 
 ## Tutorials
-Once you have installed the package (either in python, or in sage, or in Mathematica), you are probably looking for some examples on how to use it. We provide some tutorials/examples for each case. Just download the example file somewhere on your computer and run it:
+Once you have installed the package (either in python, or in sage, or in Mathematica), you are probably looking for some examples on how to use it. We provide some tutorials/examples for each case. Just download the example file somewhere on your computer and open it in jupyter. If you created a virtual environment as explained above, you can simply open a terminal and type
+```console
+jupyter notebook
+```
+This will open jupyter in your web browser. Navigate to the folder where you downloaded the files and click on them to open.
 
 1. In [1.PointGenerator.ipynb](notebooks/1.PointGenerator.ipynb) we explore the three different PointGenerators for codimension-1 CICY, general CICYs and CY in toric varieties on the Fermat Quintic. 
 2. In [2.TensorFlow_models.ipynb](notebooks/2.TensorFlow_models.ipynb) we explore some of the TF custom models with the data generated in the first notebook. 
