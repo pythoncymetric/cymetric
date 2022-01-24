@@ -533,6 +533,7 @@ Module[{python,outDir,session,res,args,pts,kappa,model},(
 python=OptionValue["Python"];
 session=OptionValue["Session"];
 outDir=OptionValue["Dir"];
+session=GetSession[python,session];
 If[session===Null,Return[{"Could not start a Python Kernel with all dependencies installed.",session}]];
 
 If[Length[points]==0,Return[{{},session}]];
