@@ -586,6 +586,7 @@ class PhiFSModel(FreeModel):
             # then there won't be issues with tracing.
             self.learn_volk = tf.cast(False, dtype=tf.bool)
         else:
+        	# at least set loss coefficient to zero.
         	alpha2 = self.alpha.numpy()
         	alpha2[-1] = 0.
         	self.alpha = [tf.Variable(a, dtype=tf.float32) for a in alpha2]
