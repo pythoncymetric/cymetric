@@ -587,9 +587,7 @@ class PhiFSModel(FreeModel):
             self.learn_volk = tf.cast(False, dtype=tf.bool)
         else:
         	# at least set loss coefficient to zero.
-        	alpha2 = self.alpha.numpy()
-        	alpha2[-1] = 0.
-        	self.alpha = [tf.Variable(a, dtype=tf.float32) for a in alpha2]
+        	self.alpha[-1] = tf.Variable(0., dtype=tf.float32)
     
     def call(self, input_tensor, training=True, j_elim=None):
         r"""Prediction of the model.
