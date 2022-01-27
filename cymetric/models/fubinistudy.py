@@ -354,14 +354,16 @@ class FSModel(tfk.Model):
     @tf.function
     def _get_inv_one_mask(self, points):
         r"""Computes mask with True when z_i != 1+0.j."""
-        one_mask = tf.math.logical_or(
-            tf.math.less(points[:, 0:self.ncoords], self.epsilon_low),
-            tf.math.greater(points[:, 0:self.ncoords], self.epsilon_high))
-        zero_mask = tf.math.greater(
-            tf.math.abs(points[:, self.ncoords:]), 1.-self.epsilon_low)
-        inv_mask = tf.math.logical_and(
-            tf.math.logical_not(one_mask), tf.math.logical_not(zero_mask))
-        return tf.math.logical_not(inv_mask)
+        cpoints = tf.complex(points[:, :self.ncoords], points[:, self.ncoords:])
+        return(tf.math.logical_not(tf.experimental.numpy.isclose(cpoints, 1.)))
+        # one_mask = tf.math.logical_or(
+        #     tf.math.less(points[:, 0:self.ncoords], self.epsilon_low),
+        #     tf.math.greater(points[:, 0:self.ncoords], self.epsilon_high))
+        # zero_mask = tf.math.greater(
+        #     tf.math.abs(points[:, self.ncoords:]), 1.-self.epsilon_low)
+        # inv_mask = tf.math.logical_and(
+        #     tf.math.logical_not(one_mask), tf.math.logical_not(zero_mask))
+        # return tf.math.logical_not(inv_mask)
 
     @tf.function
     def _indices_to_mask(self, indices):
