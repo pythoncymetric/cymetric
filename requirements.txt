@@ -1,4 +1,7 @@
-tensorflow>=2.4.1
+tensorflow>=2.4.1; sys_platform == 'linux'
+tensorflow>=2.4.1; sys_platform == 'windows'
+tensorflow-macos; sys_platform == 'darwin'
+tensorflow-metal; sys_platform == 'darwin'
 scipy
 numpy
 sympy>=1.8
