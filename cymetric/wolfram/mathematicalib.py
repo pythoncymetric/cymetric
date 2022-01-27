@@ -221,8 +221,7 @@ def get_g(my_args):
 		fsmodel = FreeModel(model, BASIS, kappa=args['kappa'])
 
 	gs = fsmodel(pts)
-	
-	return [[point_vec_to_complex(x), g] for x, g in zip(pts.numpy(), gs.numpy())]
+	return gs.numpy()
 
 def get_g_fs(my_args):
 	def point_vec_to_complex(p):
