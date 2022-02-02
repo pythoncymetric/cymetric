@@ -138,8 +138,10 @@ If[!FileExistsQ[pip],pip=FileNameJoin[{path,"bin","pip3"}];];
 If[!FileExistsQ[pip],Print["Error: Couldn't find pip at ",FileNameJoin[{path,"bin"}]];Return[python];];
 (*Install packages*);
 packages={ "h5py","joblib","numpy","pyyaml","pyzmq","scipy","sympy","wolframclient"};
-Print["Upgrading pip..."];
+Print["Upgrading pip, wheel, setuptools..."];
 installPackages=RunProcess[{pip,"install", "--upgrade", "pip"}];
+installPackages=RunProcess[{pip,"install", "--upgrade", "wheel"}];
+installPackages=RunProcess[{pip,"install", "--upgrade", "setuptools"}];
 If[installPackages["ExitCode"]!=0,Print["An error occurred. Here's the output"];Print[installPackages["StandardOutput"]];Print[installPackages["StandardError"]];Return[python];];
 For[i=1,i<=Length[packages],i++,
 Print["Installing ",packages[[i]],"..."];
