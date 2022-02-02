@@ -6,7 +6,6 @@ Authors
 Fabian Ruehle fabian.ruehle@cern.ch
 Robin Schneider robin.schneider@physics.uu.se
 """
-# pip install wolframclient
 import os
 import pickle
 import numpy as np
@@ -28,8 +27,55 @@ logging.basicConfig(format='%(name)s:%(levelname)s:%(message)s')
 
 
 class PointGeneratorMathematica(CICYPointGenerator):
+    r"""PointGeneratorMathematica class.
+
+    This uses mathematica as a backand to carry out the computations
+
+    Example:
+        A simple example on a generic CY manifold of the family defined by the following configuration matrix:
+
+        .. math::
+            X \in [5|33]
+
+        can be set up with
+
+        >>> from cymetric.pointgen.pointgen_mathematica import PointGeneratorMathematica
+        >>> from cymetric.pointgen.nphelper import generate_monomials
+        >>> monomials = np.array(list(generate_monomials(6, 3)))
+        >>> monomials_per_hyper = [monomials, monomials]
+        >>> coeff = [np.random.randn(len(m)) for m in monomials_per_hyper]
+        >>> kmoduli = np.ones(1)
+        >>> ambient = np.array([5])
+        >>> pg = PointGeneratorMathematica(monomials_per_hyper, coeff, kmoduli, ambient)
+
+        Once PointGeneratorMathematica is initialized you can generate a training dataset with
+
+        >>> pg.prepare_dataset(number_of_points, dir_name)
+
+        and prepare the required tensorflow model data with
+
+        >>> pg.prepare_basis(dir_name)
+    """
+
     def __init__(self, *args, **kwargs):
-        
+        r"""PointGeneratorMathematica uses Mathematica as a backend for computations.
+
+            Args:
+                monomials (list(ndarray[(nMonomials, ncoord), np.int])): list of length nHyper with monomials for each
+                                                                         defining equation.
+                coefficients (list(ndarray[(nMonomials)])): list of coefficients in front of each monomial.
+                kmoduli (ndarray[(nProj)]): The kaehler moduli.
+                ambient (ndarray[(nProj), np.int]): the direct product of  projective spaces making up the ambient space.
+                vol_j_norm (float, optional): Normalization of the volume of the Calabi-Yau X as computed from
+                    .. math:: \int_X J^n \; \text{ at } \; t_1=t_2=...=t_n = 1.
+                    Defaults to 1.
+                verbose (int, optional): Controls logging. 1-Debug, 2-Info,  else Warning. Defaults to 2.
+                precision (int, optional): Number of valid digits. Defaults to 10
+                point_file_path (str, optional): Path where points are stored. This is only important if Mathematica
+                                                 is also used as a frontend
+                selected_t (ndarray[(nProj)]): The ambient spaces from which the points were sampled.
+                                               This is only important if Mathematica is also used as a frontend
+        """
         self.precision = kwargs.get('precision', 10)
         if 'precision' in kwargs.keys():
             del kwargs['precision']
@@ -85,27 +131,6 @@ class PointGeneratorMathematica(CICYPointGenerator):
         # start multiple kernels for parallel evaluation
         mathematica_session.evaluate(wlexpr('Quiet[WaitAll[LaunchKernels[' + str(nproc) + ']]];'))
         logger.debug("Running with " + str(max(1, mathematica_session.evaluate(wlexpr('Length[Kernels[]]')))) + " Mathematica kernels.")
-        
-    def generate_point_weights(self, n_pw, omega=False, normalize_to_vol_j=False):
-        data_types = [
-            ('point', np.complex128, self.ncoords),
-            ('weight', np.float64)
-        ]
-        data_types = data_types + [('omega', np.complex128)] if omega else data_types
-        dtype = np.dtype(data_types)
-        if self.point_file_path is None or not os.path.exists(self.point_file_path):
-            points = self.generate_points(n_pw)
-        else:
-            points = np.array(pickle.load(open(self.point_file_path, 'rb')))
-        n_p = len(points)
-        n_p = n_p if n_p < n_pw else n_pw
-        
-        weights = self.point_weight(points, normalize_to_vol_j=normalize_to_vol_j)
-        point_weights = np.zeros((n_p), dtype=dtype)
-        point_weights['point'], point_weights['weight'] = points[0:n_p], weights[0:n_p]
-        if omega:
-            point_weights['omega'] = self.holomorphic_volume_form(points[0:n_p])
-        return point_weights
     
     def generate_points(self, n_p, nproc=-1):
         r"""Generates complex points by calling the mathematica point generator
@@ -154,8 +179,8 @@ class PointGeneratorToricMathematica(PointGeneratorMathematica):
             verbose (int, optional): Controls logging. Defaults to 2.
         """
         self.nfold = nfold
-        self.monomials = [np.array(monomials)]  # since we inherit from CICY pointgen, need array of monomnials (one for each defining poly)
-        self.coefficients = [np.array(coefficients)]  # since we inherit from CICY pointgen, need array of monomnials (one for each defining poly)
+        self.monomials = [np.array(monomials)]  # since we inherit from CICY pointgen, need array of monomials (one for each defining poly)
+        self.coefficients = [np.array(coefficients)]  # since we inherit from CICY pointgen, need array of coefficients (one for each defining poly)
         self.kmoduli = kmoduli
         self.ambient = [int(a) for a in ambient]
         self.sections = sections

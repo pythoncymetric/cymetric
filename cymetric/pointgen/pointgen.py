@@ -496,13 +496,14 @@ class PointGenerator:
             for m, c in zip(self.root_monomials_Q, self.root_factors_Q)]
         return np.array([p * t + q for t in np.roots(all_sums)])
 
-    def generate_point_weights(self, n_pw, omega=False):
+    def generate_point_weights(self, n_pw, omega=False, normalize_to_vol_j=False):
         r"""Generates a numpy dictionary of point weights.
 
         Args:
             n_pw (int): # of point weights.
-            omega (bool, optional): If True adds Omega to dict.
-                Defaults to False.
+            omega (bool, optional): If True adds Omega to dict. Defaults to False.
+            normalize_to_vol_j (bool, optional): Whether the weights should be normalized by the factor self.vol_j_norm.
+                                                 Defaults to False
 
         Returns:
             np.dict: point weights
@@ -516,10 +517,9 @@ class PointGenerator:
         points = self.generate_points(n_pw)
         n_p = len(points)
         n_p = n_p if n_p < n_pw else n_pw
-        weights = self.point_weight(points)
+        weights = self.point_weight(points, normalize_to_vol_j=normalize_to_vol_j)
         point_weights = np.zeros((n_p), dtype=dtype)
-        point_weights['point'], point_weights['weight'] = \
-            points[0:n_p], weights[0:n_p]
+        point_weights['point'], point_weights['weight'] = points[0:n_p], weights[0:n_p]
         if omega:
             point_weights['omega'] = self.holomorphic_volume_form(points[0:n_p])
         return point_weights
