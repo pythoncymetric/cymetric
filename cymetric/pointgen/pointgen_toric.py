@@ -11,6 +11,7 @@ import sympy as sp
 import scipy.optimize as opt
 from joblib import Parallel, delayed
 import random
+from cymetric.pointgen.nphelper import prepare_dataset
 from cymetric.pointgen.pointgen import PointGenerator
 from cymetric.pointgen.nphelper import generate_monomials, get_all_patch_degrees
 logging.basicConfig(format='%(name)s:%(levelname)s:%(message)s')
@@ -432,3 +433,20 @@ class ToricPointGenerator(PointGenerator):
             coeffs -= np.einsum('xa,xb,ai,bj->xij', mss, mss, degrees, degrees)
             Js += J_alphas * coeffs * np.complex(kfactors[alpha]) / np.pi
         return Js
+
+    def prepare_dataset(self, n_p, dirname, val_split=0.1, ltails=0, rtails=0):
+        r"""Prepares training and validation data.
+
+        Args:
+            n_p (int): Number of points to generate.
+            dirname (str): Directory name to save dataset in.
+            val_split (float, optional): train-val split. Defaults to 0.1.
+            ltails (float, optional): Percentage discarded on the left tail
+                of weight distribution. Defaults to 0.
+            rtails (float, optional): Percentage discarded on the right tail
+                of weight distribution. Defaults to 0.
+
+        Returns:
+            np.float: kappa = vol_k / vol_cy
+        """
+        return prepare_dataset(self, n_p, dirname, val_split=val_split, ltails=ltails, rtails=rtails, normalize_to_vol_j=True)
