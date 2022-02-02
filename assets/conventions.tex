@@ -1,0 +1,79 @@
+\documentclass[11pt]{article}
+\usepackage[scale=0.8]{geometry}
+\usepackage{amsfonts,amsmath}
+\usepackage{bbm}
+\usepackage{xspace}
+
+\newcommand{\volk}{\ensuremath{\text{vol}_\text{K}}\xspace}
+\newcommand{\volo}{\ensuremath{\text{vol}_\text{CY}}\xspace}
+\newcommand{\volnorm}{\ensuremath{\mathcal{V}}\xspace}
+
+\usepackage{hyperref}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+\begin{flushright}
+\today
+\end{flushright}
+\begin{center}
+{\huge\bfseries Conventions and normalizations}\\[5mm]
+\end{center}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Auxiliary measure}
+The auxiliary measure $dA$ is computed at the point $t_1=t_2=\ldots=t_{h^{11}}=1$ in K\"ahler moduli space (although not all $t_i$ necessarily enter in computing the measure, depending on the ambient space sampling).
+
+\section{Hermitian metric}
+Hermitian matrices of metrics are given as $g_{a\bar b}$, i.e.\ the first index is the holomorphic index and the second index is the anti-holomorphic index.
+
+\section{Normalization of the holomorphic top form}
+The holomorpic top form $\Omega$ is constructed in the usual way. For example, for a CY threefold we set
+\begin{align*}
+\Omega=\frac{dz_i\wedge dz_j \wedge dz_k}{\det (\partial p_\alpha/\partial z_{r})}\,,
+\end{align*}
+where $p_\alpha$ are the defining polynomials and the $z$'s are the projective ambient space coordinates. In the expression, we skip the patch index (i.e.\ the one index per projective ambient space factor whose projective coordinate has been scaled to 1) and the index $r$ in the denominator furthermore skips the indices $(i,j,k)$ that appear in the numerator.
+
+\section{Normalization of the K\"ahler potential}
+The K\"ahler potentials of the K\"ahler cone generator $J_\alpha$ are defined as 
+\begin{align*}
+K_\alpha=\frac{t_\alpha}{\pi}\ln\kappa_\alpha \qquad\text{with}\qquad \kappa_\alpha=\sum_{I}{|s_{\alpha,I}|^2}\,,
+\end{align*}
+where $s_{\alpha,I}$ are the sections of the K\"ahler cone generator $J_\alpha$. For projective spaces, these are just the homogeneous coordinates.
+
+\section{Pullbacks}
+The pullbacks $P_a^I$ are complex matrices of dimension $(n \times D)$, where $n$ is the complex dimension of the Calabi-Yau manifold and $D$ is the number of homogeneous ambient space coordinates. If there are more than one ambient space, the homogeneous coordinates are all listed consecutively. In that case, the pullback matrix will be block-diagonal. The pullback of e.g.\ the metric is then 
+\begin{align*}
+g_{a\bar b}=P_a^I g_{I\bar J}\bar{P}_{\bar b}^{\bar J}=P\cdot g\cdot P^\dagger\,.
+\end{align*}
+\noindent
+The pullbacks are computed as
+\begin{align*}
+P_a^I = \frac{dz_I}{dx_a}
+\end{align*}
+where $z_I$ are the ambient space coordinates and $x_a$ are the Calabi-Yau coordinates. In particular, if $K$ is the index of an ambient space coordinate that has been scaled to 1, $P_a^K=\vec{0}$. Similarly, if $K$ is the index of an ambient space coordinate that is used on the CY as coordinate $x_b$, then $P_a^I=\delta_{IK}\delta_{ab}$. In the other cases, we can use the chain rule to write 
+\begin{align*}
+\frac{dz_I}{dx_a}=\frac{\partial p}{\partial z_a}/\frac{\partial p}{\partial z_I}\,, 
+\end{align*}
+where $p$ is the polynomial that defines the CY (with obvious generalization to the case of multiple defining polynomials).
+
+\section{Transition functions}
+The transition functions between two patches are given by the Jacobians of the coordinate changes. They are $(n\times n)$ matrices $T^a_b$ where $n$ is the complex dimension of the CY. To compute the transition between patch $\mathcal{Q}$ and $\mathcal{R}$, compute 
+\begin{align*}
+g^{\mathcal{R}} = T^{(\mathcal{Q}\to\mathcal{R})} \cdot g^{\mathcal{Q}} \cdot (T^{(\mathcal{Q}\to\mathcal{R})})^\dagger.
+\end{align*}
+
+\section{Weights}
+The weights are computed as $w_i=\volnorm\frac{|\Omega|^2}{\int dA}$. To match the volume computed from the K\"ahler potential and the triple intersection numbers, $\volk(t_1, t_2,\ldots)=\int t_i J^3$, the factor $\volnorm$ needs to be set to the volume where all K\"ahler parameters are set to 1. 
+\medskip
+
+\noindent Note: This factor could also be included in the K\"ahler potential or the metric itself. However, in that case the entries of the metric will be larger, and the NNs (except for the Matrix and the Mult NN) will have to output larger numbers, which often leads to numerical instabilities and worse training behavior.
+
+\section{Volumes}
+We can compute volumes with respect to the measure induced by the K\"ahler forms or the holomorphic top forms. Since the volume form is unique up to a multiplicative constant, the two are proportional. For a CY with metric $g$ and holomorphic top form $\Omega$, the volumes are given by
+\begin{align*}
+\volk&=\frac{1}{N}\sum_{i=1}^N \left.\frac{\det(g)}{|\Omega|^2} w\right|_{p_i}\,,\\
+\volo&=\frac{1}{N}\sum_{i=1}^N w|_{p_i}\,,
+\end{align*}
+where the notation $|_{p_i}$ indicates evaluation at point $p_i$, $i=1,\ldots,N$. Note that in the case where $g$ is the CY volume, $\frac{\det(g)}{|\Omega|^2}=:\kappa$, where $\kappa$ is the constant $\kappa=\volk / \volo$, where $\volk$ is evaluated for any other metric in the same K\"ahler class (which is typically the pullback of the Fubini-Study metric).
+
+\end{document}

@@ -18,6 +18,7 @@ are on the main branch yet. Features with an (*) will be released soonish.
 * Documentation exists(*).
 
 ## Installation
+This guide assumes that you have a working Python 3 (preferably python 3.7 or above) installation (and Sage and Mathematica, if you want to use these features as well). So running ```python3``` should work on your system. Moreover, it assumes that you have installed git. Note that both are standard on Mac and most Linux distributions. For Windows, you will typically have to install them and make sure that for example Python works correctly with Mathematica if you are planing on using the Mathematica interface.
 
 ### 1. Install it with Python
 If you want to use any existing python installation (note that we recommend using a virtual environment, see below), just run in a terminal
@@ -87,7 +88,7 @@ PathToVenv = FileNameJoin[{$HomeDirectory, "cymetric"}];
 ChangeSetting["Python", PathToVenv]
 python = Setup[PathToVenv];
 ```
-
+Note that this will create a .txt file (in the same folder and with the same name as the mathematica notebook) which stores the location of the virtual environment. If you delete this file, mathematica will install a new virtual environment the next time you call ```Setup[PathToVenv]```.
 
 ## Tutorials
 Once you have installed the package (either in python, or in sage, or in Mathematica), you are probably looking for some examples on how to use it. We provide some tutorials/examples for each case. Just download the example file somewhere on your computer and open it in jupyter. If you created a virtual environment as explained above, you can simply open a terminal and type
@@ -100,6 +101,9 @@ This will open jupyter in your web browser. Navigate to the folder where you dow
 2. In [2.TensorFlow_models.ipynb](notebooks/2.TensorFlow_models.ipynb) we explore some of the TF custom models with the data generated in the first notebook. 
 3. In [3.Sage_integration_.ipynb](notebooks/3.Sage_integration_example.ipynb) we illustrate how to run the package from within Sage to compute the CY metric on a Kreuzer-Skarke model.
 4. In [Mathematica_integration_example.nb](/notebooks/4.Mathematica_integration_example.nb), we illustrate how to call the PointGenerators and the TensorFlow models for training and evaluation. Furthermore, there are arbitrary precision PointGenerators based on the wolfram language.
+
+## Conventions and normalizations
+We summarize the mathematical conventions we use in [this .pdf file](./assets/conventions.pdf).
 
 ## Contributing
 
