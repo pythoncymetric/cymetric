@@ -903,7 +903,7 @@ class PointGenerator:
                 of weight distribution. Defaults to 0.
 
         Returns:
-            int: 0
+            np.float: kappa = vol_k / vol_cy
         """
         return prepare_dataset(self, n_p, dirname, val_split=val_split, ltails=ltails, rtails=rtails)
 
