@@ -3,14 +3,10 @@ A selection of custom tensorflow models for learning
 Calabi-Yau metrics using neural networks.
 """
 import tensorflow as tf
-#import os
-#import pickle
 from cymetric.models.losses import sigma_loss
 from cymetric.models.fubinistudy import FSModel
 from cymetric.pointgen.nphelper import get_all_patch_degrees, compute_all_w_of_x
-import sys
 import numpy as np
-#import sympy as sp
 tfk = tf.keras
 
 
@@ -109,19 +105,18 @@ class FreeModel(FSModel):
         if alpha is not None:
             self.alpha = [tf.Variable(a, dtype=tf.float32) for a in alpha]
         else:
-            self.alpha = [tf.Variable(1., dtype=tf.float32) 
-                for _ in range(self.NLOSS)]
+            self.alpha = [tf.Variable(1., dtype=tf.float32) for _ in range(self.NLOSS)]
         self.learn_kaehler = tf.cast(True, dtype=tf.bool)
         self.learn_transition = tf.cast(True, dtype=tf.bool)
         self.learn_ricci = tf.cast(False, dtype=tf.bool)
         self.learn_ricci_val = tf.cast(False, dtype=tf.bool)
         self.learn_volk = tf.cast(True, dtype=tf.bool)
+
+        self.custom_metrics = None
         self.kappa = tf.cast(kappa, dtype=tf.float32)
         self.gclipping = float(5.0)
-
         # add to compile?
-        self.sigma_loss = sigma_loss(self.kappa,
-                                     tf.cast(self.nfold, dtype=tf.float32))
+        self.sigma_loss = sigma_loss(self.kappa, tf.cast(self.nfold, dtype=tf.float32))
 
     def call(self, input_tensor, training=True, j_elim=None):
         r"""Prediction of the NN.
@@ -180,8 +175,8 @@ class FreeModel(FSModel):
             if self.custom_metrics is not None:
                 metrics += self.custom_metrics
 
-        for l in self._flatten_layers():
-            metrics.extend(l._metrics)
+        for layer in self._flatten_layers():
+            metrics.extend(layer._metrics)
         return metrics
 
     def train_step(self, data):
@@ -238,13 +233,10 @@ class FreeModel(FSModel):
             #                 lambda: tf.zeros_like(x[:, 0]))
             if self.learn_volk:
                 # is scalar and not batch vector
-                volk_loss = self.compute_volk_loss(x, weights=y[:, -1],
-                    pred=y_pred)
+                volk_loss = self.compute_volk_loss(x, weights=y[:, -1], pred=y_pred)
             else:
                 volk_loss = tf.zeros_like(cijk_loss)
-            # volk_loss = tf.cond(0 < self.alpha[4],
-            #                    lambda: self.compute_volk_loss(x),
-            #                    lambda: tf.zeros_like(x[:, 0]))
+
             omega = tf.expand_dims(y[:, -1], -1)
             sigma_loss_cont = self.sigma_loss(omega, y_pred)**self.n[0]
             total_loss = self.alpha[0]*sigma_loss_cont +\
@@ -318,7 +310,7 @@ class FreeModel(FSModel):
         else:
             r_loss = tf.zeros_like(cijk_loss)
         if self.learn_volk:
-            volk_loss = self.compute_volk_loss(x, weights=y[:,-2], pred=y_pred)
+            volk_loss = self.compute_volk_loss(x, weights=y[:, -2], pred=y_pred)
         else:
             volk_loss = tf.zeros_like(cijk_loss)
         
@@ -413,7 +405,7 @@ class FreeModel(FSModel):
         Args:
             filepath (str): filepath
         """
-        #TODO: save graph? What about Optimizer?
+        # TODO: save graph? What about Optimizer?
         # https://www.tensorflow.org/guide/keras/save_and_serialize#custom_objects
         self.model.save(filepath=filepath, **kwargs)
 
@@ -582,12 +574,6 @@ class PhiFSModel(FreeModel):
         super(PhiFSModel, self).__init__(*args, **kwargs)
         # automatic in Phi network
         self.learn_kaehler = tf.cast(False, dtype=tf.bool)
-        if self.model.layers[-1].bias is None:
-            # then there won't be issues with tracing.
-            self.learn_volk = tf.cast(False, dtype=tf.bool)
-        else:
-        	# at least set loss coefficient to zero.
-        	self.alpha[-1] = tf.Variable(0., dtype=tf.float32)
     
     def call(self, input_tensor, training=True, j_elim=None):
         r"""Prediction of the model.
@@ -613,17 +599,17 @@ class PhiFSModel(FreeModel):
             tape1.watch(input_tensor)
             with tf.GradientTape(persistent=True) as tape2:
                 tape2.watch(input_tensor)
-                #Need to disable training here, because batch norm
+                # Need to disable training here, because batch norm
                 # and dropout mix the batches, such that batch_jacobian
                 # is no longer reliable.
                 phi = self.model(input_tensor, training=False)
             d_phi = tape2.gradient(phi, input_tensor)
         dd_phi = tape1.batch_jacobian(d_phi, input_tensor)
         dx_dx_phi, dx_dy_phi, dy_dx_phi, dy_dy_phi = \
-            0.25*dd_phi[:,:self.ncoords,:self.ncoords], \
-            0.25*dd_phi[:,:self.ncoords,self.ncoords:], \
-            0.25*dd_phi[:,self.ncoords:,:self.ncoords], \
-            0.25*dd_phi[:,self.ncoords:,self.ncoords:]
+            0.25*dd_phi[:, :self.ncoords, :self.ncoords], \
+            0.25*dd_phi[:, :self.ncoords, self.ncoords:], \
+            0.25*dd_phi[:, self.ncoords:, :self.ncoords], \
+            0.25*dd_phi[:, self.ncoords:, self.ncoords:]
         dd_phi = tf.complex(dx_dx_phi + dy_dy_phi, dx_dy_phi - dy_dx_phi)
         pbs = self.pullbacks(input_tensor, j_elim=j_elim)
         dd_phi = tf.einsum('xai,xij,xbj->xab', pbs, dd_phi, tf.math.conj(pbs))
@@ -633,7 +619,7 @@ class PhiFSModel(FreeModel):
         # return g_fs + \del\bar\del\phi
         return tf.math.add(fs_cont, dd_phi)
 
-    def compute_volk_loss(self, input_tensor, weights, pred = None):
+    def compute_volk_loss(self, input_tensor, weights, pred=None):
         r"""Computes volk loss. 
 
         .. math::
@@ -654,15 +640,14 @@ class PhiFSModel(FreeModel):
         Returns:
             tf.tensor([bSize], tf.float32): Volk loss.
         """
-        #sample_contribution = super().compute_volk_loss(
-        #    input_tensor, weights=weights, pred=pred)
+        # sample_contribution = super().compute_volk_loss(input_tensor, weights=weights, pred=pred)
         phi_pred = tf.reshape(self.model(input_tensor), [-1])
         phi_pred = tf.einsum('i,j->ij', phi_pred, tf.ones_like(phi_pred))
         phi_pred = tf.einsum('ij,i->ji', phi_pred, weights)
         phi_pred = tf.math.reduce_mean(phi_pred, axis=-1)
-        phi_pred = tf.math.abs(phi_pred)
-        # do we want to scale with overall kappa or batch kappa?
-        return self.kappa * phi_pred #+ sample_contribution
+        phi_pred = phi_pred**2
+        
+        return 1./self.kappa * phi_pred
 
 
 class ToricModel(FreeModel):
@@ -736,7 +721,7 @@ class ToricModel(FreeModel):
         :math:`\rho_\alpha` is a basis of sections.
 
         Args:
-            input_tensor (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
+            points (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
             pb (tf.tensor([bSize, nfold, ncoords], tf.float32)):
                 Pullback at each point. Overwrite j_elim. Defaults to None.
             j_elim (tf.tensor([bSize, nHyper], tf.int64), optional): 
@@ -747,8 +732,7 @@ class ToricModel(FreeModel):
             tf.tensor([bSize, nfold, nfold], tf.complex64):
                 Kaehler metric at each point.
         """
-        # NOTE: Cannot use super since for toric models we have only one
-        #  toric space, but more than one Kahler modulus
+        # NOTE: Cannot use super since for toric models we have only one toric space, but more than one Kahler modulus
         pullbacks = self.pullbacks(points, j_elim=j_elim) if pb is None else pb
         cpoints = tf.complex(points[:, :self.ncoords],
                              points[:, self.ncoords:])
@@ -781,33 +765,28 @@ class ToricModel(FreeModel):
         """
         alpha = 0 if n is None else n 
         degrees = self.sections[alpha]
-        ms = tf.math.pow(points[:,tf.newaxis,:], degrees[tf.newaxis,:,:])
+        ms = tf.math.pow(points[:, tf.newaxis, :], degrees[tf.newaxis, :, :])
         ms = tf.math.reduce_prod(ms, axis=int(-1))
         mss = ms * tf.math.conj(ms)     
         kappa_alphas = tf.reduce_sum(mss, int(-1))
-        zizj = points[:,:,tf.newaxis] * tf.math.conj(points[:,tf.newaxis,:])
+        zizj = points[:, :, tf.newaxis] * tf.math.conj(points[:, tf.newaxis, :])
         J_alphas = float(1.) / zizj
-        J_alphas = tf.einsum('x,xab->xab',
-                             float(1.) / (kappa_alphas**int(2)),
-                             J_alphas)
-        coeffs = tf.einsum('xa,xb,ai,aj->xij', mss, mss, degrees, degrees) - \
-                 tf.einsum('xa,xb,ai,bj->xij', mss, mss, degrees, degrees)
+        J_alphas = tf.einsum('x,xab->xab', float(1.) / (kappa_alphas**int(2)), J_alphas)
+        coeffs = tf.einsum('xa,xb,ai,aj->xij', mss, mss, degrees, degrees) - tf.einsum('xa,xb,ai,bj->xij', mss, mss, degrees, degrees)
         return J_alphas * coeffs * t/tf.constant(np.pi, dtype=tf.complex64)
 
     def _generate_helpers(self):
         """Additional helper functions."""
         self.nTransitions = int(np.max(np.sum(~self.patch_masks, axis=-2)))
         self.fixed_patches = self._generate_all_patches()
-        patch_degrees = get_all_patch_degrees(self.glsm_charges,
-            self.patch_masks)
-        w_of_x, del_w_of_x, del_w_of_z = compute_all_w_of_x(patch_degrees,
-            self.patch_masks)
+        patch_degrees = get_all_patch_degrees(self.glsm_charges, self.patch_masks)
+        w_of_x, del_w_of_x, del_w_of_z = compute_all_w_of_x(patch_degrees, self.patch_masks)
         self.patch_degrees = tf.cast(patch_degrees, dtype=tf.complex64)
         self.transition_coefficients = tf.cast(w_of_x, dtype=tf.complex64)
         self.transition_degrees = tf.cast(del_w_of_z, dtype=tf.complex64)
         self.patch_masks = tf.cast(self.patch_masks, dtype=tf.bool)
-        #Not needed; cause transition loss is different
-        #self.degrees = None <- also only needed for rescaling and patches in FS
+        # Not needed; cause transition loss is different
+        # self.degrees = None <- also only needed for rescaling and patches in FS
         self.proj_matrix = None
         self._proj_indices = None
         return None
@@ -820,11 +799,11 @@ class ToricModel(FreeModel):
         fixed_patches = fixed_patches.reshape(
             (self.ncoords, self.nPatches, self.nTransitions))
         for i in range(self.ncoords):
-            #keep each coordinate fixed and add all patches, where its zero
-            all_patches = ~self.patch_masks[:,i]
+            # keep each coordinate fixed and add all patches, where its zero
+            all_patches = ~self.patch_masks[:, i]
             all_indices = np.where(all_patches)[0]
-            fixed_patches[i,all_indices,0:len(all_indices)] = all_indices*\
-                np.ones((len(all_indices),len(all_indices)), dtype=np.int)
+            fixed_patches[i, all_indices, 0:len(all_indices)] = all_indices * \
+                np.ones((len(all_indices), len(all_indices)), dtype=np.int)
         return tf.cast(fixed_patches, dtype=tf.int64)
 
     @tf.function
@@ -832,22 +811,20 @@ class ToricModel(FreeModel):
         r"""Goes to a patch specified by patch_index which contains the patch
         index for self.patch_degrees and return the coordinates in this patch.
         """
-        #NOTE: this is different than for regular FS models
-        # it takes the patch index as argument, not a mask
-        degrees = tf.gather(self.patch_degrees, patch_index[:,0])
-        scaled_points = points[:,tf.newaxis,:]
+        # NOTE: this is different than for regular FS models it takes the patch index as argument, not a mask
+        degrees = tf.gather(self.patch_degrees, patch_index[:, 0])
+        scaled_points = points[:, tf.newaxis, :]
         scaled_points = tf.math.pow(scaled_points, degrees)
         return tf.reduce_prod(scaled_points, axis=-1)
 
     @tf.function
     def _mask_to_patch_index(self, mask):
         """Computes the patch index in self.patch_mask of a given patch mask."""
-        #NOTE: this computes the patch index, not the indices
-        # of the patch coordinates.
-        mask_to_index = tf.math.equal(mask[:,tf.newaxis,:], self.patch_masks)
+        # NOTE: this computes the patch index, not the indices of the patch coordinates.
+        mask_to_index = tf.math.equal(mask[:, tf.newaxis, :], self.patch_masks)
         mask_to_index = tf.reduce_all(mask_to_index, axis=-1)
         indices = tf.where(mask_to_index)
-        return indices[:,1:]
+        return indices[:, 1:]
 
     @tf.function
     def compute_transition_loss(self, points):
@@ -875,14 +852,9 @@ class ToricModel(FreeModel):
         other_patch_mask = tf.reshape(other_patch_mask, (-1, self.ncoords))
         # NOTE: This will include same to same patch transitions
         exp_points = tf.repeat(cpoints, self.nTransitions, axis=-2)
-        patch_points = self._get_patch_coordinates(
-            exp_points,
-            tf.reshape(other_patches, (-1,1)))
-        fixed = tf.reshape(tf.tile(fixed, [1,self.nTransitions]),
-                           (-1, self.nhyper))
-        real_points = tf.concat(
-            (tf.math.real(patch_points), tf.math.imag(patch_points)),
-            axis=-1)
+        patch_points = self._get_patch_coordinates(exp_points, tf.reshape(other_patches, (-1, 1)))
+        fixed = tf.reshape(tf.tile(fixed, [1, self.nTransitions]), (-1, self.nhyper))
+        real_points = tf.concat((tf.math.real(patch_points), tf.math.imag(patch_points)), axis=-1)
         gj = self(real_points, training=True, j_elim=fixed)
         gi = tf.repeat(self(points), self.nTransitions, axis=0)
         current_patch_mask = tf.repeat(
@@ -918,40 +890,36 @@ class ToricModel(FreeModel):
         """
         same_patch = tf.where(tf.math.reduce_all(i_mask == j_mask, axis=-1))
         diff_patch = tf.where(~tf.math.reduce_all(i_mask == j_mask, axis=-1))
-        same_patch = same_patch[:,0]
-        diff_patch = diff_patch[:,0]
-        n_p = tf.math.reduce_sum(tf.ones_like(fixed[:,0]))
+        same_patch = same_patch[:, 0]
+        diff_patch = diff_patch[:, 0]
+        n_p = tf.math.reduce_sum(tf.ones_like(fixed[:, 0]))
         n_p_red = tf.math.reduce_sum(tf.ones_like(diff_patch))
 
-        #reduce non trivial
+        # reduce non trivial
         i_mask_red = tf.gather(i_mask, diff_patch)
         j_mask_red = tf.gather(j_mask, diff_patch)
         fixed_red = tf.gather(fixed, diff_patch)
         points_red = tf.gather(points, diff_patch)
         
-        #recompute patch indices
+        # recompute patch indices
         i_patch_indices = self._mask_to_patch_index(i_mask_red)
         j_patch_indices = self._mask_to_patch_index(j_mask_red)
 
-        #fill tij
-        tij_indices = tf.concat([fixed_red, i_patch_indices, j_patch_indices], 
-                                axis=-1)
+        # fill tij
+        tij_indices = tf.concat([fixed_red, i_patch_indices, j_patch_indices], axis=-1)
         tij_degrees = tf.gather_nd(self.transition_degrees, tij_indices)
         tij_coeff = tf.gather_nd(self.transition_coefficients, tij_indices)
-        tij_red = tf.math.pow(points_red[:,tf.newaxis,tf.newaxis,:],
-                              tij_degrees)
+        tij_red = tf.math.pow(points_red[:, tf.newaxis, tf.newaxis, :], tij_degrees)
         tij_red = tf.multiply(tij_coeff, tf.reduce_prod(tij_red, axis=-1))
-        tij_red = tf.transpose(tij_red, perm=[0,2,1])
+        tij_red = tf.transpose(tij_red, perm=[0, 2, 1])
 
-        #fill tij
-        tij_eye = tf.eye(
-            self.nfold, batch_shape=[n_p-n_p_red], dtype=tf.complex64)
+        # fill tij
+        tij_eye = tf.eye(self.nfold, batch_shape=[n_p-n_p_red], dtype=tf.complex64)
         tij_all = tf.zeros((n_p, self.nfold, self.nfold), dtype=tf.complex64)
-        tij_all = tf.tensor_scatter_nd_update(
-            tij_all, tf.reshape(diff_patch, (-1,1)), tij_red)
-        tij_all = tf.tensor_scatter_nd_update(
-            tij_all, tf.reshape(same_patch, (-1,1)), tij_eye)
+        tij_all = tf.tensor_scatter_nd_update(tij_all, tf.reshape(diff_patch, (-1, 1)), tij_red)
+        tij_all = tf.tensor_scatter_nd_update(tij_all, tf.reshape(same_patch, (-1, 1)), tij_eye)
         return tij_all
+
 
 class PhiFSModelToric(ToricModel):
     r"""PhiFSModelToric inherits from :py:class:`ToricModel`.
@@ -991,9 +959,6 @@ class PhiFSModelToric(ToricModel):
         """
         super(PhiFSModelToric, self).__init__(*args, **kwargs)
         self.learn_kaehler = tf.cast(False, dtype=tf.bool)
-        if self.model.layers[-1].bias is None:
-            # then there won't be issues with tracing.
-            self.learn_volk = tf.cast(False, dtype=tf.bool)
 
     def call(self, input_tensor, training=True, j_elim=None):
         r"""Prediction of the model.
@@ -1023,10 +988,10 @@ class PhiFSModelToric(ToricModel):
             d_phi = tape2.gradient(phi, input_tensor)
         dd_phi = tape1.batch_jacobian(d_phi, input_tensor)
         dx_dx_phi, dx_dy_phi, dy_dx_phi, dy_dy_phi = \
-            0.25*dd_phi[:,:self.ncoords,:self.ncoords], \
-            0.25*dd_phi[:,:self.ncoords,self.ncoords:], \
-            0.25*dd_phi[:,self.ncoords:,:self.ncoords], \
-            0.25*dd_phi[:,self.ncoords:,self.ncoords:]
+            0.25*dd_phi[:, :self.ncoords, :self.ncoords], \
+            0.25*dd_phi[:, :self.ncoords, self.ncoords:], \
+            0.25*dd_phi[:, self.ncoords:, :self.ncoords], \
+            0.25*dd_phi[:, self.ncoords:, self.ncoords:]
         dd_phi = tf.complex(dx_dx_phi + dy_dy_phi, dx_dy_phi - dy_dx_phi)
         pbs = self.pullbacks(input_tensor, j_elim=j_elim)
         dd_phi = tf.einsum('xai,xij,xbj->xab', pbs, dd_phi, tf.math.conj(pbs))
@@ -1041,10 +1006,11 @@ class PhiFSModelToric(ToricModel):
 
         .. math::
         
-            \mathcal{L}_{\text{vol}_k} = |\int_X \phi|
+            \mathcal{L}_{\text{vol}_k} = \int_X \phi
 
         The last term is constant over the whole batch. Thus, the volk loss
-        is *batch dependent*.
+        is *batch dependent*. This loss contribution should be satisfied by 
+        construction but is included for tracing purposes.
         
         Args:
             input_tensor (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
@@ -1056,15 +1022,15 @@ class PhiFSModelToric(ToricModel):
         Returns:
             tf.tensor([bSize], tf.float32): Volk loss.
         """
-        #sample_contribution = super().compute_volk_loss(
-        #    input_tensor, weights=weights, pred=pred)
-        phi_pred = tf.reshape(self.model(input_tensor), [-1])
+        # sample_contribution = super().compute_volk_loss(input_tensor, weights=weights, pred=pred)
+        if pred is None:
+            pred = self.model(input_tensor)
+        phi_pred = tf.reshape(pred, [-1])
         phi_pred = tf.einsum('i,j->ij', phi_pred, tf.ones_like(phi_pred))
         phi_pred = tf.einsum('ij,i->ji', phi_pred, weights)
         phi_pred = tf.math.reduce_mean(phi_pred, axis=-1)
         phi_pred = tf.math.abs(phi_pred)
-        # do we want to scale with overall kappa or batch kappa?
-        return self.kappa * phi_pred #+ sample_contribution
+        return self.kappa * phi_pred
 
 
 class MatrixFSModelToric(ToricModel):

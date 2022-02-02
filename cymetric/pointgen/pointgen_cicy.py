@@ -11,10 +11,9 @@ import sympy as sp
 from sympy.geometry.util import idiff
 import scipy.optimize as opt
 from joblib import Parallel, delayed
-#import itertools as it
 from cymetric.pointgen.pointgen import PointGenerator
-from cymetric.pointgen.nphelper import generate_monomials, prepare_dataset, \
-    get_levicivita_tensor
+from cymetric.pointgen.nphelper import generate_monomials, prepare_dataset, get_levicivita_tensor
+
 logging.basicConfig(format='%(name)s:%(levelname)s:%(message)s')
 logger = logging.getLogger('CICYpointgen')
 
@@ -57,8 +56,8 @@ class CICYPointGenerator(PointGenerator):
         
         >>> pg.prepare_basis(dir_name)
     """
-    def __init__(self, monomials, coefficients, kmoduli, ambient,
-            vol_j_norm=1, verbose=2, backend='multiprocessing'):
+
+    def __init__(self, monomials, coefficients, kmoduli, ambient, vol_j_norm=1, verbose=2, backend='multiprocessing'):
         r"""The CICYPointGenerator uses the *joblib* module to parallelize 
         computations.
 
@@ -81,11 +80,6 @@ class CICYPointGenerator(PointGenerator):
             backend (str, optional): Backend for Parallel. Defaults to
                 'multiprocessing'. 'loky' makes issues with pickle5.
         """
-        # can not run the old ini for shapes are different
-        #super(CICYPointGenerator, self).__init__(
-        #    monomials=monomials, coefficients=coefficients,
-        #    kmoduli=kmoduli,
-        #    ambient=ambient, verbose=verbose)
         if verbose == 1:
             level = logging.DEBUG
         elif verbose == 2:
@@ -98,25 +92,25 @@ class CICYPointGenerator(PointGenerator):
         self.kmoduli = kmoduli
         self.ambient = ambient
         self.vol_j_norm = vol_j_norm
-        self.degrees = ambient+1
+        self.degrees = ambient + 1
         self.nhyper = len(monomials)
         self.nmonomials = []
         self.ncoords = monomials[0].shape[1]
         self.coord_to_ambient = np.concatenate(
-            [[i for _ in range(p+1)] for i, p in enumerate(ambient)])
+            [[i for _ in range(p + 1)] for i, p in enumerate(ambient)])
         self.conf = []
         for m in monomials:
             self.nmonomials += [m.shape[0]]
             deg = []
             for i in range(len(ambient)):
-                s = np.sum(ambient[:i])+i
-                e = np.sum(ambient[:i+1])+i+1
-                deg += [np.sum(m[0,s:e])]
+                s = np.sum(ambient[:i]) + i
+                e = np.sum(ambient[:i + 1]) + i + 1
+                deg += [np.sum(m[0, s:e])]
             self.conf += [deg]
-        self.nfold = np.sum(self.ambient)-self.nhyper
+        self.nfold = np.sum(self.ambient) - self.nhyper
 
         # sympy variables
-        self.x = sp.var('x0:'+str(self.ncoords))
+        self.x = sp.var('x0:' + str(self.ncoords))
         self.poly = [sum(self.coefficients[i] * np.multiply.reduce(
             np.power(self.x, m), axis=-1)) for i, m in enumerate(monomials)]
         self.backend = backend
@@ -135,7 +129,6 @@ class CICYPointGenerator(PointGenerator):
         self.selected_t = self._find_degrees()
         self._generate_root_basis()
         self._generate_dQdz_basis()
-        #self._generate_dzdz_basis()
         self.dzdz_generated = False
         self._generate_padded_basis()
 
@@ -154,63 +147,43 @@ class CICYPointGenerator(PointGenerator):
         self.root_factors = []
         self.tpoly = 0
         degrees = self.selected_t
-        
+
         self.root_vars = {}
         self.root_vars['p'] = sp.var('p0:{}:{}'.format(
-            self.ncoords, np.max(degrees)+1))
+            self.ncoords, np.max(degrees) + 1))
         self.root_vars['ps'] = sp.Matrix(np.reshape(
-            self.root_vars['p'], (self.ncoords, np.max(degrees)+1)))
+            self.root_vars['p'], (self.ncoords, np.max(degrees) + 1)))
         self.root_vars['t'] = sp.var('t0:{}'.format(self.nhyper))
         self.root_vars['ts'] = sp.ones(
-            int(self.ncoords), int(np.max(degrees)+1))
+            int(self.ncoords), int(np.max(degrees) + 1))
         for i in range(len(self.ambient)):
-            for j in range(np.max(degrees)+1):
+            for j in range(np.max(degrees) + 1):
                 if j > degrees[i]:
-                    s = np.sum(self.ambient[:i])+i
-                    e = np.sum(self.ambient[:i+1])+i+1
-                    self.root_vars['ps'][s:e,j] = \
-                        sp.zeros(*np.shape(self.root_vars['ps'][s:e,j]))
+                    s = np.sum(self.ambient[:i]) + i
+                    e = np.sum(self.ambient[:i + 1]) + i + 1
+                    self.root_vars['ps'][s:e, j] = sp.zeros(*np.shape(self.root_vars['ps'][s:e, j]))
         j = 0
         for i in range(len(self.ambient)):
             for k in range(degrees[i]):
-                s = np.sum(self.ambient[:i])+i
-                e = np.sum(self.ambient[:i+1])+i+1
-                self.root_vars['ts'][s:e,1+k] = self.root_vars['t'][j] * \
-                    sp.ones(*np.shape(self.root_vars['ts'][s:e,1+k]))
+                s = np.sum(self.ambient[:i]) + i
+                e = np.sum(self.ambient[:i + 1]) + i + 1
+                self.root_vars['ts'][s:e, 1 + k] = self.root_vars['t'][j] * sp.ones(
+                    *np.shape(self.root_vars['ts'][s:e, 1 + k]))
                 j += 1
-        self.tpoly = [pi.subs([(self.x[i], sum(self.root_vars['ps'].row(i)\
-                                    *self.root_vars['ts'].row(i).T))
-                                for i in range(self.ncoords)]
-                              ).as_poly() for pi in self.poly]
+        self.tpoly = [pi.subs(
+            [(self.x[i], sum(self.root_vars['ps'].row(i) * self.root_vars['ts'].row(i).T)) for i in range(self.ncoords)]
+        ).as_poly() for pi in self.poly]
         poly_dict = [pi.as_dict() for pi in self.tpoly]
-        all_vars = np.array(list(self.root_vars['p'])+list(self.root_vars['t']))
-        self.root_monomials = [np.zeros((len(pi), len(all_vars)),
-                                         dtype=np.int32) for pi in poly_dict]
-        self.root_factors = [np.zeros(len(pi), dtype=np.complex128)
-                             for pi in poly_dict] 
+        all_vars = np.array(list(self.root_vars['p']) + list(self.root_vars['t']))
+        self.root_monomials = [np.zeros((len(pi), len(all_vars)), dtype=np.int32) for pi in poly_dict]
+        self.root_factors = [np.zeros(len(pi), dtype=np.complex128) for pi in poly_dict]
         for j in range(self.nhyper):
-            mask = np.logical_or.reduce(all_vars == \
-                np.array(list(self.tpoly[j].free_symbols)).reshape(-1,1))
+            mask = np.logical_or.reduce(all_vars == np.array(list(self.tpoly[j].free_symbols)).reshape(-1, 1))
             for i, entry in enumerate(poly_dict[j]):
                 antry = np.array(entry)
                 self.root_monomials[j][i, mask] = antry
                 self.root_factors[j][i] = poly_dict[j][entry]
-        # generate jacobian basis; not used in the code (so far)
-        #self.root_jacobian = [[np.copy(m) for _ in range(self.nhyper)]
-        #     for m in self.root_monomials]
-        #self.root_jacobian_factor = [[np.copy(f) for _ in range(self.nhyper)]
-        #     for f in self.root_factors]
-        #for i in range(self.nhyper):
-        #    for j in range(self.nhyper):
-        #        self.root_jacobian_factor[i][j] *= \
-        #            self.root_jacobian[i][j][:, -self.nhyper+j-1]
-        #        self.root_jacobian[i][j][:, -self.nhyper+j-1] -= 1
-        #        good = np.where(
-        #            self.root_jacobian[i][j][:, -self.nhyper+j-1] >= 0)[0]
-        #        self.root_jacobian[i][j] = self.root_jacobian[i][j][good]
-        #        self.root_jacobian_factor[i][j] = \
-        #            self.root_jacobian_factor[i][j][good]
-    
+
     def _root_polynomial(self, x, p):
         r"""Function to be optimized by scipy.opt.fsolve.
         Computes the difference from zero when plugging p+qt into
@@ -231,23 +204,22 @@ class CICYPointGenerator(PointGenerator):
         c = x.view(np.complex)
         p_e = np.concatenate((p.flatten(), c), axis=-1)
         poly = np.array(
-            [np.sum(fact*np.multiply.reduce(np.power(p_e, poly), axis=-1))
-                for poly, fact in zip(self.root_monomials, self.root_factors)])
+            [np.sum(fact * np.multiply.reduce(np.power(p_e, poly), axis=-1))
+             for poly, fact in zip(self.root_monomials, self.root_factors)])
         return poly.view(np.float64)
 
     def _root_prime(self, x, p):
-        #NOTE: this does not actually work as fprime, because going from
+        # NOTE: this does not actually work as fprime, because going from
         # complex to real to complex messes with the argument shapes and
         # derivatives need not be real.
-        #TODO: Work out a hack to make the shapes work.
+        # TODO: Work out a hack to make the shapes work.
         c = x.view(np.complex)
         p_e = np.concatenate((p.flatten(), c), axis=-1)
         poly = np.array(
-            [[np.sum(fi*np.multiply.reduce(np.power(p_e, pi), axis=-1))
-            for pi, fi in zip(poly, fact)]
-                for poly, fact in zip(self.root_jacobian, self.root_factors)])
+            [[np.sum(fi * np.multiply.reduce(np.power(p_e, pi), axis=-1)) for pi, fi in zip(poly, fact)]
+             for poly, fact in zip(self.root_jacobian, self.root_factors)])
         return poly.view(np.float64)
-        
+
     def _point_from_sol_sympy(self, p, sol):
         r"""Substitutes the solution for the t-values from scipy.opt
         to generate points on the CICY.
@@ -270,7 +242,7 @@ class CICYPointGenerator(PointGenerator):
             tuple((ti, tj) for ti, tj in zip(self.root_vars['t'], sol)))
         p_matrix = np.array(p_matrix).astype(np.complex128)
         t_matrix = np.array(t_matrix).astype(np.complex128)
-        point = np.sum(p_matrix*t_matrix, axis=-1)
+        point = np.sum(p_matrix * t_matrix, axis=-1)
         return point
 
     def _generate_all_freets(self):
@@ -282,7 +254,7 @@ class CICYPointGenerator(PointGenerator):
         free_ts = list(generate_monomials(len(self.ambient), self.nhyper))
         free_ts = np.array(free_ts)
         # we remove all not allowed by degree of projective ambient space
-        good = np.reshape(self.ambient, (1,-1)) -free_ts >= 0
+        good = np.reshape(self.ambient, (1, -1)) - free_ts >= 0
         good = np.logical_and.reduce(good, axis=-1)
         # we remove all not allowed because a hypersurface does not get a free t
         for i in range(len(free_ts)):
@@ -306,12 +278,11 @@ class CICYPointGenerator(PointGenerator):
                 # in case we already exhausted all degrees of freedom
                 # shouldn't really be here other than for
                 # some interesting p1 splits (redundant CICY description?)
-                d = np.argmax(self.conf[j, d+1:])
+                d = np.argmax(self.conf[j, d + 1:])
             degrees[d] += 1
         return degrees
-    
-    def _generate_tselected_points(self, n_p, nproc=-1, acc=1e-8,
-            nattempts=1, fprime=None, batch_size=1000):
+
+    def _generate_tselected_points(self, n_p, nproc=-1, acc=1e-8, nattempts=1, fprime=None, batch_size=1000):
         r"""Generates complex points.
 
         NOTE:
@@ -333,25 +304,21 @@ class CICYPointGenerator(PointGenerator):
             ndarray[(<np, ncoord), np.complex128]: Points on the CICY.
         """
         max_deg = np.max(self.selected_t)
-        pn_pnts = np.zeros((n_p, self.ncoords, max_deg+1),
+        pn_pnts = np.zeros((n_p, self.ncoords, max_deg + 1),
                            dtype=np.complex128)
         for i in range(len(self.ambient)):
-            for k in range(self.selected_t[i]+1):
-                s = np.sum(self.ambient[:i])+i
-                e = np.sum(self.ambient[:i+1])+i+1
-                pn_pnts[:,s:e,k] += self.generate_pn_points(n_p,
-                                                            self.ambient[i])
-        points = Parallel(n_jobs=nproc, batch_size=batch_size, 
-                          backend=self.backend)\
-                (delayed(self._get_point)(p, acc, nattempts, fprime)
-                 for p in pn_pnts)
+            for k in range(self.selected_t[i] + 1):
+                s = np.sum(self.ambient[:i]) + i
+                e = np.sum(self.ambient[:i + 1]) + i + 1
+                pn_pnts[:, s:e, k] += self.generate_pn_points(n_p, self.ambient[i])
+        points = Parallel(n_jobs=nproc, batch_size=batch_size, backend=self.backend)(
+            delayed(self._get_point)(p, acc, nattempts, fprime) for p in pn_pnts)
         points = np.array(points)
         cy_cond = self.cy_condition(points)
         cy_mask = np.logical_and.reduce(np.abs(cy_cond) < acc, axis=-1)
         return points[cy_mask]
 
-    def generate_points(self, n_p, nproc=-1, nattempts=1, acc=1e-8,
-            fprime=None, batch_size=1000):
+    def generate_points(self, n_p, nproc=-1, nattempts=1, acc=1e-8, fprime=None, batch_size=1000):
         r"""Generates n_p complex points from the t-selection in
         'self.selected_t' with accuracy 'acc'.
 
@@ -373,32 +340,30 @@ class CICYPointGenerator(PointGenerator):
         points = np.ones((n_p, self.ncoords), dtype=np.complex128)
         logger.debug('Generating points for t-selections {}.'.format(
             self.selected_t))
-        #NOTE: be careful if we give different lengths
-        new_points = self._generate_tselected_points(
-            n_p, nproc=nproc, acc = acc, nattempts=nattempts,
-            fprime=fprime, batch_size=batch_size)
+        # NOTE: be careful if we give different lengths
+        new_points = self._generate_tselected_points(n_p, nproc=nproc, acc=acc, nattempts=nattempts, fprime=fprime,
+                                                     batch_size=batch_size)
         n_p_found = len(new_points)
         n_p_red = n_p
         logger.debug('found {} out of {} expected.'.format(n_p_found, n_p_red))
         points[0:n_p_found] = new_points
         if n_p_found < n_p_red:
-            #sample more points
-            ratio = n_p_red/n_p_found
+            # sample more points
+            ratio = n_p_red / n_p_found
             for _ in range(5):
                 # hopefully only need one iteration, but might get unlucky
-                missing = n_p_red-n_p_found
-                n_p_more = int(ratio*missing + 50)
+                missing = n_p_red - n_p_found
+                n_p_more = int(ratio * missing + 50)
                 logger.debug('generating {} more points.'.format(n_p_more))
-                new_points = self._generate_tselected_points(
-                    n_p_more, nproc=nproc, acc = acc, nattempts=nattempts,
-                    fprime=fprime, batch_size=batch_size)
+                new_points = self._generate_tselected_points(n_p_more, nproc=nproc, acc=acc, nattempts=nattempts,
+                                                             fprime=fprime, batch_size=batch_size)
                 logger.debug('found {} out of {} expected.'.format(
                     len(new_points), missing))
                 if n_p_found + len(new_points) > n_p_red:
                     points[n_p_found:] = new_points[0:missing]
                     break
                 else:
-                    points[n_p_found:n_p_found+len(new_points)] = new_points
+                    points[n_p_found:n_p_found + len(new_points)] = new_points
                     n_p_found += len(new_points)
         npoints = self._rescale_points(points)
         return npoints
@@ -425,12 +390,12 @@ class CICYPointGenerator(PointGenerator):
             ndarray[(nCoords), np.complex]: (potential) Point on the CICY.
         """
         # TODO: add more arguments to fsolve
-        best_sol = np.random.randn(2*self.nhyper)
+        best_sol = np.random.randn(2 * self.nhyper)
         best_acc = np.sum(np.abs(self._root_polynomial(best_sol, p)))
         for _ in range(nattempts):
             sol = opt.fsolve(
-                self._root_polynomial, np.random.randn(2*self.nhyper),
-                fprime=fprime, args = (p))
+                self._root_polynomial, np.random.randn(2 * self.nhyper),
+                fprime=fprime, args=(p))
             acc1 = np.sum(np.abs(self._root_polynomial(sol, p)))
             if acc1 < best_acc:
                 best_acc = acc1
@@ -438,7 +403,7 @@ class CICYPointGenerator(PointGenerator):
                 if acc1 < acc:
                     break
         return self._point_from_sol(p, best_sol.view(np.complex128))
-    
+
     def _generate_dQdz_basis(self):
         r"""Generates a basis for dQ/dz_j.
         """
@@ -446,27 +411,27 @@ class CICYPointGenerator(PointGenerator):
         self.dQdz_factors = [[] for _ in range(self.nhyper)]
         for j in range(self.nhyper):
             for i, m in enumerate(np.eye(self.ncoords, dtype=np.int32)):
-                basis = self.monomials[j]-m
+                basis = self.monomials[j] - m
                 factors = self.monomials[j][:, i] * self.coefficients[j]
                 good = np.ones(len(basis), dtype=np.bool)
                 good[np.where(basis < 0)[0]] = False
                 self.dQdz_basis[j] += [basis[good]]
                 self.dQdz_factors[j] += [factors[good]]
-                
+
     def _generate_dzdz_basis(self, nproc=-1):
         r"""Generates a basis for dz_i/dz_j which was needed for the
         pullback tensor. NOTE: This code is not actively needed anymore.
         """
         self.dzdz_generated = True
         self.dzdz_basis = [[[(np.zeros((1, self.ncoords), dtype=np.int32),
-            np.zeros((1, self.ncoords), dtype=np.int32))
-            for _ in range(self.ncoords)]
-            for _ in range(self.ncoords)] for _ in range(self.nhyper)]
+                              np.zeros((1, self.ncoords), dtype=np.int32))
+                             for _ in range(self.ncoords)]
+                            for _ in range(self.ncoords)] for _ in range(self.nhyper)]
         self.dzdz_factor = [[[([0], [0]) for _ in range(self.ncoords)]
-            for _ in range(self.ncoords)] for _ in range(self.nhyper)]
+                             for _ in range(self.ncoords)] for _ in range(self.nhyper)]
         self.iderivatives = [[Parallel(n_jobs=nproc, backend=self.backend)
-            (delayed(self._implicit_diff)(i, j, k) for i in range(self.ncoords))
-            for j in range(self.ncoords)] for k in range(self.nhyper)]
+                              (delayed(self._implicit_diff)(i, j, k) for i in range(self.ncoords))
+                              for j in range(self.ncoords)] for k in range(self.nhyper)]
         for k in range(self.nhyper):
             for j in range(self.ncoords):
                 for i in range(self.ncoords):
@@ -474,7 +439,7 @@ class CICYPointGenerator(PointGenerator):
                             and self.conf[self.coord_to_ambient[j]][k] != 0:
                         self.dzdz_basis[k][j][i], self.dzdz_factor[k][j][i] = \
                             self._frac_to_monomials(self.iderivatives[k][j][i])
-                        
+
     def _implicit_diff(self, i, j, k):
         r"""Compute the implicit derivative of
             dzi/dzj
@@ -489,7 +454,7 @@ class CICYPointGenerator(PointGenerator):
             sympy poly: implicit derivative
         """
         if i == j or self.conf[self.coord_to_ambient[i]][k] == 0 or \
-            self.conf[self.coord_to_ambient[j]][k] == 0:
+                self.conf[self.coord_to_ambient[j]][k] == 0:
             return 0
         return idiff(self.poly[k], self.x[i], self.x[j])
 
@@ -501,47 +466,39 @@ class CICYPointGenerator(PointGenerator):
             # first dQdz
             shape = np.array([np.shape(mb) for mb in self.dQdz_basis[k]])
             DQDZB = np.zeros((len(shape), np.max(shape[:, 0]), len(shape)),
-                            dtype=np.complex64)
+                             dtype=np.complex64)
             DQDZF = np.zeros((len(shape), np.max(shape[:, 0])),
-                            dtype=np.complex64)
-            for i, m in enumerate(zip(self.dQdz_basis[k], 
-                    self.dQdz_factors[k])):
+                             dtype=np.complex64)
+            for i, m in enumerate(zip(self.dQdz_basis[k],
+                                      self.dQdz_factors[k])):
                 DQDZB[i, 0:shape[i, 0]] += m[0]
                 DQDZF[i, 0:shape[i, 0]] += m[1]
-            self.BASIS['DQDZB'+str(k)] = np.copy(DQDZB)
-            self.BASIS['DQDZF'+str(k)] = np.copy(DQDZF)
-            self.BASIS['QB'+str(k)] = self.monomials[k]
-            self.BASIS['QF'+str(k)] = self.coefficients[k]
+            self.BASIS['DQDZB' + str(k)] = np.copy(DQDZB)
+            self.BASIS['DQDZF' + str(k)] = np.copy(DQDZF)
+            self.BASIS['QB' + str(k)] = self.monomials[k]
+            self.BASIS['QF' + str(k)] = self.coefficients[k]
             # next dzdz, TODO padd before remove enumerate?
             if self.dzdz_generated:
                 shapes = np.array([[
                     [np.shape(t[0]), np.shape(t[1])] if i != j
-                        else [[-1, -1], [-1, -1]] for i, t in enumerate(zi)]
+                    else [[-1, -1], [-1, -1]] for i, t in enumerate(zi)]
                     for j, zi in enumerate(self.dzdz_basis[k])]
                 )
-                DZDZB_d = np.zeros((self.ncoords, self.ncoords,
-                    np.max(shapes[:, 0, 0]), self.ncoords), dtype=np.int64)
-                DZDZB_n = np.zeros((self.ncoords, self.ncoords,
-                    np.max(shapes[:, 1, 0]), self.ncoords), dtype=np.int64)
-                DZDZF_d = np.zeros((self.ncoords, self.ncoords,
-                    np.max(shapes[:, 0, 0])), dtype=np.complex64)
-                DZDZF_n = np.zeros((self.ncoords, self.ncoords,
-                    np.max(shapes[:, 1, 0])), dtype=np.complex64)
+                DZDZB_d = np.zeros((self.ncoords, self.ncoords, np.max(shapes[:, 0, 0]), self.ncoords), dtype=np.int64)
+                DZDZB_n = np.zeros((self.ncoords, self.ncoords, np.max(shapes[:, 1, 0]), self.ncoords), dtype=np.int64)
+                DZDZF_d = np.zeros((self.ncoords, self.ncoords, np.max(shapes[:, 0, 0])), dtype=np.complex64)
+                DZDZF_n = np.zeros((self.ncoords, self.ncoords, np.max(shapes[:, 1, 0])), dtype=np.complex64)
                 for i in range(self.ncoords):
                     for j in range(self.ncoords):
                         if i != j:
-                            DZDZB_d[i, j, 0:shapes[i, j, 0, 0]
-                                    ] += self.dzdz_basis[k][i][j][0]
-                            DZDZB_n[i, j, 0:shapes[i, j, 1, 0]
-                                    ] += self.dzdz_basis[k][i][j][1]
-                            DZDZF_d[i, j, 0:shapes[i, j, 0, 0]
-                                    ] += self.dzdz_factor[k][i][j][0]
-                            DZDZF_n[i, j, 0:shapes[i, j, 1, 0]
-                                    ] += self.dzdz_factor[k][i][j][1]
-                self.BASIS['DZDZB_d'+str(k)] = np.copy(DZDZB_d)
-                self.BASIS['DZDZB_n'+str(k)] = np.copy(DZDZB_n)
-                self.BASIS['DZDZF_d'+str(k)] = np.copy(DZDZF_d)
-                self.BASIS['DZDZF_n'+str(k)] = np.copy(DZDZF_n)
+                            DZDZB_d[i, j, 0:shapes[i, j, 0, 0]] += self.dzdz_basis[k][i][j][0]
+                            DZDZB_n[i, j, 0:shapes[i, j, 1, 0]] += self.dzdz_basis[k][i][j][1]
+                            DZDZF_d[i, j, 0:shapes[i, j, 0, 0]] += self.dzdz_factor[k][i][j][0]
+                            DZDZF_n[i, j, 0:shapes[i, j, 1, 0]] += self.dzdz_factor[k][i][j][1]
+                self.BASIS['DZDZB_d' + str(k)] = np.copy(DZDZB_d)
+                self.BASIS['DZDZB_n' + str(k)] = np.copy(DZDZB_n)
+                self.BASIS['DZDZF_d' + str(k)] = np.copy(DZDZF_d)
+                self.BASIS['DZDZF_n' + str(k)] = np.copy(DZDZF_n)
 
     def holomorphic_volume_form(self, points, j_elim=None):
         r"""We compute the holomorphic volume form
@@ -563,16 +520,16 @@ class CICYPointGenerator(PointGenerator):
             ndarray[(n_p), np.complex128]: Omega evaluated at each point
         """
         indices = self._find_max_dQ_coords(points) if j_elim is None else j_elim
-        omega = np.ones_like(points[:,0])
+        omega = np.ones_like(points[:, 0])
         for i in range(self.nhyper):
             tmp_omega = np.power(np.expand_dims(points, 1),
-                                 self.BASIS['DQDZB'+str(i)][indices[:,i]])
+                                 self.BASIS['DQDZB' + str(i)][indices[:, i]])
             tmp_omega = np.multiply.reduce(tmp_omega, axis=-1)
             omega *= np.add.reduce(
-                self.BASIS['DQDZF'+str(i)][indices[:,i]] * tmp_omega, axis=-1)
+                self.BASIS['DQDZF' + str(i)][indices[:, i]] * tmp_omega, axis=-1)
         # compute (dQ/dzj)**-1
         return 1 / omega
-        
+
     def _find_max_dQ_coords(self, points):
         r"""finds the coordinates for which |dQ/dzj| is largest.
 
@@ -582,13 +539,12 @@ class CICYPointGenerator(PointGenerator):
         Returns:
             ndarray[(n_p, nhyper), np.int64]: maxdQdz indices
         """
-        dQdz = []
         available_mask = ~np.isclose(points, np.complex(1, 0))
         max_coords = np.zeros((len(points), self.nhyper), dtype=np.int32)
         for i in range(self.nhyper):
             dQdz = np.abs(self._compute_dQdz(points, i))
-            max_coords[:,i] = np.argmax(dQdz*available_mask, axis=-1)
-            available_mask[np.arange(len(points)), max_coords[:,i]] = False
+            max_coords[:, i] = np.argmax(dQdz * available_mask, axis=-1)
+            available_mask[np.arange(len(points)), max_coords[:, i]] = False
         return max_coords
 
     def _find_good_coordinate_mask(self, points):
@@ -618,12 +574,12 @@ class CICYPointGenerator(PointGenerator):
             ndarray([n_p, ncoords], np.complex128): dQdz at each point.
         """
         p_exp = np.expand_dims(np.expand_dims(points, 1), 1)
-        dQdz = np.power(p_exp, self.BASIS['DQDZB'+str(k)])
+        dQdz = np.power(p_exp, self.BASIS['DQDZB' + str(k)])
         dQdz = np.multiply.reduce(dQdz, axis=-1)
-        dQdz = np.multiply(self.BASIS['DQDZF'+str(k)], dQdz)
+        dQdz = np.multiply(self.BASIS['DQDZF' + str(k)], dQdz)
         dQdz = np.add.reduce(dQdz, axis=-1)
         return dQdz
-        
+
     def prepare_dataset(self, n_p, dirname, ltails=0.05, **kwargs):
         r"""Prepares training and validation data.
 
@@ -656,7 +612,7 @@ class CICYPointGenerator(PointGenerator):
         Returns:
             ndarray([n_p, nhyper], np.complex128): CY condition
         """
-        cy_cond = np.zeros((len(points), self.nhyper), dtype = points.dtype)
+        cy_cond = np.zeros((len(points), self.nhyper), dtype=points.dtype)
         for i, (c, m) in enumerate(zip(self.coefficients, self.monomials)):
             cy_cond[:, i] = np.add.reduce(c * np.multiply.reduce(
                 np.power(np.expand_dims(points, 1), m), axis=-1), axis=-1)

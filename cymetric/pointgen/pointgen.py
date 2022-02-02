@@ -6,7 +6,6 @@ Main PointGenerator module.
     Robin Schneider <robin.schneider@physics.uu.se>
 """
 import numpy as np
-#from scipy.special import factorial
 import logging
 import sympy as sp
 from cymetric.pointgen.nphelper import prepare_basis_pickle, prepare_dataset, \
@@ -55,8 +54,8 @@ class PointGenerator:
         
         >>> pg.prepare_basis(dir_name)
     """
-    def __init__(self, monomials, coefficients, kmoduli, ambient, 
-            vol_j_norm=1, verbose=2, backend='multiprocessing'):
+
+    def __init__(self, monomials, coefficients, kmoduli, ambient, vol_j_norm=1, verbose=2, backend='multiprocessing'):
         r"""The PointGenerator uses the *joblib* module to parallelize 
         computations. 
 
@@ -90,17 +89,17 @@ class PointGenerator:
         self.kmoduli = kmoduli
         self.ambient = ambient.astype(np.int64)
         self.vol_j_norm = vol_j_norm
-        self.degrees = ambient+1
+        self.degrees = ambient + 1
         self.nhyper = 1
         self.vol_j_norm = vol_j_norm
         self.nmonomials, self.ncoords = monomials.shape
-        self.nfold = np.sum(self.ambient)-self.nhyper
+        self.nfold = np.sum(self.ambient) - self.nhyper
         self.backend = backend
         self.lc = get_levicivita_tensor(int(self.nfold))
         # sympy variables
-        self.x = sp.var('x0:'+str(self.ncoords))
+        self.x = sp.var('x0:' + str(self.ncoords))
         self.poly = sum(self.coefficients * np.multiply.reduce(
-                            np.power(self.x, self.monomials), axis=-1))
+            np.power(self.x, self.monomials), axis=-1))
         # more general
         # self.c = sp.var('c0:'+str(self.nmonomials))
         # self.gpoly = sum(self.c *
@@ -110,7 +109,8 @@ class PointGenerator:
         self._set_seed(2021)
         self._generate_all_bases()
 
-    def _set_seed(self, seed):
+    @staticmethod
+    def _set_seed(seed):
         # sets the numpy seed for point gen
         np.random.seed(seed)
 
@@ -127,7 +127,6 @@ class PointGenerator:
         # we disable dzdz derivatives, there is not much difference in 
         # pullback accuracy with the inverse vs implicit derivatives.
         self.dzdz_generated = False
-        #self._generate_dzdz_basis()
         self._generate_padded_basis()
 
     def _generate_root_basis(self):
@@ -146,50 +145,46 @@ class PointGenerator:
         self.tpoly = 0
         self.root_vars = {}
         self.root_vars['p'] = sp.var('p0:{}:{}'.format(
-            self.ncoords, np.max(self.selected_t)+1))
+            self.ncoords, np.max(self.selected_t) + 1))
         self.root_vars['ps'] = sp.Matrix(np.reshape(
-            self.root_vars['p'], (self.ncoords, np.max(self.selected_t)+1)))
+            self.root_vars['p'], (self.ncoords, np.max(self.selected_t) + 1)))
         self.root_vars['t'] = sp.var('t0:{}'.format(self.nhyper))
         self.root_vars['ts'] = sp.ones(
-            int(self.ncoords), int(np.max(self.selected_t)+1))
+            int(self.ncoords), int(np.max(self.selected_t) + 1))
         for i in range(len(self.ambient)):
-            for j in range(np.max(self.selected_t)+1):
+            for j in range(np.max(self.selected_t) + 1):
                 if j > self.selected_t[i]:
-                    s = np.sum(self.ambient[:i])+i
-                    e = np.sum(self.ambient[:i+1])+i+1
-                    self.root_vars['ps'][s:e,j] = \
-                        sp.zeros(*np.shape(self.root_vars['ps'][s:e,j]))
+                    s = np.sum(self.ambient[:i]) + i
+                    e = np.sum(self.ambient[:i + 1]) + i + 1
+                    self.root_vars['ps'][s:e, j] = \
+                        sp.zeros(*np.shape(self.root_vars['ps'][s:e, j]))
         j = 0
         for i in range(len(self.ambient)):
             for k in range(self.selected_t[i]):
-                s = np.sum(self.ambient[:i])+i
-                e = np.sum(self.ambient[:i+1])+i+1
-                self.root_vars['ts'][s:e,1+k] = self.root_vars['t'][j] * \
-                    sp.ones(*np.shape(self.root_vars['ts'][s:e,1+k]))
+                s = np.sum(self.ambient[:i]) + i
+                e = np.sum(self.ambient[:i + 1]) + i + 1
+                self.root_vars['ts'][s:e, 1 + k] = self.root_vars['t'][j] * sp.ones(*np.shape(self.root_vars['ts'][s:e, 1 + k]))
                 j += 1
         self.tpoly = self.poly.subs(
-            [(self.x[i], sum(self.root_vars['ps'].row(i)\
-                            *self.root_vars['ts'].row(i).T))
-                for i in range(self.ncoords)]).as_poly()
+            [(self.x[i], sum(self.root_vars['ps'].row(i) * self.root_vars['ts'].row(i).T))
+             for i in range(self.ncoords)]).as_poly()
         poly_dict = self.tpoly.as_dict()
-        all_vars = np.array(list(self.root_vars['p'])+list(self.root_vars['t']))
-        root_monomials = np.zeros((len(poly_dict), len(all_vars)),
-                                  dtype=np.int32)
+        all_vars = np.array(list(self.root_vars['p']) + list(self.root_vars['t']))
+        root_monomials = np.zeros((len(poly_dict), len(all_vars)), dtype=np.int32)
         root_factors = np.zeros(len(poly_dict), dtype=np.complex128)
-        mask = np.logical_or.reduce(all_vars == \
-                np.array(list(self.tpoly.free_symbols)).reshape(-1,1))
+        mask = np.logical_or.reduce(all_vars == np.array(list(self.tpoly.free_symbols)).reshape(-1, 1))
         for i, entry in enumerate(poly_dict):
             antry = np.array(entry)
             root_monomials[i, mask] = antry
             root_factors[i] = poly_dict[entry]
-        #sort root_monomials to work with np.root        
+        # sort root_monomials to work with np.root
         t_mask = self.root_vars['t'] == all_vars
         t_index = np.where(t_mask)[0][0]
         # +1 because hypersurface
-        max_degree = int(self.ambient[self.selected_t.astype(np.bool)])+1
+        max_degree = int(self.ambient[self.selected_t.astype(np.bool)]) + 1
         # +1 for degree zero
-        for j in range(max_degree+1):
-            good = root_monomials[:,t_index] == max_degree-j
+        for j in range(max_degree + 1):
+            good = root_monomials[:, t_index] == max_degree - j
             tmp_monomials = root_monomials[good]
             self.root_monomials += [np.delete(tmp_monomials, t_index, axis=1)]
             self.root_factors += [root_factors[good]]
@@ -204,7 +199,7 @@ class PointGenerator:
         q = sp.var('q0:{}'.format(self.ncoords))
         t = sp.var('t')
         # change here to self.gpoly
-        poly_p = self.poly.subs([(self.x[i], p[i]*t+q[i])
+        poly_p = self.poly.subs([(self.x[i], p[i] * t + q[i])
                                  for i in range(self.ncoords)]).as_poly()
         poly_dict = poly_p.as_dict()
         p_monomials = np.zeros((len(poly_dict), self.ncoords), dtype=np.int32)
@@ -212,13 +207,13 @@ class PointGenerator:
         factors = np.zeros(len(poly_dict), dtype=np.complex128)
         for i, entry in enumerate(poly_dict):
             p_monomials[i, :] = entry[0:self.ncoords]
-            q_monomials[i, :] = entry[self.ncoords:2*self.ncoords]
+            q_monomials[i, :] = entry[self.ncoords:2 * self.ncoords]
             factors[i] = poly_dict[entry]
         self.root_monomials_Q = []
         self.root_factors_Q = []
-        for i in range(self.ncoords+1):
+        for i in range(self.ncoords + 1):
             sums = np.sum(p_monomials, axis=-1)
-            indi = np.where(sums == self.ncoords-i)[0]
+            indi = np.where(sums == self.ncoords - i)[0]
             self.root_monomials_Q += [(p_monomials[indi], q_monomials[indi])]
             self.root_factors_Q += [factors[indi]]
 
@@ -227,7 +222,7 @@ class PointGenerator:
         self.dQdz_basis = []
         self.dQdz_factors = []
         for i, m in enumerate(np.eye(self.ncoords, dtype=np.int32)):
-            basis = self.monomials-m
+            basis = self.monomials - m
             factors = self.monomials[:, i] * self.coefficients
             good = np.ones(len(basis), dtype=np.bool)
             good[np.where(basis < 0)[0]] = False
@@ -288,10 +283,8 @@ class PointGenerator:
         den = den.as_poly().as_dict()
 
         # coordinate mask
-        num_mask = [True if self.x[i]
-                    in num_free else False for i in range(self.ncoords)]
-        den_mask = [True if self.x[i]
-                    in den_free else False for i in range(self.ncoords)]
+        num_mask = [True if self.x[i] in num_free else False for i in range(self.ncoords)]
+        den_mask = [True if self.x[i] in den_free else False for i in range(self.ncoords)]
 
         # initialize output
         num_monomials = np.zeros((len(num), self.ncoords), dtype=np.int32)
@@ -316,36 +309,26 @@ class PointGenerator:
         """
         self.BASIS = {}
         shape = np.array([np.shape(mb) for mb in self.dQdz_basis])
-        DQDZB = np.zeros((len(shape), np.max(shape[:, 0]), len(shape)),
-                         dtype=np.complex64)
-        DQDZF = np.zeros((len(shape), np.max(shape[:, 0])),
-                         dtype=np.complex64)
+        DQDZB = np.zeros((len(shape), np.max(shape[:, 0]), len(shape)), dtype=np.complex64)
+        DQDZF = np.zeros((len(shape), np.max(shape[:, 0])), dtype=np.complex64)
         for i, m in enumerate(zip(self.dQdz_basis, self.dQdz_factors)):
             DQDZB[i, 0:shape[i, 0]] += m[0]
             DQDZF[i, 0:shape[i, 0]] += m[1]
         if self.dzdz_generated:
-            shapes = np.array([[[np.shape(t[0]), np.shape(t[1])] 
-                if i != j else [[-1, -1], [-1, -1]] for i, t in enumerate(zi)]
-                for j, zi in enumerate(self.dzdz_basis)])
-            DZDZB_d = np.zeros((len(shapes), len(shapes),
-                np.max(shapes[:, :, 0, 0]), len(shapes)), dtype=np.int64)
-            DZDZB_n = np.zeros((len(shapes), len(shapes),
-                np.max(shapes[:, :, 1, 0]), len(shapes)), dtype=np.int64)
-            DZDZF_d = np.zeros((len(shapes), len(shapes),
-                np.max(shapes[:, :, 0, 0])), dtype=np.complex64)
-            DZDZF_n = np.zeros((len(shapes), len(shapes),
-                np.max(shapes[:, :, 1, 0])), dtype=np.complex64)
+            shapes = np.array([[[np.shape(t[0]), np.shape(t[1])]
+                                if i != j else [[-1, -1], [-1, -1]] for i, t in enumerate(zi)]
+                               for j, zi in enumerate(self.dzdz_basis)])
+            DZDZB_d = np.zeros((len(shapes), len(shapes), np.max(shapes[:, :, 0, 0]), len(shapes)), dtype=np.int64)
+            DZDZB_n = np.zeros((len(shapes), len(shapes), np.max(shapes[:, :, 1, 0]), len(shapes)), dtype=np.int64)
+            DZDZF_d = np.zeros((len(shapes), len(shapes), np.max(shapes[:, :, 0, 0])), dtype=np.complex64)
+            DZDZF_n = np.zeros((len(shapes), len(shapes), np.max(shapes[:, :, 1, 0])), dtype=np.complex64)
             for i in range(len(shapes)):
                 for j in range(len(shapes)):
                     if i != j:
-                        DZDZB_d[i, j, 0:shapes[i, j, 0, 0]
-                                ] += self.dzdz_basis[i][j][0]
-                        DZDZB_n[i, j, 0:shapes[i, j, 1, 0]
-                                ] += self.dzdz_basis[i][j][1]
-                        DZDZF_d[i, j, 0:shapes[i, j, 0, 0]
-                                ] += self.dzdz_factor[i][j][0]
-                        DZDZF_n[i, j, 0:shapes[i, j, 1, 0]
-                                ] += self.dzdz_factor[i][j][1]
+                        DZDZB_d[i, j, 0:shapes[i, j, 0, 0]] += self.dzdz_basis[i][j][0]
+                        DZDZB_n[i, j, 0:shapes[i, j, 1, 0]] += self.dzdz_basis[i][j][1]
+                        DZDZF_d[i, j, 0:shapes[i, j, 0, 0]] += self.dzdz_factor[i][j][0]
+                        DZDZF_n[i, j, 0:shapes[i, j, 1, 0]] += self.dzdz_factor[i][j][1]
             self.BASIS['DZDZB_d0'] = DZDZB_d
             self.BASIS['DZDZB_n0'] = DZDZB_n
             self.BASIS['DZDZF_d0'] = DZDZF_d
@@ -372,20 +355,18 @@ class PointGenerator:
             ndarray[(n_p, ncoords), np.complex128]: rescaled points
         """
         max_ts = np.max(self.selected_t)
-        max_degree = self.ambient[self.selected_t.astype(np.bool)]+1
-        n_p_red = int(n_p/max_degree)+1
-        pn_pnts = np.zeros((n_p_red, self.ncoords, max_ts+1),
+        max_degree = self.ambient[self.selected_t.astype(np.bool)] + 1
+        n_p_red = int(n_p / max_degree) + 1
+        pn_pnts = np.zeros((n_p_red, self.ncoords, max_ts + 1),
                            dtype=np.complex128)
         for i in range(len(self.ambient)):
-            for k in range(self.selected_t[i]+1):
-                s = np.sum(self.ambient[:i])+i
-                e = np.sum(self.ambient[:i+1])+i+1
-                pn_pnts[:,s:e,k] += self.generate_pn_points(n_p_red,
-                                                            self.ambient[i])
+            for k in range(self.selected_t[i] + 1):
+                s = np.sum(self.ambient[:i]) + i
+                e = np.sum(self.ambient[:i + 1]) + i + 1
+                pn_pnts[:, s:e, k] += self.generate_pn_points(n_p_red, self.ambient[i])
         # TODO: vectorize this nicely
-        points = Parallel(n_jobs=nproc, backend=self.backend,
-                          batch_size=batch_size)\
-                (delayed(self._take_roots)(pi) for pi in pn_pnts)
+        points = Parallel(n_jobs=nproc, backend=self.backend, batch_size=batch_size)(
+            delayed(self._take_roots)(pi) for pi in pn_pnts)
         points = np.vstack(points)
         return self._rescale_points(points)
 
@@ -407,15 +388,13 @@ class PointGenerator:
             ndarray[(n_p, ncoords), np.complex128]: rescaled points
         """
         self._generate_root_basis_Q()
-        p = np.hstack([self.generate_pn_points(int(n_p/self.ncoords)+1, n)
-                       for n in self.ambient])
-        q = np.hstack([self.generate_pn_points(int(n_p/self.ncoords)+1, n)
-                       for n in self.ambient])
+        p = np.hstack([self.generate_pn_points(int(n_p / self.ncoords) + 1, n) for n in self.ambient])
+        q = np.hstack([self.generate_pn_points(int(n_p / self.ncoords) + 1, n) for n in self.ambient])
 
         # TODO: vectorize this nicely
         points = np.vstack(
-            Parallel(n_jobs=nproc, backend=self.backend,batch_size=batch_size)\
-                (delayed(self._take_roots_Q)(pi, qi) for pi, qi in zip(p, q)))
+            Parallel(n_jobs=nproc, backend=self.backend, batch_size=batch_size)(
+                delayed(self._take_roots_Q)(pi, qi) for pi, qi in zip(p, q)))
 
         return self._rescale_points(points)
 
@@ -432,14 +411,12 @@ class PointGenerator:
         # iterate over all projective spaces and rescale in each
         for i in range(len(self.ambient)):
             s = np.sum(self.degrees[0:i])
-            e = np.sum(self.degrees[0:i+1])
-            points[:, s:e] = points[:, s:e] * \
-                (points[np.arange(len(points)),s +\
-                        np.argmax(np.abs(points[:, s:e]),
-                    axis=-1)].reshape((-1, 1)))**-1
+            e = np.sum(self.degrees[0:i + 1])
+            points[:, s:e] = points[:, s:e] * (points[np.arange(len(points)), s + np.argmax(np.abs(points[:, s:e]), axis=-1)].reshape((-1, 1))) ** -1
         return points
 
-    def generate_pn_points(self, n_p, n):
+    @staticmethod
+    def generate_pn_points(n_p, n):
         r"""Generates points on the sphere :math:`S^{2n+1}`.
 
         Args:
@@ -451,11 +428,11 @@ class PointGenerator:
         """
         # to not get a higher concentration from the corners of the hypercube,
         #  sample with gaussian
-        points = np.random.randn(n_p, 2*(n+1))
+        points = np.random.randn(n_p, 2 * (n + 1))
         # put them on the sphere
         norm = np.expand_dims(np.linalg.norm(points, axis=-1), -1)
         # make them complex
-        return (points/norm).view(dtype=np.complex128)
+        return (points / norm).view(dtype=np.complex128)
 
     def _point_from_sol(self, p, sol):
         r"""Generates a point on the CICY.
@@ -472,12 +449,12 @@ class PointGenerator:
         t = np.ones_like(p)
         j = 0
         for i in range(len(self.ambient)):
-            for k in range(1, self.selected_t[i]+1):
-                s = np.sum(self.ambient[:i])+i
-                e = np.sum(self.ambient[:i+1])+i+1
-                t[s:e,k] = sol[j] * np.ones_like(t[s:e,k])
+            for k in range(1, self.selected_t[i] + 1):
+                s = np.sum(self.ambient[:i]) + i
+                e = np.sum(self.ambient[:i + 1]) + i + 1
+                t[s:e, k] = sol[j] * np.ones_like(t[s:e, k])
                 j += 1
-        point = np.sum(p*t, axis=-1)
+        point = np.sum(p * t, axis=-1)
         return point
 
     def _take_roots(self, p):
@@ -494,8 +471,8 @@ class PointGenerator:
                 intersection
         """
         all_sums = [
-            np.sum(c*np.multiply.reduce(np.power(p.flatten(), m), axis=-1))
-                for m, c in zip(self.root_monomials, self.root_factors)]
+            np.sum(c * np.multiply.reduce(np.power(p.flatten(), m), axis=-1))
+            for m, c in zip(self.root_monomials, self.root_factors)]
         roots = np.roots(all_sums)
         # we give [t] to work with more general hypersurfaces.
         return np.array([self._point_from_sol(p, [t]) for t in roots])
@@ -514,10 +491,10 @@ class PointGenerator:
                 from the intersection
         """
         all_sums = [
-            np.sum(c*np.multiply.reduce(np.power(p, m[0]), axis=-1) *
+            np.sum(c * np.multiply.reduce(np.power(p, m[0]), axis=-1) *
                    np.multiply.reduce(np.power(q, m[1]), axis=-1))
-                for m, c in zip(self.root_monomials_Q, self.root_factors_Q)]
-        return np.array([p*t+q for t in np.roots(all_sums)])
+            for m, c in zip(self.root_monomials_Q, self.root_factors_Q)]
+        return np.array([p * t + q for t in np.roots(all_sums)])
 
     def generate_point_weights(self, n_pw, omega=False):
         r"""Generates a numpy dictionary of point weights.
@@ -534,8 +511,7 @@ class PointGenerator:
             ('point', np.complex128, self.ncoords),
             ('weight', np.float64)
         ]
-        data_types = data_types + \
-            [('omega', np.complex128)] if omega else data_types
+        data_types = data_types + [('omega', np.complex128)] if omega else data_types
         dtype = np.dtype(data_types)
         points = self.generate_points(n_pw)
         n_p = len(points)
@@ -574,7 +550,7 @@ class PointGenerator:
         omega = np.add.reduce(self.BASIS['DQDZF0'][indices] * omega, axis=-1)
         # compute (dQ/dzj)**-1
         return 1 / omega
-        
+
     def _find_max_dQ_coords(self, points):
         r"""Finds the coordinates for which |dQ/dz| is largest.
 
@@ -585,7 +561,7 @@ class PointGenerator:
             ndarray[(n_p), np.int64]: max(dQdz) indices
         """
         dQdz = np.abs(self._compute_dQdz(points))
-        dQdz = dQdz*(~np.isclose(points, np.complex(1, 0)))
+        dQdz = dQdz * (~np.isclose(points, np.complex(1, 0)))
         return np.argmax(dQdz, axis=-1)
 
     def _find_good_coordinate_mask(self, points):
@@ -600,10 +576,10 @@ class PointGenerator:
         """
         one_mask = ~np.isclose(points, np.complex(1, 0))
         dQdz = self._compute_dQdz(points)
-        dQdz = dQdz*one_mask
+        dQdz = dQdz * one_mask
         indices = np.argmax(np.abs(dQdz), axis=-1)
-        dQdz_mask = -1*np.eye(self.ncoords)[indices]
-        full_mask = one_mask+dQdz_mask
+        dQdz_mask = -1 * np.eye(self.ncoords)[indices]
+        full_mask = one_mask + dQdz_mask
         return full_mask.astype(np.bool)
 
     def _compute_dQdz(self, points):
@@ -653,19 +629,20 @@ class PointGenerator:
         omegas = self.holomorphic_volume_form(points, j_elim=j_elim)
         pbs = self.pullbacks(points, j_elim=j_elim)
         # find the nfold wedge product of omegas
-        all_omegas = self.ambient-self.selected_t
+        all_omegas = self.ambient - self.selected_t
         ts = np.zeros((self.nfold, len(all_omegas)))
         j = 0
         for i in range(len(all_omegas)):
             for _ in range(all_omegas[i]):
-                ts[j,i] += 1
+                ts[j, i] += 1
                 j += 1
         fs_pbs = []
         for t in ts:
             fs = self.fubini_study_metrics(points, vol_js=t)
             fs_pbs += [np.einsum('xai,xij,xbj->xab', pbs, fs, np.conj(pbs))]
-        #do antisymmetric tensor contraction. is there a nice way to do this
+        # do antisymmetric tensor contraction. is there a nice way to do this
         # in arbitrary dimensions? Not that anyone would study 6-folds ..
+        detg_norm = 1.
         if self.nfold == 1:
             detg_norm = np.einsum('xab->x', fs_pbs[0])
         elif self.nfold == 2:
@@ -682,7 +659,7 @@ class PointGenerator:
                                   self.lc, self.lc)
         elif self.nfold == 5:
             detg_norm = np.einsum('xab,xcd,xef,xgh,xij,acegi,bdfhj->x',
-                                  fs_pbs[0], fs_pbs[1], fs_pbs[2], fs_pbs[3], 
+                                  fs_pbs[0], fs_pbs[1], fs_pbs[2], fs_pbs[3],
                                   fs_pbs[4], self.lc, self.lc)
         else:
             logger.error('Weights are only implemented for nfold <= 5.'
@@ -690,8 +667,7 @@ class PointGenerator:
         omega_squared = np.real(omegas * np.conj(omegas))
         weight = np.real(omega_squared / detg_norm)
         if normalize_to_vol_j:
-            vol_omega_norm = np.mean(omega_squared)
-            weight = self.vol_j_norm / vol_omega_norm * weight
+            weight = self.vol_j_norm * weight
         return weight
 
     def pullbacks(self, points, j_elim=None):
@@ -718,7 +694,7 @@ class PointGenerator:
         if j_elim is None:
             j_elim = self._find_max_dQ_coords(points)
         if len(j_elim.shape) == 1:
-            j_elim = np.reshape(j_elim, (-1,1))
+            j_elim = np.reshape(j_elim, (-1, 1))
         full_mask = np.copy(inv_one_mask)
         for i in range(self.nhyper):
             full_mask[np.arange(len(points)), j_elim[:, i]] = \
@@ -731,37 +707,35 @@ class PointGenerator:
             np.arange(self.nfold), 0), len(points), axis=0)
         y_indices = np.reshape(y_indices, (-1))
         pullbacks[x_indices, y_indices, z_indices] = \
-            np.ones(self.nfold*len(points), dtype=np.complex128)
+            np.ones(self.nfold * len(points), dtype=np.complex128)
         # next fill the dzdz from every hypersurface
-        B_matrix = np.zeros((len(points), self.nhyper, self.nhyper),
-            dtype=np.complex128)
-        dz_hyper = np.zeros((len(points), self.nhyper, self.nfold),
-            dtype=np.complex128)
+        B_matrix = np.zeros((len(points), self.nhyper, self.nhyper), dtype=np.complex128)
+        dz_hyper = np.zeros((len(points), self.nhyper, self.nfold), dtype=np.complex128)
         fixed_indices = np.reshape(j_elim, (-1))
         for i in range(self.nhyper):
             # compute p_i\alpha eq (5.24)
-            pia_polys = self.BASIS['DQDZB'+str(i)][z_indices]
-            pia_factors = self.BASIS['DQDZF'+str(i)][z_indices]
+            pia_polys = self.BASIS['DQDZB' + str(i)][z_indices]
+            pia_factors = self.BASIS['DQDZF' + str(i)][z_indices]
             pia = np.power(np.expand_dims(
                 np.repeat(points, self.nfold, axis=0), 1), pia_polys)
             pia = np.multiply.reduce(pia, axis=-1)
             pia = np.add.reduce(np.multiply(pia_factors, pia), axis=-1)
             pia = np.reshape(pia, (-1, self.nfold))
-            dz_hyper[:,i,:] += pia
+            dz_hyper[:, i, :] += pia
             # compute p_ifixed
-            pif_polys = self.BASIS['DQDZB'+str(i)][fixed_indices]
-            pif_factors = self.BASIS['DQDZF'+str(i)][fixed_indices]
+            pif_polys = self.BASIS['DQDZB' + str(i)][fixed_indices]
+            pif_factors = self.BASIS['DQDZF' + str(i)][fixed_indices]
             pif = np.power(np.expand_dims(
                 np.repeat(points, self.nhyper, axis=0), 1), pif_polys)
             pif = np.multiply.reduce(pif, axis=-1)
             pif = np.add.reduce(np.multiply(pif_factors, pif), axis=-1)
             pif = np.reshape(pif, (-1, self.nhyper))
-            B_matrix[:,i,:] += pif
+            B_matrix[:, i, :] += pif
         all_dzdz = np.einsum('xij,xjk->xki',
                              np.linalg.inv(B_matrix),
-                             np.complex(-1.,0.)*dz_hyper)
+                             np.complex(-1., 0.) * dz_hyper)
         for i in range(self.nhyper):
-            pullbacks[np.arange(len(points)),:,j_elim[:, i]] += all_dzdz[:,:,i]
+            pullbacks[np.arange(len(points)), :, j_elim[:, i]] += all_dzdz[:, :, i]
         return pullbacks
 
     def _pullbacks_dzdz(self, points, j_elim=None):
@@ -787,19 +761,19 @@ class PointGenerator:
                 at each point.
         """
         if not self.dzdz_generated:
-            #This will take some time when called for the first time.
+            # This will take some time when called for the first time.
             self.dzdz_generated = True
             self._generate_dzdz_basis()
             self._generate_padded_basis()
         one_mask = ~np.isclose(points, np.complex(1, 0))
         if j_elim is None:
             dQdz = self._compute_dQdz(points)
-            dQdz = dQdz*one_mask
+            dQdz = dQdz * one_mask
             dQdz_indices = np.argmax(np.abs(dQdz), axis=-1)
         else:
             dQdz_indices = j_elim
         dQdz_mask = np.eye(self.ncoords)[dQdz_indices]
-        full_mask = one_mask-dQdz_mask
+        full_mask = one_mask - dQdz_mask
         full_mask = full_mask.astype(np.bool)
         x_indices, z_indices = np.where(full_mask)
         nrepeat = self.nfold
@@ -828,14 +802,14 @@ class PointGenerator:
         y_indices = np.reshape(y_indices, (-1))
         y_indices = np.concatenate((y_indices, y_indices))
         all_values = np.concatenate(
-            (np.ones(nrepeat*len(points), dtype=np.complex128), all_dzdz),
+            (np.ones(nrepeat * len(points), dtype=np.complex128), all_dzdz),
             axis=0)
         pullbacks = np.zeros(
             (len(points), nrepeat, self.ncoords), dtype=np.complex128)
         pullbacks[x_indices, y_indices, z_indices] = all_values
         return pullbacks
 
-    def compute_kappa(self, pw=[]):
+    def compute_kappa(self, points, weights, omegas):
         r"""We compute kappa from the Monge-Ampère equation
 
         .. math:: J^3 = \kappa |\Omega|^2
@@ -848,32 +822,23 @@ class PointGenerator:
                 \frac{\text{Vol}_K}{\text{Vol}_{\text{CY}}}
 
         Args:
-            pw (ndarray[(points, weight, omega)], optional): 
-                point weights generated from:
-
-                >>> self.generate_point_weights(np, omega=True)
-            
-                Defaults to [], which then generates 10000 pws.
+            points (ndarray[(n_p, ncoords), np.complex128]): Points.
+            weights (ndarray[n_p, np.float64]): weights of the points.
+            omegas (ndarray[n_p, np.complex128]): Omega \wedge Omega* of the points.
 
         Returns:
             np.float: kappa
         """
-        if len(pw) == 0:
-            pw = self.generate_point_weights(10000, omega=True)
-        #volcy = np.mean(pw['weight'])
-        # Fill FS for all projective spaces in the diagonal
-        # since the ambient is a direct product.
-        gFS = self.fubini_study_metrics(pw['point'])
-        pullbacks = self.pullbacks(pw['point'])
-        gFSpb = np.einsum('xai,xij,xbj->xab', pullbacks,
-                          gFS, np.conj(pullbacks))
-        det = np.real(np.linalg.det(gFSpb))# * \
-        #    factorial(self.nfold)/(2**self.nfold)
-        omega_wedge_omega = np.real(pw['omega'] * np.conj(pw['omega']))
-        volcy = np.mean(pw['weight'])
-        volk = np.mean(det * pw['weight']/omega_wedge_omega)
-        logger.info('Volk: {}, Volcy: {}.'.format(volk, volcy))
-        kappa = volk/volcy
+        weights, omegas = weights.flatten(), omegas.flatten()
+        pbs = self.pullbacks(points)
+        gFS = self.fubini_study_metrics(points)
+        gFS_pbs = np.einsum('xai,xij,xbj->xab', pbs, gFS, np.conj(pbs))
+        dets = np.real(np.linalg.det(gFS_pbs))
+
+        vol_k = np.mean(weights * dets / omegas)
+        vol_cy = np.mean(weights)
+        logger.info('Vol_k: {}, Vol_cy: {}.'.format(vol_k, vol_cy))
+        kappa = vol_k / vol_cy
         return kappa
 
     def fubini_study_metrics(self, points, vol_js=None):
@@ -892,12 +857,12 @@ class PointGenerator:
         kmoduli = self.kmoduli if vol_js is None else vol_js
         for i in range(len(self.ambient)):
             s = np.sum(self.degrees[0:i])
-            e = np.sum(self.degrees[0:i+1])
-            gFS[:, s:e, s:e] += self._fubini_study_n_metrics(points[:, s:e],
-                vol_j=kmoduli[i])
+            e = np.sum(self.degrees[0:i + 1])
+            gFS[:, s:e, s:e] += self._fubini_study_n_metrics(points[:, s:e], vol_j=kmoduli[i])
         return gFS
 
-    def _fubini_study_n_metrics(self, points, vol_j=1.+0.j):
+    @staticmethod
+    def _fubini_study_n_metrics(points, vol_j=1. + 0.j):
         r"""Computes the FS metric for a single projective space of points.
 
         Args:
@@ -912,7 +877,7 @@ class PointGenerator:
         outer = np.einsum('xi,xj->xij', np.conj(points), points)
         gFS = np.einsum('x,ij->xij', point_square, np.eye(points.shape[1]))
         gFS = gFS.astype(np.complex128) - outer
-        return np.einsum('xij,x->xij', gFS, 1/(point_square**2))*vol_j/np.pi
+        return np.einsum('xij,x->xij', gFS, 1 / (point_square ** 2)) * vol_j / np.pi
 
     def prepare_basis(self, dirname):
         r"""Prepares pickled monomial basis for the tensorflow models.
@@ -924,9 +889,8 @@ class PointGenerator:
             int: 0
         """
         return prepare_basis_pickle(self, dirname)
-        
-    def prepare_dataset(self, n_p, dirname, val_split=0.1, ltails=0,
-            rtails=0):
+
+    def prepare_dataset(self, n_p, dirname, val_split=0.1, ltails=0, rtails=0):
         r"""Prepares training and validation data.
 
         Args:
@@ -941,8 +905,7 @@ class PointGenerator:
         Returns:
             int: 0
         """
-        return prepare_dataset(self, n_p, dirname, val_split=val_split,
-                               ltails=ltails, rtails=rtails)
+        return prepare_dataset(self, n_p, dirname, val_split=val_split, ltails=ltails, rtails=rtails)
 
     def cy_condition(self, points):
         r"""Computes the CY condition at each point.
@@ -955,7 +918,7 @@ class PointGenerator:
         """
         cy_condition = np.power(np.expand_dims(points, 1), self.monomials)
         cy_condition = np.multiply.reduce(cy_condition, axis=-1)
-        cy_condition = np.add.reduce(self.coefficients*cy_condition, axis=-1)
+        cy_condition = np.add.reduce(self.coefficients * cy_condition, axis=-1)
         return cy_condition
 
     def __call__(self, points, vol_js=None):

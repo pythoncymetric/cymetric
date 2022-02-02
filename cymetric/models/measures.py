@@ -5,6 +5,7 @@ representing (ricci flat) kaehler metrics.
 import tensorflow as tf
 import sys
 
+
 def sigma_measure(model, points, y_true):
     r"""We compute the Monge Ampere equation
 
@@ -23,19 +24,16 @@ def sigma_measure(model, points, y_true):
         tf.float: sigma measure
     """
     g = model(points)
-    weights = y_true[:,-2]
-    omega = y_true[:,-1]
+    weights = y_true[:, -2]
+    omega = y_true[:, -1]
     # use gamma series
-    #nfold = tf.cast(tf.shape(g)[1], dtype=tf.float32)
-    #factorial = tf.exp(tf.math.lgamma(nfold+1))
-    det = tf.math.real(tf.linalg.det(g))# * factorial / (2**nfold)
+    det = tf.math.real(tf.linalg.det(g))  # * factorial / (2**nfold)
     det_over_omega = det / omega
     volume_cy = tf.math.reduce_mean(weights, axis=-1)
     vol_k = tf.math.reduce_mean(det_over_omega * weights, axis=-1)
     ratio = volume_cy / vol_k
     sigma_integrand = tf.abs(
-        tf.ones(tf.shape(det_over_omega), dtype=tf.float32) \
-            - det_over_omega * ratio) * weights
+        tf.ones(tf.shape(det_over_omega), dtype=tf.float32) - det_over_omega * ratio) * weights
     sigma = tf.math.reduce_mean(sigma_integrand) / volume_cy
     return sigma
 
@@ -63,11 +61,11 @@ def ricci_measure(model, points, y_true, pullbacks=None, verbose=0):
     """
     nfold = tf.cast(model.nfold, dtype=tf.float32)
     ncoords = model.ncoords
-    weights = y_true[:,-2]
-    omega = y_true[:,-1]
+    weights = y_true[:, -2]
+    omega = y_true[:, -1]
     if pullbacks is None:
         pullbacks = model.pullbacks(points)
-    #factorial = tf.exp(tf.math.lgamma(nfold+1))
+    # factorial = tf.exp(tf.math.lgamma(nfold+1))
     x_vars = points
     # take derivatives
     with tf.GradientTape(persistent=True) as tape1:
@@ -75,15 +73,14 @@ def ricci_measure(model, points, y_true, pullbacks=None, verbose=0):
         with tf.GradientTape(persistent=True) as tape2:
             tape2.watch(x_vars)
             prediction = model(x_vars)
-            det = tf.math.real(tf.linalg.det(prediction)) * \
-                1.#factorial / (2**nfold)
+            det = tf.math.real(tf.linalg.det(prediction)) * 1.  # factorial / (2**nfold)
             log = tf.math.log(det)
         di_dg = tape2.gradient(log, x_vars)
     didj_dg = tf.cast(tape1.batch_jacobian(di_dg, x_vars), dtype=tf.complex64)
     # add derivatives together to complex tensor
     ricci_ij = didj_dg[:, 0:ncoords, 0:ncoords]
-    ricci_ij += 1j*didj_dg[:, 0:ncoords, ncoords:]
-    ricci_ij -= 1j*didj_dg[:, ncoords:, 0:ncoords]
+    ricci_ij += 1j * didj_dg[:, 0:ncoords, ncoords:]
+    ricci_ij -= 1j * didj_dg[:, ncoords:, 0:ncoords]
     ricci_ij += didj_dg[:, ncoords:, ncoords:]
     ricci_ij *= 0.25
     pred_inv = tf.linalg.inv(prediction)
@@ -101,12 +98,9 @@ def ricci_measure(model, points, y_true, pullbacks=None, verbose=0):
 
     # compute ricci measure
     det_over_omega = det / omega
-    if verbose > 2:
-        tf.print('Weights are', 1/det_over_omega, output_stream=sys.stdout)
     volume_cy = tf.math.reduce_mean(weights, axis=-1)
     vol_k = tf.math.reduce_mean(det_over_omega * weights, axis=-1)
-    ricci_measure = (vol_k**(1/nfold) / volume_cy) * \
-        tf.math.reduce_mean(det_over_omega * ricci_scalar * weights, axis=-1)
+    ricci_measure = (vol_k ** (1 / nfold) / volume_cy) * tf.math.reduce_mean(det_over_omega * ricci_scalar * weights, axis=-1)
     return ricci_measure
 
 
@@ -119,20 +113,16 @@ def ricci_scalar_fn(model, points, pullbacks=None, verbose=0, rdet=True):
     Args:
         model (tfk.model): Any (sub-)class of FSModel.
         points (tensor[(n_p,2*ncoord), tf.float32]): NN input
-        pullbacks (tensor[(n_p,nfold,ncoord), tf.complex64]): Pullback tensor
-            Defaults to None. Then gets computed.
-        verbose (int, optional): if > 0 prints some intermediate
-            infos. Defaults to 0.
-		rdet (bool, optional): if True also returns det. Defaults to True.
+        pullbacks (tensor[(n_p,nfold,ncoord), tf.complex64]): Pullback tensor. Defaults to None. Then gets computed.
+        verbose (int, optional): if > 0 prints some intermediate infos. Defaults to 0.
+        rdet (bool, optional): if True also returns det. Defaults to True.
             This is a bit hacky, because the output signature changes
             but avoids recomputing the determinant after batching.
 
     Returns:
         tf.float32(tensor[(n_p,), tf.float32]): Ricci scalar
     """
-    #nfold = tf.cast(model.nfold, dtype=tf.float32)
     ncoords = model.ncoords
-    #factorial = tf.exp(tf.math.lgamma(nfold+1))
     x_vars = points
     if pullbacks is None:
         pullbacks = model.pullbacks(points)
@@ -142,15 +132,14 @@ def ricci_scalar_fn(model, points, pullbacks=None, verbose=0, rdet=True):
         with tf.GradientTape(persistent=True) as tape2:
             tape2.watch(x_vars)
             prediction = model(x_vars)
-            det = tf.math.real(tf.linalg.det(prediction)) * \
-                1.#factorial / (2**nfold)
+            det = tf.math.real(tf.linalg.det(prediction)) * 1.  # factorial / (2**nfold)
             log = tf.math.log(det)
         di_dg = tape2.gradient(log, x_vars)
     didj_dg = tf.cast(tape1.batch_jacobian(di_dg, x_vars), dtype=tf.complex64)
     # add derivatives together to complex tensor
     ricci_ij = didj_dg[:, 0:ncoords, 0:ncoords]
-    ricci_ij += 1j*didj_dg[:, 0:ncoords, ncoords:]
-    ricci_ij -= 1j*didj_dg[:, ncoords:, 0:ncoords]
+    ricci_ij += 1j * didj_dg[:, 0:ncoords, ncoords:]
+    ricci_ij -= 1j * didj_dg[:, ncoords:, 0:ncoords]
     ricci_ij += didj_dg[:, ncoords:, ncoords:]
     ricci_ij *= 0.25
     pred_inv = tf.linalg.inv(prediction)

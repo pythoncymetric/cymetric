@@ -10,13 +10,12 @@ import logging
 import sympy as sp
 import scipy.optimize as opt
 from joblib import Parallel, delayed
-#import itertools as it
 import random
 from cymetric.pointgen.pointgen import PointGenerator
 from cymetric.pointgen.nphelper import generate_monomials, get_all_patch_degrees
 logging.basicConfig(format='%(name)s:%(levelname)s:%(message)s')
 logger = logging.getLogger('toricpointgen')
-#logger.setLevel(logging.DEBUG)
+
 
 class ToricPointGenerator(PointGenerator):
     r"""ToricPointGenerator class.
@@ -90,14 +89,12 @@ class ToricPointGenerator(PointGenerator):
         # ambient degree of sections.
         self.dim_ps = np.array([s for s, _ in self.num_sections])
         if 'dzdz' in kwargs:
-            #NOTE: Don't use this. some issues with sympys implicit
-            # derivative.
+            # NOTE: Don't use this. some issues with sympys implicit derivative.
             self.dzdz_generated = kwargs['dzdz']
             del kwargs['dzdz']
         else:
             self.dzdz_generated = False
-        #need to give it some ambient, 
-        # but all function including it will be overwritten
+        # need to give it some ambient, but all function including it will be overwritten
         fambient = np.array([toric_data['dim_cy']+1])
         super(ToricPointGenerator, self).__init__(
             monomials=np.array(self.toric_data['exp_aK']),
@@ -105,7 +102,6 @@ class ToricPointGenerator(PointGenerator):
             kmoduli=kmoduli,
             ambient=fambient, **kwargs)
         # TODO: make a better guess with GLSM charges
-        #self.ambient = np.array([self.ncoords-1])
         # HACK: We use self.selected_t differently to CICY pointgen
         # self.ambient is not used other than in point_weight.
         self.ambient = 2*self.selected_t
@@ -118,7 +114,6 @@ class ToricPointGenerator(PointGenerator):
         """
         self.all_ts = self._generate_all_freets()
         self.selected_t = self._find_degrees()
-        #self._generate_root_basis()
         self._generate_dQdz_basis()
         if self.dzdz_generated:
             self._generate_dzdz_basis()
@@ -130,7 +125,7 @@ class ToricPointGenerator(PointGenerator):
         # implement a more efficient way.
         free_ts = list(generate_monomials(len(self.kmoduli), self.nfold))
         free_ts = np.array(free_ts)
-        good = np.reshape(self.dim_ps-1, (1,-1)) - free_ts >= 0
+        good = np.reshape(self.dim_ps-1, (1, -1)) - free_ts >= 0
         good = np.logical_and.reduce(good, axis=-1)
         return free_ts[good]
 
@@ -155,20 +150,17 @@ class ToricPointGenerator(PointGenerator):
         """
         x = x_guess.view(np.complex128)
         patches = np.where(patch_mask, x-patch_mask, np.zeros(self.ncoords))
-        eqs = [np.add.reduce(self.coefficients * \
-            np.multiply.reduce(np.power(x, self.monomials), axis=-1), axis=-1)]
+        eqs = [np.add.reduce(self.coefficients * np.multiply.reduce(np.power(x, self.monomials), axis=-1), axis=-1)]
         for j, t in enumerate(self.selected_t):
             section_monom = np.power(x, self.sections[j])
             section_monom = np.multiply.reduce(section_monom, axis=-1)
             for i in range(t):
                 s = np.sum(self.dim_ps[:j])
                 e = np.sum(self.dim_ps[:j+1])
-                #coeff = coeffs[j][i].view(np.complex128)
-                coeff = p[s:e,i]
+                coeff = p[s:e, i]
                 new_eq = np.add.reduce(coeff * section_monom, axis=-1)
                 eqs += [new_eq]
-        #[(1+nfold)*2] != [2*ncoords]
-        final_eq = eqs #+ [0+0.j for _ in range(self.ncoords-len(eqs))]
+        final_eq = eqs
         patches[~(patch_mask.astype(np.bool))] += np.array(final_eq)
         return patches.view(np.float64)
 
@@ -193,10 +185,9 @@ class ToricPointGenerator(PointGenerator):
             ndarray[2*num_eqns, np.float]: difference from zero.
         """
         x = x_guess.view(np.complex)
-        eqs = [np.add.reduce(self.coefficients * \
-            np.multiply.reduce(np.power(x, self.monomials), axis=-1), axis=-1)]
+        eqs = [np.add.reduce(self.coefficients * np.multiply.reduce(np.power(x, self.monomials), axis=-1), axis=-1)]
         num_eqns_in_pn = np.zeros(self.nsections, dtype=np.int32)
-        #TODO: vectorize this.
+        # TODO: vectorize this.
         for i, (e, p) in enumerate(zip(x, patch_mask)):
             if p == 1:
                 eqs += [e - 1]
@@ -204,23 +195,20 @@ class ToricPointGenerator(PointGenerator):
             if sum(num_eqns_in_pn) == self.ncoords - self.nsections - 1:
                 continue
             for jj in range(self.nsections):
-                section_monom = [np.multiply.reduce(np.power(x, s), axis=-1) 
-                    for s in self.sections[jj]]
+                section_monom = [np.multiply.reduce(np.power(x, s), axis=-1) for s in self.sections[jj]]
                 if num_eqns_in_pn[jj] >= self.dim_ps[jj]:
                     continue
                 tmp_mask = np.sum(self.sections[jj], axis=-2)
                 if tmp_mask[i] != 0:
                     coeff = coeffs[jj][num_eqns_in_pn[jj]]
-                    #TODO vectorize this.
-                    new_eq = np.sum([(coeff[k, 0] + 1.j * coeff[k, 1]) * \
-                        section_monom[k] for k in range(len(section_monom))])
+                    # TODO vectorize this.
+                    new_eq = np.sum([(coeff[k, 0] + 1.j * coeff[k, 1]) * section_monom[k] for k in range(len(section_monom))])
                     eqs += [new_eq]
                     num_eqns_in_pn[jj] += 1
                     break
         return np.array(eqs).view(np.float64)
 
-    def generate_points(self, n_p, nproc=-1, nattempts=1, acc=1e-8,
-            fprime=None, batch_size = 1000, fast=False):
+    def generate_points(self, n_p, nproc=-1, nattempts=1, acc=1e-8, fprime=None, batch_size=1000):
         r"""Generates complex points using scipy's optimizer fsolve.
 
         Args:
@@ -240,12 +228,9 @@ class ToricPointGenerator(PointGenerator):
         """
         logger.debug("Generating {:} points...".format(n_p))
         sphere_points = self._get_sphere_points(n_p)
-        points = Parallel(n_jobs=nproc, batch_size=batch_size,
-                          backend=self.backend)\
-                (delayed(self._get_point)(pi, acc, nattempts, fprime) 
-                 for pi in sphere_points)
+        points = Parallel(n_jobs=nproc, batch_size=batch_size, backend=self.backend)(delayed(self._get_point)(pi, acc, nattempts, fprime) for pi in sphere_points)
         points = np.array(points)
-        #remove points for which opt didnt converge to zero
+        # remove points for which opt didnt converge to zero
         cy_cond = self.cy_condition(points)
         cy_mask = np.abs(cy_cond) < acc
         logger.debug("{} out of {} solutions are on the CY with acc {}.".format(
@@ -259,10 +244,7 @@ class ToricPointGenerator(PointGenerator):
                 n_p_more = int(ratio*missing + 50)
                 logger.debug('generating {} more points.'.format(n_p_more))
                 new_sphere_points = self._get_sphere_points(n_p_more)
-                new_points = Parallel(n_jobs=nproc, batch_size=batch_size,
-                                      backend=self.backend)\
-                        (delayed(self._get_point)(pi, acc, nattempts, fprime)
-                         for pi in new_sphere_points)
+                new_points = Parallel(n_jobs=nproc, batch_size=batch_size, backend=self.backend)(delayed(self._get_point)(pi, acc, nattempts, fprime) for pi in new_sphere_points)
                 new_points = np.array(new_points)
                 cy_cond = self.cy_condition(new_points)
                 cy_mask = np.abs(cy_cond) < acc
@@ -288,7 +270,7 @@ class ToricPointGenerator(PointGenerator):
                 sphere.
         """
         max_deg = np.max(self.selected_t)
-        #NOTE: if there are allowed of section this might become too large.
+        # NOTE: if there are allowed of section this might become too large.
         # We then have to further batch the generate point function.
         pn_pnts = np.zeros((n_p, np.sum(self.dim_ps), max_deg),
                            dtype=np.complex128)
@@ -296,8 +278,7 @@ class ToricPointGenerator(PointGenerator):
             for k in range(self.selected_t[i]):
                 s = np.sum(self.dim_ps[:i])
                 e = np.sum(self.dim_ps[:i+1])
-                pn_pnts[:,s:e,k] += self.generate_pn_points(n_p,
-                                                            self.dim_ps[i]-1)
+                pn_pnts[:, s:e, k] += self.generate_pn_points(n_p, self.dim_ps[i]-1)
         return pn_pnts
 
     def _get_point(self, p, acc=1e-8, nattempts=1, fprime=None):
@@ -321,17 +302,15 @@ class ToricPointGenerator(PointGenerator):
             ndarray[(ncoords), np.complex128]: (potential) Point on the CY.
         """
         # random coefficients to build random sections of Kahler cone divisors
-        #coeffs = [np.random.normal(size=[self.dim_ps[i]-1, x[0], 2]) 
-        #            for i,x in enumerate(self.num_sections)]
         best_sol = np.random.randn(2*self.ncoords).view(np.complex128)
-        best_acc = self.cy_condition(best_sol[np.newaxis,:])[0]
+        best_acc = self.cy_condition(best_sol[np.newaxis, :])[0]
         for _ in range(nattempts):
             patch_mask = random.choice(self.patch_masks)
             sol = opt.fsolve(
                 self._root_polynomial, np.random.randn(2*self.ncoords),
                 args=(p, patch_mask), fprime=fprime)
             sol_c = sol.view(np.complex128)
-            acc1 = self.cy_condition(sol_c[np.newaxis,:])[0]
+            acc1 = self.cy_condition(sol_c[np.newaxis, :])[0]
             if acc1 < best_acc:
                 best_acc = acc1
                 best_sol = sol_c
@@ -347,9 +326,9 @@ class ToricPointGenerator(PointGenerator):
         degrees = np.zeros(len(self.num_sections), dtype=np.int32)
         available_degrees = np.array(self.num_sections)
         for _ in range(int(self.nfold)):
-            largest_proj = np.argmax(available_degrees[:,0])
+            largest_proj = np.argmax(available_degrees[:, 0])
             degrees[largest_proj] += 1
-            available_degrees[largest_proj,0] -= 1
+            available_degrees[largest_proj, 0] -= 1
         return degrees
     
     def _scale_point_old(self, point):
@@ -383,7 +362,7 @@ class ToricPointGenerator(PointGenerator):
                     scalings = [s * l**q for s, q in zip(scalings, qs)]
                 tmp_point = point * scalings
                 if np.isclose(np.max(np.abs(tmp_point)), 1.):
-                	return tmp_point
+                    return tmp_point
         logger.debug("Could not scale point {}.".format(point))
         return point
 
@@ -398,7 +377,7 @@ class ToricPointGenerator(PointGenerator):
             ndarray([n_p, ncoords], np.complex128): Rescaled coordinates.
         """
         degrees = self.patch_degrees[patch_index]
-        scaled_points = points[:,np.newaxis,:]
+        scaled_points = points[:, np.newaxis, :]
         scaled_points = np.power(scaled_points, degrees)
         return np.multiply.reduce(scaled_points, axis=-1)
 
@@ -416,13 +395,10 @@ class ToricPointGenerator(PointGenerator):
         missing_points = np.ones(len(points), dtype=np.bool)
         for i in range(len(self.patch_masks)):
             tmp_points = self._get_patch_coordinates(points[missing_points],
-                np.zeros(np.sum(missing_points), dtype=np.int32)+i)
-            abs_points = np.logical_and.reduce(np.abs(tmp_points) < 1.0001,
-                                               axis=-1)
+                                                     np.zeros(np.sum(missing_points), dtype=np.int32)+i)
+            abs_points = np.logical_and.reduce(np.abs(tmp_points) < 1.0001, axis=-1)
             # update
-            scaled_points[missing_points] = np.where(
-                abs_points[:,np.newaxis], tmp_points,
-                scaled_points[missing_points])
+            scaled_points[missing_points] = np.where(abs_points[:, np.newaxis], tmp_points, scaled_points[missing_points])
             missing_points[missing_points] = np.where(abs_points, False, True)
             logger.debug("Rescaled {} ouf of {} points.".format(
                 np.sum(~missing_points), len(scaled_points)))
@@ -434,22 +410,21 @@ class ToricPointGenerator(PointGenerator):
         r"""Computes the toric equivalent to FS metric at points.
 
         Args:
-            point (ndarray[(n_p, ncoords), np.complex128]): Points.
+            points (ndarray[(n_p, ncoords), np.complex128]): Points.
             vol_js (ndarray[(h^{(1,1)}), np.complex128]): vol_j factor.
 
         Returns:
             ndarray[(len(points), ncoords, ncoords), np.complex128]: g^FS
         """
         kfactors = self.kmoduli if vol_js is None else vol_js
-        Js = np.zeros([len(points), self.ncoords, self.ncoords],
-                      dtype=np.complex128)
+        Js = np.zeros([len(points), self.ncoords, self.ncoords], dtype=np.complex128)
         for alpha in range(len(kfactors)):
             degrees = self.sections[alpha]
             ms = np.power(points[:,np.newaxis,:], degrees[np.newaxis,:,:])
             ms = np.multiply.reduce(ms, axis=-1)
             mss = ms*np.conj(ms)
             kappa_alphas = np.sum(mss, -1)
-            point_sq = points[:,:,np.newaxis]*np.conj(points[:,np.newaxis,:])
+            point_sq = points[:, :, np.newaxis]*np.conj(points[:, np.newaxis, :])
             J_alphas = 1/point_sq
             J_alphas = np.einsum('x,xab->xab', 1/(kappa_alphas**2), J_alphas)
             degrees = degrees.astype(points.dtype)

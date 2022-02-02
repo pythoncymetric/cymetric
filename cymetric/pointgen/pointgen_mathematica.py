@@ -8,15 +8,11 @@ Robin Schneider robin.schneider@physics.uu.se
 """
 # pip install wolframclient
 import os
-import sys
 import pickle
 import numpy as np
 import sympy as sp
-from scipy.special import factorial
 import decimal
 import re
-
-import tensorflow as tf
 
 from wolframclient.evaluation import WolframLanguageSession
 from wolframclient.language import wl, wlexpr
@@ -41,13 +37,13 @@ class PointGeneratorMathematica(CICYPointGenerator):
         if 'point_file_path' in kwargs.keys():
             del kwargs['point_file_path']
         
-        selected_t =  kwargs.get('selected_t', None)
+        selected_t = kwargs.get('selected_t', None)
         if 'selected_t' in kwargs.keys():
             del kwargs['selected_t']
             
         super(PointGeneratorMathematica, self).__init__(*args, **kwargs)
         
-		# NOTE: This is computed in the constructor, but we need to use the distribution that the Mathematica point gen used        
+        # NOTE: This is computed in the constructor, but we need to use the distribution that the Mathematica point gen used
         self.selected_t = selected_t if selected_t is not None else np.zeros((len(self.ambient)), dtype=np.int)
         
         self.verbose = kwargs.get('verbose', 1)
@@ -66,7 +62,8 @@ class PointGeneratorMathematica(CICYPointGenerator):
         except:
             pass
     
-    def _setup_session(self, mathematica_session):
+    @staticmethod
+    def _setup_session(mathematica_session):
         # surpress some of the debug messages, they are a bit too much
         mathematica_session.evaluate(wlexpr('ClientLibrary`SetErrorLogLevel[]'))
         # read in mathematica functions as string
@@ -77,7 +74,8 @@ class PointGeneratorMathematica(CICYPointGenerator):
         # Compile functions in mathematica session
         mathematica_session.evaluate(wlexpr(mathematica_functions_str))
         
-    def _start_parallel_kernels(self, mathematica_session, nproc=-1):
+    @staticmethod
+    def _start_parallel_kernels(mathematica_session, nproc=-1):
         num_kernels = mathematica_session.evaluate(wlexpr('If[$ConfiguredKernels!={},$ConfiguredKernels[[1, 1]],-1]'))
         if nproc <= 0 or nproc > num_kernels:
             nproc = ''
@@ -110,10 +108,10 @@ class PointGeneratorMathematica(CICYPointGenerator):
         return point_weights
     
     def generate_points(self, n_p, nproc=-1):
-        r"""Generates complex points by calling tje mathematica point generator
+        r"""Generates complex points by calling the mathematica point generator
 
         Args:
-            np (int): # of points
+            n_p (int): # of points
             nproc (int, optional): # of processes used. Defaults to -1.
 
         Returns:
@@ -140,6 +138,7 @@ class PointGeneratorMathematica(CICYPointGenerator):
         
         self.selected_t = np.array(pts[1], dtype=np.int)
         return np.array(pts[0])
+
 
 class PointGeneratorToricMathematica(PointGeneratorMathematica):
     def __init__(self, nfold, monomials, coefficients, kmoduli, ambient, sections, non_CI_coeffs, non_CI_exps, patch_masks, glsm_charges, precision=15, vol_j_norm=1, verbose=2, point_file_path=None, selected_t=None):
@@ -200,7 +199,7 @@ class PointGeneratorToricMathematica(PointGeneratorMathematica):
         r"""Generates complex points by calling the mathematica point generator
 
         Args:
-            np (int): # of points
+            n_p (int): # of points
             nproc (int, optional): # of processes used. Defaults to -1.
 
         Returns:
@@ -240,12 +239,12 @@ class PointGeneratorToricMathematica(PointGeneratorMathematica):
             ndarray[(len(points), n, n), np.complex]: g^FS
         """
         kfactors = self.kmoduli if kfactors is None else kfactors
-        Js = np.zeros([len(points),len(self.sections[0][0]), len(self.sections[0][0])], dtype=np.complex128)
+        Js = np.zeros([len(points), len(self.sections[0][0]), len(self.sections[0][0])], dtype=np.complex128)
         for alpha in range(len(kfactors)):
-            ms = np.transpose(np.product([np.power(points, self.sections[alpha][a]) for a in range(len(self.sections[alpha]))], axis=-1), [1,0])
+            ms = np.transpose(np.product([np.power(points, self.sections[alpha][a]) for a in range(len(self.sections[alpha]))], axis=-1), [1, 0])
             mss = ms*np.conj(ms)
             kappa_alphas = np.sum(mss, -1)
-            J_alphas = 1/(points[:,:,np.newaxis] * np.conj(points[:,np.newaxis,:]))
+            J_alphas = 1/(points[:, :, np.newaxis] * np.conj(points[:, np.newaxis, :]))
             J_alphas = np.einsum('x,xab->xab', 1/(kappa_alphas**2), J_alphas)
             coeffs = np.einsum('xa,xb,ai,aj->xij', mss, mss, np.array(self.sections[alpha], dtype=np.complex128), np.array(self.sections[alpha], dtype=np.complex128)) - np.einsum('xa,xb,ai,bj->xij', mss, mss, np.array(self.sections[alpha], dtype=np.complex128), np.array(self.sections[alpha], dtype=np.complex128))
             Js += J_alphas * coeffs * np.complex(kfactors[alpha]) / np.complex(np.pi)

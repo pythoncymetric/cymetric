@@ -3,7 +3,6 @@ A collection of tensorflow callbacks.
 """
 import tensorflow as tf
 import numpy as np
-#import sys
 from cymetric.models.measures import ricci_measure, sigma_measure, \
     kaehler_measure_loss, transition_measure_loss, ricci_scalar_fn
 tfk = tf.keras
@@ -13,6 +12,7 @@ kaehler_measure_tf = tf.function(func=kaehler_measure_loss)
 transition_measure_tf = tf.function(func=transition_measure_loss)
 ricci_measure_tf = tf.function(func=ricci_measure)
 ricci_scalar_tf = tf.function(func=ricci_scalar_fn)
+
 
 class AlphaCallback(tfk.callbacks.Callback):
     """Callback that allows to manipulate the alpha factors."""
@@ -100,8 +100,7 @@ class KaehlerCallback(tfk.callbacks.Callback):
 
 class RicciCallback(tfk.callbacks.Callback):
     """Callback that tracks the Ricci measure."""
-    def __init__(self, validation_data, pullbacks, verbose=0, bSize=1000,
-            nth=1, hlevel = 0):
+    def __init__(self, validation_data, pullbacks, verbose=0, bSize=1000, nth=1, hlevel=0):
         r"""A callback which computes the ricci measure for
         the validation data after every epoch end.
 
@@ -152,8 +151,10 @@ class RicciCallback(tfk.callbacks.Callback):
                 s = i*self.bSize
                 e = (i+1)*self.bSize if i != int(n_p/self.bSize)-1 else n_p
                 ricci_scalars[s:e], dets[s:e] = ricci_scalar_tf(self.model,
-                    self.X_val[s:e], pullbacks=self.pullbacks[s:e],
-                    verbose=self.verbose, rdet=True)
+                                                                self.X_val[s:e],
+                                                                pullbacks=self.pullbacks[s:e],
+                                                                verbose=self.verbose,
+                                                                rdet=True)
             ricci_scalars = tf.math.abs(ricci_scalars)
             det_over_omega = dets / self.omega
             ricci_scalars = tf.cast(ricci_scalars, dtype=tf.float32)
@@ -170,7 +171,7 @@ class RicciCallback(tfk.callbacks.Callback):
                     logs['ricci_val_var'] = float(np.var(ricci_scalars))
                     logs['ricci_val_std'] = float(np.std(ricci_scalars))
                     if self.hlevel > 2:
-                        logs['ricci_val_dets'] = float(np.sum(dets<0)/len(dets))
+                        logs['ricci_val_dets'] = float(np.sum(dets < 0)/len(dets))
             if cb_res <= 1e-3:
                 print(' - Ricci measure val:      {:.4e}'.format(cb_res))
             else:
@@ -207,8 +208,6 @@ class SigmaCallback(tfk.callbacks.Callback):
         self.X_val, self.y_val = validation_data
         self.X_val = tf.cast(self.X_val, tf.float32)
         self.y_val = tf.cast(self.y_val, tf.float32)
-        #self.weights = tf.cast(self.y_val[:, -2], tf.float32)
-        #self.omega = tf.cast(self.y_val[:, -1], tf.float32)
 
     def on_epoch_end(self, epoch, logs=None):
         r"""Computes sigma measure.
@@ -298,8 +297,7 @@ class VolkCallback(tfk.callbacks.Callback):
         self.weights = tf.cast(self.y_val[:, -2], dtype=tf.float32)
         self.omega = tf.cast(self.y_val[:, -1], dtype=tf.float32)
         self.nfold = tf.cast(nfold, dtype=tf.float32)
-        #NOTE: Check that convention is consistent with rest of code.
-        #self.factor = tf.exp(tf.math.lgamma(self.nfold+1))/(2.**nfold)
+        # NOTE: Check that convention is consistent with rest of code.
         self.factor = float(1.)
 
     def on_epoch_end(self, epoch, logs=None):

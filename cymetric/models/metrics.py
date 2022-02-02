@@ -7,9 +7,6 @@ and not y_pred, y_true as arguments.
 import tensorflow as tf
 tfk = tf.keras
 
-#from cymetric.models.metrics import KaehlerLoss
-#kaehler_loss = KaehlerLoss(name='kaehler_loss')
-
 
 class SigmaLoss(tfk.metrics.Metric):
 
@@ -135,6 +132,7 @@ class VolkLoss(tfk.metrics.Metric):
         self.volk_loss.assign(0)
         self.count.assign(0)
 
+
 class TotalLoss(tfk.metrics.Metric):
 
     def __init__(self, name='loss', **kwargs):
@@ -144,12 +142,11 @@ class TotalLoss(tfk.metrics.Metric):
 
     def update_state(self, values, sample_weight=None):
         loss = values['loss']
-        #total loss already gets rescaled by sample weight
-        #if sample_weight is not None:
+        # total loss already gets rescaled by sample weight
+        # if sample_weight is not None:
         #    sample_weight = tf.cast(sample_weight, self.dtype)
         #    loss = tf.multiply(loss, sample_weight)
-        new_value = (tf.reduce_mean(loss, axis=-1) -
-                     self.total_loss)/(self.count+1)
+        new_value = (tf.reduce_mean(loss, axis=-1) - self.total_loss)/(self.count+1)
         self.total_loss.assign_add(new_value)
         self.count.assign_add(1)
 

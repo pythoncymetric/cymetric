@@ -7,6 +7,7 @@ import pickle
 import itertools as it
 from sympy import LeviCivita
 
+
 def get_levicivita_tensor(dim):
     r"""Computes Levi-Civita tensor in dim dimensions.
 
@@ -23,6 +24,7 @@ def get_levicivita_tensor(dim):
     for t in it.permutations(range(dim), r=dim):
         lc[t] = LeviCivita(*t)
     return lc
+
 
 def conf_to_monomials(conf):
     r"""Creates monomials basis from configuration matrix.
@@ -52,6 +54,7 @@ def conf_to_monomials(conf):
         monomials += [np.array(mbasis)]
     return monomials
 
+
 def generate_monomials(n, deg):
     r"""Yields a generator of monomials with degree deg in n variables.
 
@@ -69,8 +72,8 @@ def generate_monomials(n, deg):
             for j in generate_monomials(n - 1, deg - i):
                 yield (i,) + j
 
-def prepare_dataset(point_gen, n_p, dirname, val_split=0.1, ltails=0, rtails=0,
-        normalize_to_vol_j=False):
+
+def prepare_dataset(point_gen, n_p, dirname, val_split=0.1, ltails=0, rtails=0, normalize_to_vol_j=False):
     r"""Prepares training and validation data from point_gen.
 
     Note:
@@ -94,7 +97,7 @@ def prepare_dataset(point_gen, n_p, dirname, val_split=0.1, ltails=0, rtails=0,
             Defaults to False.
 
     Returns:
-        int: 0
+        np.float: kappa = vol_k / vol_cy
     """
     if not os.path.exists(dirname):
         os.makedirs(dirname)
@@ -114,8 +117,7 @@ def prepare_dataset(point_gen, n_p, dirname, val_split=0.1, ltails=0, rtails=0,
     omega = np.expand_dims(pwo['omega'][mask], -1)
     omega = np.real(omega * np.conj(omega))
     if normalize_to_vol_j:
-        vol_omega_norm = np.mean(omega)
-        weights = point_gen.vol_j_norm / vol_omega_norm * weights
+        weights = point_gen.vol_j_norm * weights
     
     new_np = len(weights)
     t_i = int((1-val_split)*new_np)
@@ -133,10 +135,9 @@ def prepare_dataset(point_gen, n_p, dirname, val_split=0.1, ltails=0, rtails=0,
                         y_val=y_val,
                         val_pullbacks=val_pullbacks
                         )
-    return 0
+    return point_gen.compute_kappa(points, weights, omega)
 
-# load with
-# old_basis = np.load(os.path.join(dirname, 'basis.npz'), allow_pickle=True)
+
 def prepare_basis(point_gen, dirname):
     r"""Prepares monomial basis for NNs from point_gen as .npz dict.
 
@@ -153,23 +154,22 @@ def prepare_basis(point_gen, dirname):
     np.savez_compressed(os.path.join(dirname, 'basis'),
                         DQDZB0=point_gen.BASIS['DQDZB0'],
                         DQDZF0=point_gen.BASIS['DQDZF0'],
-                        #DZDZB_d0=point_gen.BASIS['DZDZB_d0'],
-                        #DZDZF_d0=point_gen.BASIS['DZDZF_d0'],
-                        #DZDZB_n0=point_gen.BASIS['DZDZB_n0'],
-                        #DZDZF_n0=point_gen.BASIS['DZDZF_n0'],
                         AMBIENT=point_gen.ambient,
                         KMODULI=point_gen.kmoduli,
                         NFOLD=point_gen.nfold,
-                        NHYPER=point_gen.nhyper
+                        NHYPER=point_gen.nhyper,
+                        KAPPA=kappa
                         )
     return 0
 
-def prepare_basis_pickle(point_gen, dirname):
+
+def prepare_basis_pickle(point_gen, dirname, kappa=1.):
     r"""Prepares pickled monomial basis for NNs from PointGenerator.
 
     Args:
         point_gen (PointGenerator): Any point generator.
         dirname (str): dir name to save
+        kappa (float): kappa value (ratio of Kahler and CY volume)
 
     Returns:
         int: 0
@@ -182,11 +182,13 @@ def prepare_basis_pickle(point_gen, dirname):
     new_dict['AMBIENT'] = point_gen.ambient
     new_dict['KMODULI'] = point_gen.kmoduli
     new_dict['NHYPER'] = point_gen.nhyper
+    new_dict['KAPPA'] = kappa
     
     with open(os.path.join(dirname, 'basis.pickle'), 'wb') as handle:
         pickle.dump(new_dict, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     return 0
+
 
 def get_all_patch_degrees(glsm_charges, patch_masks):
     r"""Computes the degrees of every coordinate for each patch to rescale such
@@ -207,12 +209,13 @@ def get_all_patch_degrees(glsm_charges, patch_masks):
         patch_coords = np.where(patch_masks[i])[0]
         for j in range(ncoords):
             factors = np.linalg.solve(
-                glsm_charges[:, patch_coords], glsm_charges[:,j].T)
+                glsm_charges[:, patch_coords], glsm_charges[:, j].T)
             if not np.allclose(factors, np.round(factors)):
                 print('WARNING GLSM: NO INTEGER COEFFICIENTS.')
             for l, k in enumerate(patch_coords):
-                all_patch_degrees[i,j,k] -= np.round(factors[l]).astype(np.int)
+                all_patch_degrees[i, j, k] -= np.round(factors[l]).astype(np.int)
     return all_patch_degrees
+
 
 def compute_all_w_of_x(patch_degrees, patch_masks, dim_cy = 3):
     r"""Computes monomials to reexpress the good coordinates in one patch in 
@@ -236,35 +239,33 @@ def compute_all_w_of_x(patch_degrees, patch_masks, dim_cy = 3):
         (ncoords, npatches, npatches, dim_cy, dim_cy, dim_cy), dtype=np.int)
     del_w_of_z = np.zeros(
         (ncoords, npatches, npatches, dim_cy, dim_cy, ncoords), dtype=np.int)
-    #TODO: Add a warning for when the array becomes too large.
+    # TODO: Add a warning for when the array becomes too large.
     # NOTE: There will be many zeros.
     for i in range(ncoords):
         allowed_patches = np.where(~patch_masks[:,i])[0]
         for j in allowed_patches:
             for k in allowed_patches:
-                #good coordinates in patch 1
+                # good coordinates in patch 1
                 g1mask = np.ones(ncoords, dtype=np.bool)
                 g1mask[patch_masks[j]] = False
                 g1mask[i] = False
-                #good coordinates in patch 2
+                # good coordinates in patch 2
                 g2mask = np.ones(ncoords, dtype=np.bool)
                 g2mask[patch_masks[k]] = False
                 g2mask[i] = False
-                #rewrite each good coordinate in patch 2 in terms of patch2
+                # rewrite each good coordinate in patch 2 in terms of patch2
                 for l, v in enumerate(patch_degrees[k][g2mask]):
                     coeff, _, _, _ = np.linalg.lstsq(
                         patch_degrees[j][g1mask].T, v, rcond=None)
                     if not np.allclose(coeff, np.round(coeff)):
                         print('WARNING W(X): NO INTEGER COEFFICIENTS.')
-                    w_of_x[i,j,k,l] = np.round(coeff).astype(np.int)
+                    w_of_x[i, j, k, l] = np.round(coeff).astype(np.int)
                     # compute the derivative wrt to the g1 coordinates
-                    del_w_of_x[i,j,k,l] = w_of_x[i,j,k,l]-\
-                        np.eye(dim_cy, dtype=np.int)
-                    # reexpress everything in terms of degrees of the homogeneous 
+                    del_w_of_x[i, j, k, l] = w_of_x[i, j, k, l] - np.eye(dim_cy, dtype=np.int)
+                    # re-express everything in terms of degrees of the homogeneous
                     # ambient space coordinates
                     for m in range(dim_cy):
-                        del_w_of_z[i,j,k,l,m] = np.einsum('j,ji',
-                            del_w_of_x[i,j,k,l,m], patch_degrees[j][g1mask])
+                        del_w_of_z[i, j, k, l, m] = np.einsum('j,ji', del_w_of_x[i, j, k, l, m], patch_degrees[j][g1mask])
     # w_of_x contains the derivative coefficients
     # del_w_of_x express g2 in terms of g1 coordinates
     # del_w_of_z express g2 in terms of homogeneous coordinates.

@@ -16,10 +16,10 @@ def sigma_loss(kappa=1., nfold=3., flat=False):
     Returns:
         function: MA loss function.
     """
-    factorial = float(1.)#tf.constant(tf.exp(tf.math.lgamma(nfold+1.)))
+    factorial = float(1.)
     nfold = tf.cast(nfold, dtype=tf.int32)
     kappa = tf.cast(kappa, dtype=tf.float32)
-    det_factor = float(1.)#tf.cast(2**nfold, dtype=tf.float32)
+    det_factor = float(1.)
 
     def to_hermitian_vec(x):
         r"""Takes a tensor of length (-1,NFOLD**2) and transforms it
@@ -34,8 +34,7 @@ def sigma_loss(kappa=1., nfold=3., flat=False):
         t1 = tf.reshape(tf.complex(x, tf.zeros_like(x)), (-1, nfold, nfold))
         up = tf.linalg.band_part(t1, 0, -1)
         low = tf.linalg.band_part(1j * t1, -1, 0)
-        out = up + tf.transpose(up, perm=[0, 2, 1]) - \
-            tf.linalg.band_part(t1, 0, 0)
+        out = up + tf.transpose(up, perm=[0, 2, 1]) - tf.linalg.band_part(t1, 0, 0)
         return out + low + tf.transpose(low, perm=[0, 2, 1], conjugate=True)
 
     def sigma_integrand_loss_flat(y_true, y_pred):
@@ -55,9 +54,9 @@ def sigma_loss(kappa=1., nfold=3., flat=False):
         # older tensorflow versions require shape(y_pred) == shape(y_true)
         # then just give it some tensor where omega is the last value.
         omega_squared = y_true[:, -1]
-        det = tf.math.real(tf.linalg.det(g))*factorial/kappa/det_factor
+        det = tf.math.real(tf.linalg.det(g))*factorial/det_factor
         return tf.abs(tf.ones(tf.shape(omega_squared), dtype=tf.float32) -
-                      det/omega_squared)
+                      det/omega_squared/kappa)
 
     def sigma_integrand_loss(y_true, y_pred):
         r"""Monge-Ampere integrand loss.
@@ -73,9 +72,9 @@ def sigma_loss(kappa=1., nfold=3., flat=False):
             tensor[(bsize, 1), tf.float]: loss for each sample in batch
         """
         omega_squared = y_true[:, -1]
-        det = tf.math.real(tf.linalg.det(y_pred))*factorial/kappa/det_factor
+        det = tf.math.real(tf.linalg.det(y_pred))*factorial/det_factor
         return tf.abs(tf.ones(tf.shape(omega_squared), dtype=tf.float32) -
-                      det/omega_squared)
+                      det/omega_squared/kappa)
 
     if flat:
         return sigma_integrand_loss_flat
