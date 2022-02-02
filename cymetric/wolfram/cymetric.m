@@ -90,7 +90,7 @@ If[FileExistsQ[$SETTINGSFILE],Print["Settings file does not contain a path to a 
 ];
 ];
 If[!pythonVENV===Null,
-If[!FileExistsQ[pythonVENV],Print["Could not find specified Python executable ", pythonVENV], Return[""];];
+If[!FileExistsQ[pythonVENV],Print["Could not find specified Python executable ", pythonVENV]; Return[""];];
 exec=pythonVENV;
 ,
 exec=DiscoverPython[True];
