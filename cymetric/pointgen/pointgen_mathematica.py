@@ -216,6 +216,7 @@ class ToricPointGeneratorMathematica(PointGeneratorMathematica):
                  selected_t (ndarray[(nProj)]): The ambient spaces from which the points were sampled.
                                                 This is only important if Mathematica is also used as a frontend
          """
+        self.toric_data = toric_data
         self.nfold = toric_data['dim_cy']
         self.monomials = [np.array(toric_data['exp_aK'])]  # since we inherit from CICY pointgen, need array of monomials (one for each defining poly)
         self.coefficients = [np.array(toric_data['coeff_aK'])]  # since we inherit from CICY pointgen, need array of coefficients (one for each defining poly)

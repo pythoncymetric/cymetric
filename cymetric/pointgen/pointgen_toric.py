@@ -87,6 +87,7 @@ class ToricPointGenerator(PointGenerator):
         self.nProjective = len(self.toric_data["glsm_charges"])
         self.patch_degrees = get_all_patch_degrees(self.glsm_charges,
                                                    self.patch_masks)
+        self.vol_j_norm = toric_data['vol_j_norm']
         # ambient degree of sections.
         self.dim_ps = np.array([s for s, _ in self.num_sections])
         if 'dzdz' in kwargs:
