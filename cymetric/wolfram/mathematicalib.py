@@ -7,7 +7,7 @@ import pickle
 logging.basicConfig(stream=sys.stdout)
 mcy_logger = logging.getLogger('mathematica')
 
-from cymetric.pointgen.pointgen_mathematica import PointGeneratorMathematica, PointGeneratorToricMathematica
+from cymetric.pointgen.pointgen_mathematica import PointGeneratorMathematica, ToricPointGeneratorMathematica
 from cymetric.pointgen.nphelper import prepare_dataset, prepare_basis_pickle
 
 import tensorflow as tf
@@ -38,17 +38,23 @@ def generate_points_toric(my_args):
     args_str = re.sub('\], \n', '], ', str(args))
     args_str = re.sub(' +', ' ', str(args_str))
     mcy_logger.debug(args_str)
-    
-    point_gen = PointGeneratorToricMathematica(args['dim_cy'], [np.array(x) for x in args['monomials']], [np.array(x) for x in args['coeffs']], args['k_moduli'], args['ambient_dims'], args['sections'], args['patch_masks'], args['glsm_charges'], vol_j_norm=args['vol_j_norm'], precision=args['precision'], verbose=args['verbose'], point_file_path=args['point_file_path'])
+
+    with open(os.path.join(args['outdir'], 'toric_data.pickle'), 'rb') as f:
+        toric_data = pickle.load(f)
+    for key in toric_data:
+        mcy_logger.debug(key)
+        mcy_logger.debug(toric_data[key])
+
+    point_gen = ToricPointGeneratorMathematica(toric_data, precision=args['precision'], verbose=args['verbose'], point_file_path=args['point_file_path'])
 
     # save point generator to pickle
     mcy_logger.info("Saving point generator to {:}".format(os.path.join(os.path.abspath(args['outdir']), "point_gen.pickle")))
     with open(os.path.join(os.path.abspath(args['outdir']), "point_gen.pickle"), 'wb') as hnd:
         pickle.dump(point_gen, hnd)
     
-    prepare_dataset(point_gen, args['num_pts'], args['outdir'])
+    kappa = prepare_dataset(point_gen, args['num_pts'], args['outdir'], normalize_to_vol_j=True)
     mcy_logger.info("Computing derivatives of J_FS, Omega, ...")
-    prepare_basis_pickle(point_gen, args['outdir'])
+    prepare_basis_pickle(point_gen, args['outdir'], kappa)
     mcy_logger.debug("done")
 
 

@@ -8,8 +8,7 @@ Main PointGenerator module.
 import numpy as np
 import logging
 import sympy as sp
-from cymetric.pointgen.nphelper import prepare_basis_pickle, prepare_dataset, \
-    get_levicivita_tensor
+from cymetric.pointgen.nphelper import prepare_basis_pickle, prepare_dataset, get_levicivita_tensor
 from sympy.geometry.util import idiff
 from joblib import Parallel, delayed
 

@@ -19,7 +19,7 @@ from wolframclient.deserializers import WXFConsumer, binary_deserialize
 from wolframclient.language import Global as wlGlobal
 from wolframclient.serializers import export as wlexport
 from cymetric.pointgen.pointgen_cicy import CICYPointGenerator
-from cymetric.pointgen.nphelper import get_levicivita_tensor
+from cymetric.pointgen.nphelper import get_levicivita_tensor, prepare_dataset
 
 import logging
 logger = logging.getLogger('pointgenMathematica')
@@ -165,31 +165,69 @@ class PointGeneratorMathematica(CICYPointGenerator):
         return np.array(pts[0])
 
 
-class PointGeneratorToricMathematica(PointGeneratorMathematica):
-    def __init__(self, nfold, monomials, coefficients, kmoduli, ambient, sections, non_CI_coeffs, non_CI_exps, patch_masks, glsm_charges, precision=10, vol_j_norm=1, verbose=2, point_file_path=None, selected_t=None):
-        r"""Initializer.
+class ToricPointGeneratorMathematica(PointGeneratorMathematica):
+    r"""ToricPointGeneratorMathematica class.
 
-        Args:
-            monomials (ndarray[(nMonomials, ncoord), np.int]): monomials
-            coefficients (ndarray[(nMonomials)]): coefficients in front of each
-                monomial.
-            kmoduli (ndarray[(nProj)]): The kaehler moduli.
-            ambient (ndarray[(nProj), np.int]): The direct product of projective
-                spaces in the ambient
-            verbose (int, optional): Controls logging. Defaults to 2.
-        """
-        self.nfold = nfold
-        self.monomials = [np.array(monomials)]  # since we inherit from CICY pointgen, need array of monomials (one for each defining poly)
-        self.coefficients = [np.array(coefficients)]  # since we inherit from CICY pointgen, need array of coefficients (one for each defining poly)
+    The numerics are done in mathematica, the toric computations have been done in SageMath.
+
+    Use this class if you want to generate points and data on a toric CY
+    given by one hypersurface as in the Kreuzer-Skarke list.
+
+    Example:
+        We assume toric_data has been generated using the sage lib beforehand.
+        Check https://doc.sagemath.org/html/en/reference/schemes/sage/schemes/toric/variety.html
+        for infos how to construct ToricVarieties/Fans in sage.
+
+        Define in sage your favourite polytope.
+
+        >>> from cymetric.sage.sagelib import prepare_toric_cy_data
+        >>> # [...] generate fan from triangulations from vertices
+        >>> TV = ToricVariety(fan)
+        >>> fname = "toric_data.pickle"
+        >>> toric_data = prepare_toric_cy_data(TV, fname)
+
+        then we can start another python kernel or continue in sage with
+
+        >>> import numpy as np
+        >>> from cymetric.pointgen.pointgen_mathematica import PointGeneratorMathematica
+        >>> kmoduli = np.ones(len(toric_data['exps_sections']))
+        >>> # [...] load toric_data with pickle
+        >>> pg = PointGeneratorMathematica(toric_data, kmoduli)
+
+        Once the ToricPointGenerator is initialized you can generate a training dataset with
+
+        >>> pg.prepare_dataset(number_of_points, dir_name)
+
+        and prepare the required tensorflow model data with
+
+        >>> pg.prepare_basis(dir_name)
+
+    """
+    def __init__(self, toric_data, kmoduli,  verbose=2, precision=10, point_file_path=None, selected_t=None):
+        r"""PointGeneratorMathematica uses Mathematica as a backend for computations.
+
+             Args:
+                 toric_data (np.ndarray): Toric data generated from sage by calling prepare_toric_cy_data(TV, fname)
+                 kmoduli (ndarray[(nProj)]): The kaehler moduli.
+                 verbose (int, optional): Controls logging. 1-Debug, 2-Info,  else Warning. Defaults to 2.
+                 precision (int, optional): Number of valid digits. Defaults to 10
+                 point_file_path (str, optional): Path where points are stored. This is only important if Mathematica
+                                                  is also used as a frontend
+                 selected_t (ndarray[(nProj)]): The ambient spaces from which the points were sampled.
+                                                This is only important if Mathematica is also used as a frontend
+         """
+        self.nfold = toric_data['dim_cy']
+        self.monomials = [np.array(toric_data['exp_aK'])]  # since we inherit from CICY pointgen, need array of monomials (one for each defining poly)
+        self.coefficients = [np.array(toric_data['coeff_aK'])]  # since we inherit from CICY pointgen, need array of coefficients (one for each defining poly)
         self.kmoduli = kmoduli
-        self.ambient = [int(a) for a in ambient]
-        self.sections = sections
-        self.non_CI_coeffs = non_CI_coeffs
-        self.non_CI_exps = non_CI_exps
-        self.patch_masks = patch_masks
-        self.glsm_charges = glsm_charges
+        self.ambient = np.array([len(s) + 1 for s in toric_data['exps_sections']])
+        self.sections = toric_data['exps_sections']
+        self.non_CI_coeffs = toric_data['non_ci_coeffs']
+        self.non_CI_exps = toric_data['non_ci_exps']
+        self.patch_masks = toric_data['patch_masks']
+        self.glsm_charges = toric_data['glsm_charges']
         self.precision = precision
-        self.vol_j_norm = vol_j_norm
+        self.vol_j_norm = toric_data['vol_j_norm']
         self.verbose = verbose
         self.selected_t = selected_t
         self.lc = get_levicivita_tensor(int(self.nfold))
@@ -217,6 +255,23 @@ class PointGeneratorToricMathematica(PointGeneratorMathematica):
         self.dzdz_generated = False
         self._generate_padded_basis()
     
+    def prepare_dataset(self, n_p, dirname, val_split=0.1, ltails=0, rtails=0):
+        r"""Prepares training and validation data.
+
+        Args:
+            n_p (int): Number of points to generate.
+            dirname (str): Directory name to save dataset in.
+            val_split (float, optional): train-val split. Defaults to 0.1.
+            ltails (float, optional): Percentage discarded on the left tail
+                of weight distribution. Defaults to 0.
+            rtails (float, optional): Percentage discarded on the right tail
+                of weight distribution. Defaults to 0.
+
+        Returns:
+            np.float: kappa = vol_k / vol_cy
+        """
+        return prepare_dataset(self, n_p, dirname, val_split=val_split, ltails=ltails, rtails=rtails, normalize_to_vol_j=True)
+
     def fubini_study_metrics(self, points, vol_js=None):
         return self._fubini_study_n_metrics(points, kfactors=vol_js)
         
