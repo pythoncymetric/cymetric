@@ -879,7 +879,7 @@ class PointGenerator:
         gFS = gFS.astype(np.complex128) - outer
         return np.einsum('xij,x->xij', gFS, 1 / (point_square ** 2)) * vol_j / np.pi
 
-    def prepare_basis(self, dirname):
+    def prepare_basis(self, dirname, kappa=1.):
         r"""Prepares pickled monomial basis for the tensorflow models.
 
         Args:
@@ -888,7 +888,7 @@ class PointGenerator:
         Returns:
             int: 0
         """
-        return prepare_basis_pickle(self, dirname)
+        return prepare_basis_pickle(self, dirname, kappa)
 
     def prepare_dataset(self, n_p, dirname, val_split=0.1, ltails=0, rtails=0):
         r"""Prepares training and validation data.
