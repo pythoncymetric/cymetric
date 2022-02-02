@@ -138,12 +138,13 @@ def prepare_dataset(point_gen, n_p, dirname, val_split=0.1, ltails=0, rtails=0, 
     return point_gen.compute_kappa(points, weights, omega)
 
 
-def prepare_basis(point_gen, dirname):
+def prepare_basis(point_gen, dirname, kappa=1.):
     r"""Prepares monomial basis for NNs from point_gen as .npz dict.
 
     Args:
         point_gen (point_gen): point generator
         dirname (str): dir name to save
+        kappa (float): kappa value (ratio of Kahler and CY volume)
 
     Returns:
         int: 0
