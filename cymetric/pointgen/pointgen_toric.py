@@ -87,7 +87,6 @@ class ToricPointGenerator(PointGenerator):
         self.nProjective = len(self.toric_data["glsm_charges"])
         self.patch_degrees = get_all_patch_degrees(self.glsm_charges,
                                                    self.patch_masks)
-        self.vol_j_norm = toric_data['vol_j_norm']
         # ambient degree of sections.
         self.dim_ps = np.array([s for s, _ in self.num_sections])
         if 'dzdz' in kwargs:
@@ -107,6 +106,7 @@ class ToricPointGenerator(PointGenerator):
         # HACK: We use self.selected_t differently to CICY pointgen
         # self.ambient is not used other than in point_weight.
         self.ambient = 2*self.selected_t
+        self.vol_j_norm = toric_data['vol_j_norm']
 
     def _generate_all_bases(self):
         r"""This function calls a bunch of others
