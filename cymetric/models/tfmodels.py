@@ -634,8 +634,7 @@ class PhiFSModel(FreeModel):
             input_tensor (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
             weights (tf.tensor([bSize], tf.float32)): Weights.
             pred (tf.tensor([bSize, nfold, nfold], tf.complex64), optional): 
-                Prediction from `self(input_tensor)`.
-                If None will be calculated. Defaults to None.
+                Prediction from `self(input_tensor)`. Ignored for Phi model.
             
         Returns:
             tf.tensor([bSize], tf.float32): Volk loss.
@@ -1016,8 +1015,7 @@ class PhiFSModelToric(ToricModel):
             input_tensor (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
             weights (tf.tensor([bSize], tf.float32)): Weights.
             pred (tf.tensor([bSize, nfold, nfold], tf.complex64), optional):
-                Prediction from `self(input_tensor)`.
-                If None will be calculated. Defaults to None. Ignored for phi model
+                Prediction from `self(input_tensor)`. Ignored for phi model
 
         Returns:
             tf.tensor([bSize], tf.float32): Volk loss.
