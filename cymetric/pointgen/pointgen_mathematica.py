@@ -30,7 +30,7 @@ logging.basicConfig(format='%(name)s:%(levelname)s:%(message)s')
 class PointGeneratorMathematica(CICYPointGenerator):
     def __init__(self, *args, **kwargs):
         
-        self.precision = kwargs.get('precision', 20)
+        self.precision = kwargs.get('precision', 10)
         if 'precision' in kwargs.keys():
             del kwargs['precision']
         self.point_file_path = kwargs.get('point_file_path', None)
@@ -141,7 +141,7 @@ class PointGeneratorMathematica(CICYPointGenerator):
 
 
 class PointGeneratorToricMathematica(PointGeneratorMathematica):
-    def __init__(self, nfold, monomials, coefficients, kmoduli, ambient, sections, non_CI_coeffs, non_CI_exps, patch_masks, glsm_charges, precision=15, vol_j_norm=1, verbose=2, point_file_path=None, selected_t=None):
+    def __init__(self, nfold, monomials, coefficients, kmoduli, ambient, sections, non_CI_coeffs, non_CI_exps, patch_masks, glsm_charges, precision=10, vol_j_norm=1, verbose=2, point_file_path=None, selected_t=None):
         r"""Initializer.
 
         Args:
