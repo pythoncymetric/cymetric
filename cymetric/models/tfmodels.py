@@ -233,7 +233,7 @@ class FreeModel(FSModel):
             #                 lambda: tf.zeros_like(x[:, 0]))
             if self.learn_volk:
                 # is scalar and not batch vector
-                volk_loss = self.compute_volk_loss(x, weights=y[:, -1], pred=y_pred)
+                volk_loss = self.compute_volk_loss(x, weights=y[:, -2], pred=y_pred)
             else:
                 volk_loss = tf.zeros_like(cijk_loss)
 
@@ -289,7 +289,7 @@ class FreeModel(FSModel):
         Returns:
             dict: metrics
         """
-        #unpack data
+        # unpack data
         if len(data) == 3:
             x, y, sample_weight = data
         else:
@@ -1002,35 +1002,34 @@ class PhiFSModelToric(ToricModel):
         return tf.math.add(fs_cont, dd_phi)
 
     def compute_volk_loss(self, input_tensor, weights, pred=None):
-        r"""Computes volk loss. 
+        r"""Computes volk loss.
 
         .. math::
-        
+
             \mathcal{L}_{\text{vol}_k} = \int_X \phi
 
         The last term is constant over the whole batch. Thus, the volk loss
-        is *batch dependent*. This loss contribution should be satisfied by 
+        is *batch dependent*. This loss contribution should be satisfied by
         construction but is included for tracing purposes.
-        
+
         Args:
             input_tensor (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
             weights (tf.tensor([bSize], tf.float32)): Weights.
-            pred (tf.tensor([bSize, nfold, nfold], tf.complex64), optional): 
+            pred (tf.tensor([bSize, nfold, nfold], tf.complex64), optional):
                 Prediction from `self(input_tensor)`.
-                If None will be calculated. Defaults to None.
-            
+                If None will be calculated. Defaults to None. Ignored for phi model
+
         Returns:
             tf.tensor([bSize], tf.float32): Volk loss.
         """
         # sample_contribution = super().compute_volk_loss(input_tensor, weights=weights, pred=pred)
-        if pred is None:
-            pred = self.model(input_tensor)
-        phi_pred = tf.reshape(pred, [-1])
+        phi_pred = tf.reshape(self.model(input_tensor), [-1])
         phi_pred = tf.einsum('i,j->ij', phi_pred, tf.ones_like(phi_pred))
         phi_pred = tf.einsum('ij,i->ji', phi_pred, weights)
         phi_pred = tf.math.reduce_mean(phi_pred, axis=-1)
-        phi_pred = tf.math.abs(phi_pred)
-        return self.kappa * phi_pred
+        phi_pred = phi_pred ** 2
+
+        return 1. / self.kappa * phi_pred
 
 
 class MatrixFSModelToric(ToricModel):
