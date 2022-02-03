@@ -221,7 +221,6 @@ class ToricPointGeneratorMathematica(PointGeneratorMathematica):
         self.monomials = [np.array(toric_data['exp_aK'])]  # since we inherit from CICY pointgen, need array of monomials (one for each defining poly)
         self.coefficients = [np.array(toric_data['coeff_aK'])]  # since we inherit from CICY pointgen, need array of coefficients (one for each defining poly)
         self.kmoduli = kmoduli
-        self.ambient = np.array([len(s) + 1 for s in toric_data['exps_sections']])
         self.sections = toric_data['exps_sections']
         self.non_CI_coeffs = toric_data['non_ci_coeffs']
         self.non_CI_exps = toric_data['non_ci_exps']
@@ -231,6 +230,8 @@ class ToricPointGeneratorMathematica(PointGeneratorMathematica):
         self.vol_j_norm = toric_data['vol_j_norm']
         self.verbose = verbose
         self.selected_t = selected_t
+        self.ambient = 2 * self.selected_t  # hack to make the standard routine for auxiliary weight computation work. Note that for the toric case, the ambient space plays a different role and is not linked to the number of Kahler moduli
+        self.ambient_dims = np.array([len(s) + 1 for s in toric_data['exps_sections']])
         self.lc = get_levicivita_tensor(int(self.nfold))
         
         if self.verbose == 1:
