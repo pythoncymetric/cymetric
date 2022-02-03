@@ -643,9 +643,9 @@ class PhiFSModel(FreeModel):
         phi_pred = tf.einsum('i,j->ij', phi_pred, tf.ones_like(phi_pred))
         phi_pred = tf.einsum('ij,i->ji', phi_pred, weights)
         phi_pred = tf.math.reduce_mean(phi_pred, axis=-1)
-        phi_pred = phi_pred**2
-        
-        return 1./self.kappa * phi_pred
+        phi_pred = tf.math.abs(phi_pred)
+
+        return 1. / tf.math.reduce_mean(weights, axis=-1) * phi_pred
 
 
 class ToricModel(FreeModel):
@@ -1024,9 +1024,9 @@ class PhiFSModelToric(ToricModel):
         phi_pred = tf.einsum('i,j->ij', phi_pred, tf.ones_like(phi_pred))
         phi_pred = tf.einsum('ij,i->ji', phi_pred, weights)
         phi_pred = tf.math.reduce_mean(phi_pred, axis=-1)
-        phi_pred = phi_pred ** 2
+        phi_pred = tf.math.abs(phi_pred)
 
-        return 1. / self.kappa * phi_pred
+        return 1. / tf.math.reduce_mean(weights, axis=-1) * phi_pred
 
 
 class MatrixFSModelToric(ToricModel):

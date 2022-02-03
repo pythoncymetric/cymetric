@@ -91,6 +91,24 @@ def generate_points(my_args):
     mcy_logger.info("Computing derivatives of J_FS, Omega, ...")
     prepare_basis_pickle(point_gen, args['outdir'], kappa)
     mcy_logger.debug("done")
+    
+    
+#     def point_vec_to_complex(p):
+#         plen = len(p)//2
+#         return p[:plen] + 1.j*p[plen:]
+#     
+#     data = np.load(os.path.join(args['outdir'], 'dataset.npz'))
+#     pts = np.array([point_vec_to_complex(p) for p in data['X_val']])
+#     weights, omegas = data['y_val'][:,-2], data['y_val'][:,-1]
+#     pbs = point_gen.pullbacks(pts)
+#     gFS = point_gen.fubini_study_metrics(pts)
+#     gFS_pbs = np.einsum('xai,xij,xbj->xab', pbs, gFS, np.conj(pbs))
+#     dets = np.real(np.linalg.det(gFS_pbs))
+# 
+#     vol_k = np.mean(weights * dets / omegas)
+#     vol_cy = np.mean(weights)
+#     print('Without NN')
+#     print('Vol_k: {}, Vol_cy: {}.'.format(vol_k, vol_cy))
 
 
 
@@ -99,7 +117,10 @@ def train_NN(my_args):
     
     args = to_numpy_arrays(eval(my_args))
     mcy_logger.setLevel(args['logger_level'])
-
+    mcy_logger.setLevel(logging.DEBUG)
+    mcy_logger.debug(args)
+    
+    
     # get info of generated points
     data = np.load(os.path.join(args['outdir'], 'dataset.npz'))
     BASIS = prepare_tf_basis(pickle.load(open(os.path.join(args['outdir'], 'basis.pickle'), 'rb')))
@@ -148,30 +169,30 @@ def train_NN(my_args):
         for n_hidden, act in zip(n_hiddens, acts):
             model.add(tfk.layers.Dense(n_hidden, activation=act))
         model.add(tfk.layers.Dense(n_out))
-        # reproduces the FS Kahler potential for the bicubic
-        # import math
-        # def reorder_input(x):
-        #     x1 = x[:,0:x.shape[-1]//4]
-        #     x2 = x[:,x.shape[-1]//4:2*x.shape[-1]//4]
-        #     x3 = x[:,2*x.shape[-1]//4:3*x.shape[-1]//4]
-        #     x4 = x[:,3*x.shape[-1]//4:]
-        #     return tf.keras.layers.concatenate([x1,x3], axis=1), tf.keras.layers.concatenate([x2,x4], axis=1)
-        #
-        # inp1 = tf.keras.layers.Input(shape=(12,))
-        # in1, in2 = tf.keras.layers.Lambda(reorder_input)(inp1)
-        # x1 = tf.keras.layers.dot([in1, in1], axes=-1)
-        # x2 = tf.keras.layers.dot([in2, in2], axes=-1)
-        # for n_hidden, act in zip(n_hiddens, acts):
-        #   x1 = tf.keras.layers.Dense(n_hidden, activation=act)(x1)
-        #   x2 = tf.keras.layers.Dense(n_hidden, activation=act)(x2)
-        # x1 = tfk.layers.Dense(n_out, use_bias=False, activation='sigmoid')(x1)
-        # x2 = tfk.layers.Dense(n_out, use_bias=False, activation='sigmoid')(x2)
-        # x1 = tf.math.log(x1)
-        # x2 = tf.math.log(x2)
-        # x = tf.keras.layers.add([0.1/math.pi * x1, 0.1/math.pi * x2])
-        # x = tfk.layers.Dense(n_out)(x)
-        #
-        # model = tf.keras.models.Model(inputs=[inp1], outputs=x)
+#       # reproduces the FS Kahler potential for the bicubic
+#       import math
+#       def reorder_input(x):
+#           x1 = x[:,0:x.shape[-1]//4]
+#           x2 = x[:,x.shape[-1]//4:2*x.shape[-1]//4]
+#           x3 = x[:,2*x.shape[-1]//4:3*x.shape[-1]//4]
+#           x4 = x[:,3*x.shape[-1]//4:]
+#           return tf.keras.layers.concatenate([x1,x3], axis=1), tf.keras.layers.concatenate([x2,x4], axis=1)
+#       
+#       inp1 = tf.keras.layers.Input(shape=(12,))
+#       in1, in2 = tf.keras.layers.Lambda(reorder_input)(inp1)
+#       x1 = tf.keras.layers.dot([in1, in1], axes=-1)
+#       x2 = tf.keras.layers.dot([in2, in2], axes=-1)
+#       for n_hidden, act in zip(n_hiddens, acts):
+#         x1 = tf.keras.layers.Dense(n_hidden, activation=act)(x1)
+#         x2 = tf.keras.layers.Dense(n_hidden, activation=act)(x2)
+#       x1 = tfk.layers.Dense(n_out, use_bias=False, activation='sigmoid')(x1)
+#       x2 = tfk.layers.Dense(n_out, use_bias=False, activation='sigmoid')(x2)
+#       x1 = tf.math.log(x1)
+#       x2 = tf.math.log(x2)
+#       x = tf.keras.layers.add([0.1/math.pi * x1, 0.1/math.pi * x2])
+#       x = tfk.layers.Dense(n_out)(0.0000000001*x)
+#       
+#       model = tf.keras.models.Model(inputs=[inp1], outputs=x)
     else:
         model = tf.keras.Sequential()
         model.add(tfk.Input(shape=(n_in,)))
@@ -201,6 +222,17 @@ def train_NN(my_args):
     
     model.summary(print_fn=mcy_logger.debug)
     
+#     weights = tf.cast(data['y_train'][:, -2], tf.float32)
+#     pred = tf.cast(fsmodel.model(data['X_train']), tf.float32)
+#     
+#     phi_pred = tf.reshape(pred, [-1])  # flatten
+#     phi_pred = phi_pred * weights / tf.math.reduce_mean(weights, axis=-1)
+#     phi_pred = tf.math.reduce_mean(phi_pred, axis=-1)
+#     phi_pred = tf.math.abs(phi_pred)
+#     phi_pred = tf.repeat(tf.expand_dims(phi_pred, axis=0), repeats=[len(data['X_train'])], axis=0)
+#         
+#     print("phi_pred      : ", (phi_pred)[:10], tf.reduce_mean(phi_pred, axis=-1).numpy())
+#     print("volk loss:      ", (fsmodel.compute_volk_loss(data['X_train'], weights, pred))[:10])
     # train model
     history = fsmodel.fit(data['X_train'], data['y_train'], epochs=args['n_epochs'], batch_size=args['batch_size'], verbose=2, callbacks=cb_list)
         
