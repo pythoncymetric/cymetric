@@ -54,7 +54,7 @@ class FreeModel(FSModel):
         :py:mod:`cymetric.models.metrics` and
         :py:mod:`cymetric.models.callbacks`.
     """
-    def __init__(self, tfmodel, BASIS, alpha=None, kappa=1., **kwargs):
+    def __init__(self, tfmodel, BASIS, alpha=None, **kwargs):
         r"""FreeModel is a tensorflow model predicting CY metrics. 
         
         The output is
@@ -96,7 +96,6 @@ class FreeModel(FSModel):
                 relevant information from cymetric.pointgen.pointgen.
             alpha ([5//NLOSS], float): Weighting of each loss contribution.
                 Defaults to None, which corresponds to equal weights.
-            kappa (float, optional): kappa from MA. Defaults to 1..
         """
         super(FreeModel, self).__init__(BASIS=BASIS, **kwargs)
         self.model = tfmodel
@@ -113,7 +112,7 @@ class FreeModel(FSModel):
         self.learn_volk = tf.cast(True, dtype=tf.bool)
 
         self.custom_metrics = None
-        self.kappa = tf.cast(kappa, dtype=tf.float32)
+        self.kappa = tf.cast(BASIS['KAPPA'], dtype=tf.float32)
         self.gclipping = float(5.0)
         # add to compile?
         self.sigma_loss = sigma_loss(self.kappa, tf.cast(self.nfold, dtype=tf.float32))

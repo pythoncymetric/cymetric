@@ -17,8 +17,8 @@ class FSModel(tfk.Model):
     for training of CICYs. Toric hypersurfaces require some extra routines,
     which are implemented here: `cymetric.models.tfmodels.ToricModel`
     """
-    def __init__(self, BASIS, norm=None, epsilon=0.9999999):
-        r"""A tensorflow implementation of the pullbacked Fubini-Study metric.
+    def __init__(self, BASIS, norm=None):
+        r"""A tensorflow implementation of the pulled back Fubini-Study metric.
 
         Args:
             BASIS (dict): a dictionary containing all monomials and other
@@ -26,9 +26,6 @@ class FSModel(tfk.Model):
                 `cymetric.pointgen.pointgen.PointGenerator`
             norm ([5//NLOSS], optional): degree of norm for various losses.
                 Defaults to 1 for all but Kaehler norm (2).
-            epsilon (float, optional): Numerical epsilon to determine
-                patch indices. Patch indices are those which have
-                x_i == 1 \pm (1-epsilon) + 0j. Defaults to 0.9999999.
         """
         super(FSModel, self).__init__()
         self.BASIS = BASIS
@@ -42,10 +39,7 @@ class FSModel(tfk.Model):
         else:
             self.n = [tf.cast(n, dtype=tf.float32) for n in norm]
         # projective vars
-        self.degrees = tf.cast(tf.ones_like(self.BASIS['AMBIENT']) +
-                               self.BASIS['AMBIENT'], dtype=tf.int32)
-        self.epsilon_low = tf.constant(epsilon)
-        self.epsilon_high = tf.constant(1.+(1.-epsilon))
+        self.degrees = tf.cast(tf.ones_like(self.BASIS['AMBIENT']) + self.BASIS['AMBIENT'], dtype=tf.int32)
         self.pi = tf.constant(tf.cast(np.pi, dtype=tf.complex64))
         self.nhyper = int(tf.cast(BASIS['NHYPER'], dtype=tf.int64))
         self._generate_helpers()
