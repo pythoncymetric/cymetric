@@ -123,9 +123,10 @@ def prepare_dataset(point_gen, n_p, dirname, val_split=0.1, ltails=0, rtails=0, 
 
     if normalize_to_vol_j:
         pbs = point_gen.pullbacks(points)
-        fs_ref = point_gen.fubini_study_metrics(points, vol_js=np.ones_like(self.kmoduli))
+        fs_ref = point_gen.fubini_study_metrics(points, vol_js=np.ones_like(point_gen.kmoduli))
         fs_ref_pb = np.einsum('xai,xij,xbj->xab', pbs, fs_ref, np.conj(pbs))
-        norm_fac = self.vol_j_norm * np.mean(np.real(np.linalg.det(fs_ref_pb)) / detg_norm)
+        aux_weights = omega.flatten() / weights.flatten()
+        norm_fac = point_gen.vol_j_norm / np.mean(np.real(np.linalg.det(fs_ref_pb)) / aux_weights)
         weights = norm_fac * weights
 
     X_train = np.concatenate((points[:t_i].real, points[:t_i].imag), axis=-1)
@@ -133,6 +134,7 @@ def prepare_dataset(point_gen, n_p, dirname, val_split=0.1, ltails=0, rtails=0, 
     X_val = np.concatenate((points[t_i:].real, points[t_i:].imag), axis=-1)
     y_val = np.concatenate((weights[t_i:], omega[t_i:]), axis=1)
     val_pullbacks = point_gen.pullbacks(points[t_i:])
+    
     # save everything to compressed dict.
     np.savez_compressed(os.path.join(dirname, 'dataset'),
                         X_train=X_train,

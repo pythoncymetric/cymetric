@@ -93,6 +93,7 @@ def generate_points(my_args):
     mcy_logger.debug("done")
 
 
+
 def train_NN(my_args):
     global mcy_logger
     
@@ -180,19 +181,19 @@ def train_NN(my_args):
     
     mcy_logger.debug("Using model ", args['model'])
     if args['model'] == 'PhiFS':
-        fsmodel = PhiFSModel(model, BASIS, alpha=args['alphas'], kappa=kappa)
+        fsmodel = PhiFSModel(model, BASIS, alpha=args['alphas'])
     elif args['model'] == 'PhiFSToric':
-        fsmodel = PhiFSModelToric(model, BASIS, alpha=args['alphas'], kappa=kappa, toric_data=toric_data)
+        fsmodel = PhiFSModelToric(model, BASIS, alpha=args['alphas'], toric_data=toric_data)
     elif args['model'] == 'MultFS':
-        fsmodel = MultFSModel(model, BASIS, alpha=args['alphas'], kappa=kappa)
+        fsmodel = MultFSModel(model, BASIS, alpha=args['alphas'])
     elif args['model'] == 'MatrixMultFS':
-        fsmodel = MatrixFSModel(model, BASIS, alpha=args['alphas'], kappa=kappa)
+        fsmodel = MatrixFSModel(model, BASIS, alpha=args['alphas'])
     elif args['model'] == 'MatrixMultFSToric':
-        fsmodel = MatrixFSModelToric(model, BASIS, alpha=args['alphas'], kappa=kappa, toric_data=toric_data)
+        fsmodel = MatrixFSModelToric(model, BASIS, alpha=args['alphas'], toric_data=toric_data)
     elif args['model'] == 'AddFS':
-        fsmodel = AddFSModel(model, BASIS, alpha=args['alphas'], kappa=kappa)
+        fsmodel = AddFSModel(model, BASIS, alpha=args['alphas'])
     elif args['model'] == 'Free':
-        fsmodel = FreeModel(model, BASIS, alpha=args['alphas'], kappa=kappa)
+        fsmodel = FreeModel(model, BASIS, alpha=args['alphas'])
     else:
         mcy_logger.error("{} is not a recognized option for a model".format(args['model']))
         return {}
@@ -233,19 +234,19 @@ def get_g(my_args):
     pts = tf.convert_to_tensor(pts, dtype=tf.float32)
     model = tfk.models.load_model(os.path.join(args['outdir'], 'model'))
     if args['model'] == 'PhiFS':
-        fsmodel = PhiFSModel(model, BASIS, kappa=kappa)
+        fsmodel = PhiFSModel(model, BASIS)
     elif args['model'] == 'PhiFSToric':
-        fsmodel = PhiFSModelToric(model, BASIS, kappa=kappa, toric_data=toric_data)
+        fsmodel = PhiFSModelToric(model, BASIS, toric_data=toric_data)
     elif args['model'] == 'MultFS':
-        fsmodel = MultFSModel(model, BASIS, kappa=kappa)
+        fsmodel = MultFSModel(model, BASIS)
     elif args['model'] == 'MatrixMultFS':
-        fsmodel = MatrixFSModel(model, BASIS, kappa=kappa)
+        fsmodel = MatrixFSModel(model, BASIS)
     elif args['model'] == 'MatrixMultFSToric':
-        fsmodel = MatrixFSModelToric(model, BASIS, kappa=kappa, toric_data=toric_data)
+        fsmodel = MatrixFSModelToric(model, BASIS, toric_data=toric_data)
     elif args['model'] == 'AddFS':
-        fsmodel = AddFSModel(model, BASIS, kappa=kappa)
+        fsmodel = AddFSModel(model, BASIS)
     elif args['model'] == 'Free':
-        fsmodel = FreeModel(model, BASIS, kappa=kappa)
+        fsmodel = FreeModel(model, BASIS)
     else:
         mcy_logger.error("{} is not a recognized option for a model".format(args['model']))
         return []
