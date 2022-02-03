@@ -230,8 +230,8 @@ class ToricPointGeneratorMathematica(PointGeneratorMathematica):
         self.vol_j_norm = toric_data['vol_j_norm']
         self.verbose = verbose
         self.selected_t = selected_t
-        self.ambient = 2 * self.selected_t if selected_t is not None  # hack to make the standard routine for auxiliary weight computation work. Note that for the toric case, the ambient space plays a different role and is not linked to the number of Kahler moduli
         self.ambient_dims = np.array([len(s) + 1 for s in toric_data['exps_sections']])
+        self.ambient = 2 * self.selected_t if selected_t is not None else self.ambient_dims  # hack to make the standard routine for auxiliary weight computation work. Note that for the toric case, the ambient space plays a different role and is not linked to the number of Kahler moduli
         self.lc = get_levicivita_tensor(int(self.nfold))
         
         if self.verbose == 1:
