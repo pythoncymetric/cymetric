@@ -230,7 +230,7 @@ class ToricPointGeneratorMathematica(PointGeneratorMathematica):
         self.vol_j_norm = toric_data['vol_j_norm']
         self.verbose = verbose
         self.selected_t = selected_t
-        self.ambient = 2 * self.selected_t  # hack to make the standard routine for auxiliary weight computation work. Note that for the toric case, the ambient space plays a different role and is not linked to the number of Kahler moduli
+        self.ambient = 2 * self.selected_t if selected_t is not None  # hack to make the standard routine for auxiliary weight computation work. Note that for the toric case, the ambient space plays a different role and is not linked to the number of Kahler moduli
         self.ambient_dims = np.array([len(s) + 1 for s in toric_data['exps_sections']])
         self.lc = get_levicivita_tensor(int(self.nfold))
         
@@ -308,6 +308,7 @@ class ToricPointGeneratorMathematica(PointGeneratorMathematica):
             pts = binary_deserialize(pts, consumer=ComplexFunctionConsumer())
         
         self.selected_t = np.array(pts[1], dtype=np.int)
+        self.ambient = 2 * self.selected_t
         return np.array(pts[0])
         
     def _fubini_study_n_metrics(self, points, kfactors=None):
