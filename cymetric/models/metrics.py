@@ -120,8 +120,7 @@ class VolkLoss(tfk.metrics.Metric):
         if sample_weight is not None:
             sample_weight = tf.cast(sample_weight, self.dtype)
             loss = tf.multiply(loss, sample_weight)
-        new_value = (tf.reduce_mean(loss, axis=-1) -
-                     self.volk_loss)/(self.count+1)
+        new_value = (tf.reduce_mean(loss, axis=-1) - self.volk_loss)/(self.count+1)
         self.volk_loss.assign_add(new_value)
         self.count.assign_add(1)
 

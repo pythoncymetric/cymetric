@@ -666,7 +666,10 @@ class PointGenerator:
         omega_squared = np.real(omegas * np.conj(omegas))
         weight = np.real(omega_squared / detg_norm)
         if normalize_to_vol_j:
-            weight = self.vol_j_norm * weight
+            fs_ref = self.fubini_study_metrics(points, vol_js=np.ones_like(self.kmoduli))
+            fs_ref_pb = np.einsum('xai,xij,xbj->xab', pbs, fs_ref, np.conj(pbs))
+            norm_fac = self.vol_j_norm * np.mean(np.real(np.linalg.det(fs_ref_pb)) / detg_norm)
+            weight = norm_fac * weight
         return weight
 
     def pullbacks(self, points, j_elim=None):

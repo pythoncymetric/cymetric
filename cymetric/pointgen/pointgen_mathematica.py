@@ -93,7 +93,7 @@ class PointGeneratorMathematica(CICYPointGenerator):
         self.selected_t = selected_t if selected_t is not None else np.zeros((len(self.ambient)), dtype=np.int)
         
         self.verbose = kwargs.get('verbose', 1)
-        if self.verbose == 1:
+        if self.verbose == 0 or self.verbose == 1:
             self.level = logging.DEBUG
         elif self.verbose == 2:
             self.level = logging.INFO
@@ -132,7 +132,7 @@ class PointGeneratorMathematica(CICYPointGenerator):
         mathematica_session.evaluate(wlexpr('Quiet[WaitAll[LaunchKernels[' + str(nproc) + ']]];'))
         logger.debug("Running with " + str(max(1, mathematica_session.evaluate(wlexpr('Length[Kernels[]]')))) + " Mathematica kernels.")
     
-    def generate_points(self, n_p, nproc=-1):
+    def generate_points(self, n_p, nproc=-1, **kwargs):
         r"""Generates complex points by calling the mathematica point generator
 
         Args:
@@ -277,7 +277,7 @@ class ToricPointGeneratorMathematica(PointGeneratorMathematica):
     def fubini_study_metrics(self, points, vol_js=None):
         return self._fubini_study_n_metrics(points, kfactors=vol_js)
         
-    def generate_points(self, n_p, nproc=-1):
+    def generate_points(self, n_p, nproc=-1, **kwargs):
         r"""Generates complex points by calling the mathematica point generator
 
         Args:

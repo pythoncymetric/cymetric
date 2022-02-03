@@ -308,8 +308,7 @@ class VolkCallback(tfk.callbacks.Callback):
             logs (dict, optional): history.history. Defaults to None.
         """
         prediction = self.model(self.X_val)
-        volk = self.compute_volk(prediction, self.weights,
-                                 self.omega, self.factor)
+        volk = self.compute_volk(prediction, self.weights, self.omega, self.factor)
 
         cb_res = volk.numpy().tolist()
         logs['volk_val'] = cb_res
