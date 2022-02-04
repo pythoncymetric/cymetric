@@ -21,6 +21,11 @@ from cymetric.models.callbacks import RicciCallback, SigmaCallback, KaehlerCallb
 from cymetric.models.metrics import SigmaLoss, KaehlerLoss, TransitionLoss, VolkLoss
 
 
+def point_vec_to_complex(p):
+    p = np.array(p)
+    plen = len(p)//2
+    return p[:, :plen] + 1.j*p[:, plen:]
+
 def to_numpy_arrays(my_args):
     for k, v in my_args.items():
         my_args[k] = np.array(v) if isinstance(v, list) else v
@@ -91,14 +96,9 @@ def generate_points(my_args):
     mcy_logger.info("Computing derivatives of J_FS, Omega, ...")
     prepare_basis_pickle(point_gen, args['outdir'], kappa)
     mcy_logger.debug("done")
-    
-    
-#     def point_vec_to_complex(p):
-#         plen = len(p)//2
-#         return p[:plen] + 1.j*p[plen:]
-#     
+
 #     data = np.load(os.path.join(args['outdir'], 'dataset.npz'))
-#     pts = np.array([point_vec_to_complex(p) for p in data['X_val']])
+#     pts = point_vec_to_complex(data['X_val'])
 #     weights, omegas = data['y_val'][:,-2], data['y_val'][:,-1]
 #     pbs = point_gen.pullbacks(pts)
 #     gFS = point_gen.fubini_study_metrics(pts)
@@ -288,14 +288,11 @@ def get_g(my_args):
 
 
 def get_g_fs(my_args):
-    def point_vec_to_complex(p):
-        plen = len(p)//2
-        return p[:plen] + 1.j*p[plen:]
     global mcy_logger
     mcy_logger.setLevel(logging.DEBUG)
     # don't process points to save time
     my_args = eval(my_args)
-    pts = np.array([point_vec_to_complex(p) for p in np.array(my_args['points'])])
+    pts = point_vec_to_complex(my_args['points'])
     del my_args['points']
     
     # parse arguments
@@ -310,16 +307,46 @@ def get_g_fs(my_args):
     fs_pbs = np.einsum('xai,xij,xbj->xab', pbs, fs, np.conj(pbs))
     return fs_pbs
 
-    
-def get_weights(my_args):
-    def point_vec_to_complex(p):
-        plen = len(p)//2
-        return p[:plen] + 1.j*p[plen:]
+def get_kahler_potential(my_args):
     global mcy_logger
     mcy_logger.setLevel(logging.DEBUG)
     # don't process points to save time
     my_args = eval(my_args)
-    pts = np.array([point_vec_to_complex(p) for p in np.array(my_args['points'])])
+    pts = my_args['points']
+    del my_args['points']
+    
+    # parse arguments
+    args = to_numpy_arrays(my_args)
+
+    # load toric data if exists/needed
+    toric_data = None
+    if args['model'] == 'PhiFSToric':
+        if os.path.exists(args['toric_data_path']):
+            toric_data = pickle.load(open(args['toric_data_path'], 'rb'))
+        else:
+            mcy_logger.error("Model set to {}, but {} with toric data not found.".format(args['model'], args['toric_data_path']))
+        
+    BASIS = prepare_tf_basis(pickle.load(open(os.path.join(args['outdir'], 'basis.pickle'), 'rb')))
+    pts = tf.convert_to_tensor(pts, dtype=tf.float32)
+    model = tfk.models.load_model(os.path.join(args['outdir'], 'model'))
+    if args['model'] == 'PhiFS':
+        fsmodel = PhiFSModel(model, BASIS)
+    elif args['model'] == 'PhiFSToric':
+        fsmodel = PhiFSModelToric(model, BASIS, toric_data=toric_data)
+    else:
+        mcy_logger.error("Calculating the Kahler potential for model {} is notsupported".format(args['model']))
+        return []
+
+    ks = fsmodel.get_kahler_potential(pts)
+    return ks.numpy()
+
+    
+def get_weights(my_args):
+    global mcy_logger
+    mcy_logger.setLevel(logging.DEBUG)
+    # don't process points to save time
+    my_args = eval(my_args)
+    pts = point_vec_to_complex(my_args['points'])
     del my_args['points']
     
     # parse arguments
@@ -331,14 +358,11 @@ def get_weights(my_args):
 
 
 def get_omegas(my_args):
-    def point_vec_to_complex(p):
-        plen = len(p)//2
-        return p[:plen] + 1.j*p[plen:]
     global mcy_logger
     mcy_logger.setLevel(logging.DEBUG)
     # don't process points to save time
     my_args = eval(my_args)
-    pts = np.array([point_vec_to_complex(p) for p in np.array(my_args['points'])])
+    pts = point_vec_to_complex(my_args['points'])
     del my_args['points']
     
     # parse arguments
@@ -351,14 +375,11 @@ def get_omegas(my_args):
 
 
 def get_pullbacks(my_args):
-    def point_vec_to_complex(p):
-        plen = len(p)//2
-        return p[:plen] + 1.j*p[plen:]
     global mcy_logger
     mcy_logger.setLevel(logging.DEBUG)
     # don't process points to save time
     my_args = eval(my_args)
-    pts = [point_vec_to_complex(p) for p in np.array(my_args['points'])]
+    pts = point_vec_to_complex(my_args['points'])
     del my_args['points']
     
     # parse arguments
