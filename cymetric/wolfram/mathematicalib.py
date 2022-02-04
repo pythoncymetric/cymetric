@@ -22,8 +22,10 @@ from cymetric.models.metrics import SigmaLoss, KaehlerLoss, TransitionLoss, Volk
 
 
 def point_vec_to_complex(p):
+    if len(p) == 0: 
+        return np.array([[]])
     p = np.array(p)
-    plen = len(p)//2
+    plen = len(p[0])//2
     return p[:, :plen] + 1.j*p[:, plen:]
 
 def to_numpy_arrays(my_args):
