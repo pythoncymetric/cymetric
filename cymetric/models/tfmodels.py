@@ -647,6 +647,37 @@ class PhiFSModel(FreeModel):
 
         return 1. / tf.math.reduce_mean(weights, axis=-1) * phi_pred
 
+    def get_kahler_potential(self, points):
+        r"""Computes the Kahler potential.
+
+        Args:
+            points (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
+
+        Returns:
+            tf.tensor([bSize], tf.float32): Kahler potential.
+        """
+        if self.nProjective > 1:
+            # we go through each ambient space factor and create the Kahler potential.
+            cpoints = tf.complex(
+                points[:, :self.degrees[0]],
+                points[:, self.ncoords:self.ncoords+self.degrees[0]])
+            k_fs = self._fubini_study_n_potentials(cpoints, n=self.degrees[0], t=self.BASIS['KMODULI'][0])
+            for i in range(1, self.nProjective):
+                s = tf.reduce_sum(self.degrees[:i])
+                e = s + self.degrees[i]
+                cpoints = tf.complex(points[:, s:e],
+                                     points[:, self.ncoords+s:self.ncoords+e])
+                k_fs_tmp = self._fubini_study_n_potentials(cpoints, n=self.degrees[i], t=self.BASIS['KMODULI'][i])
+                k_fs += k_fs_tmp
+        else:
+            cpoints = tf.complex(
+                points[:, :self.ncoords],
+                points[:, self.ncoords:2*self.ncoords])
+            k_fs = self._fubini_study_n_potentials(cpoints, t=self.BASIS['KMODULI'][0])
+
+        k_fs += tf.reshape(self.model(points), [-1])
+        return k_fs
+
 
 class ToricModel(FreeModel):
     r"""ToricModel is the base class of toric CYs and inherits from
@@ -1014,7 +1045,7 @@ class PhiFSModelToric(ToricModel):
             input_tensor (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
             weights (tf.tensor([bSize], tf.float32)): Weights.
             pred (tf.tensor([bSize, nfold, nfold], tf.complex64), optional):
-                Prediction from `self(input_tensor)`. Ignored for phi model
+                Prediction from `self(input_tensor)`. Ignored for Phi model.
 
         Returns:
             tf.tensor([bSize], tf.float32): Volk loss.
