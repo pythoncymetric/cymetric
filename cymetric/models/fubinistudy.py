@@ -402,22 +402,19 @@ class FSModel(tfk.Model):
         return tf.map_fn(self._generate_patches, combined)
 
     @tf.function
-    def _fubini_study_n_potentials(self, points, n=None, t=tf.complex(1., 0.)):
+    def _fubini_study_n_potentials(self, points, t=tf.complex(1., 0.)):
         r"""Computes the Fubini-Study Kahler potential on a single projective
         ambient space factor specified by n.
 
         Args:
             points (tf.tensor([bSize, ncoords], tf.complex64)): Coordinates of
                 the n-th projective spce.
-            n (int, optional): Degree of P**n. Defaults to None(=self.ncoords).
-            t (tf.complex, optional): Volume factor. Defaults to 1+0j.
+           t (tf.complex, optional): Volume factor. Defaults to 1+0j.
 
         Returns:
             tf.tensor([bsize], tf.float32):
                 FS-metric in the ambient space coordinates.
         """
-        if n is None:
-            n = self.ncoords
         point_square = tf.math.reduce_sum(tf.math.abs(points)**2, axis=-1)
         return tf.cast(t/self.pi, tf.float32) * tf.cast(tf.math.log(point_square), tf.float32)
 

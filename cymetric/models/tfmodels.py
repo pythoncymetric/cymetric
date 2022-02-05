@@ -661,13 +661,13 @@ class PhiFSModel(FreeModel):
             cpoints = tf.complex(
                 points[:, :self.degrees[0]],
                 points[:, self.ncoords:self.ncoords+self.degrees[0]])
-            k_fs = self._fubini_study_n_potentials(cpoints, n=self.degrees[0], t=self.BASIS['KMODULI'][0])
+            k_fs = self._fubini_study_n_potentials(cpoints, t=self.BASIS['KMODULI'][0])
             for i in range(1, self.nProjective):
                 s = tf.reduce_sum(self.degrees[:i])
                 e = s + self.degrees[i]
                 cpoints = tf.complex(points[:, s:e],
                                      points[:, self.ncoords+s:self.ncoords+e])
-                k_fs_tmp = self._fubini_study_n_potentials(cpoints, n=self.degrees[i], t=self.BASIS['KMODULI'][i])
+                k_fs_tmp = self._fubini_study_n_potentials(cpoints, t=self.BASIS['KMODULI'][i])
                 k_fs += k_fs_tmp
         else:
             cpoints = tf.complex(
@@ -738,12 +738,12 @@ class ToricModel(FreeModel):
         """
         # FS prediction
         return self.fubini_study_pb(input_tensor, j_elim=j_elim)
-        
+
     def fubini_study_pb(self, points, pb=None, j_elim=None):
         r"""Returns toric FS equivalent for each point.
 
-        .. math:: 
-        
+        .. math::
+
             J = t^\alpha J_\alpha \quad \text{ with: }
                 J_\alpha = \frac{i}{2\pi} \partial \bar\partial \ln \rho_\alpha
 
@@ -753,27 +753,24 @@ class ToricModel(FreeModel):
             points (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
             pb (tf.tensor([bSize, nfold, ncoords], tf.float32)):
                 Pullback at each point. Overwrite j_elim. Defaults to None.
-            j_elim (tf.tensor([bSize, nHyper], tf.int64), optional): 
+            j_elim (tf.tensor([bSize, nHyper], tf.int64), optional):
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
-                
+
         Returns:
             tf.tensor([bSize, nfold, nfold], tf.complex64):
                 Kaehler metric at each point.
         """
         # NOTE: Cannot use super since for toric models we have only one toric space, but more than one Kahler modulus
         pullbacks = self.pullbacks(points, j_elim=j_elim) if pb is None else pb
-        cpoints = tf.complex(points[:, :self.ncoords],
-                             points[:, self.ncoords:])
+        cpoints = tf.complex(points[:, :self.ncoords], points[:, self.ncoords:])
 
         Js = self._fubini_study_n_metrics(cpoints, n=0, t=self.kmoduli[0])
         if len(self.kmoduli) != 1:
             for i in range(1, len(self.kmoduli)):
-                Js += self._fubini_study_n_metrics(
-                    cpoints, n=i, t=self.kmoduli[i])
-        
-        gFSpb = tf.einsum('xai,xij,xbj->xab',
-                          pullbacks, Js, tf.math.conj(pullbacks))
+                Js += self._fubini_study_n_metrics(cpoints, n=i, t=self.kmoduli[i])
+
+        gFSpb = tf.einsum('xai,xij,xbj->xab', pullbacks, Js, tf.math.conj(pullbacks))
         return gFSpb
 
     @tf.function
@@ -1029,6 +1026,63 @@ class PhiFSModelToric(ToricModel):
         fs_cont = self.fubini_study_pb(input_tensor, pb=pbs, j_elim=j_elim)
         # return g_fs + \del\bar\del\phi
         return tf.math.add(fs_cont, dd_phi)
+
+    @tf.function
+    def _fubini_study_n_potentials(self, points, t=tf.complex(1., 0.)):
+        r"""Computes the Fubini-Study equivalent on the ambient space for each
+        Kaehler modulus.
+
+        .. math:: g_\alpha = \partial_i \bar\partial_j \ln \rho_\alpha
+
+        Args:
+            points (tf.tensor([bSize, ncoords], tf.complex64)): Points.
+            t (tf.complex, optional): Volume factor. Defaults to 1+0j.
+
+        Returns:
+            tf.tensor([bSize, ncoords, ncoords], tf.complex64):
+                Metric contribution at each point for t_n.
+        """
+        alpha = 0 if n is None else n
+        degrees = self.sections[alpha]
+        ms = tf.math.pow(points[:, tf.newaxis, :], degrees[tf.newaxis, :, :])
+        ms = tf.math.reduce_prod(ms, axis=int(-1))
+        mss = ms * tf.math.conj(ms)
+        kappa_alphas = tf.reduce_sum(mss, int(-1))
+        return tf.cast(t/np.pi, dtype=tf.float32) * tf.cast(tf.math.log(kappa_alphas), tf.float32)
+
+    def get_kahler_potential(self, points):
+        r"""Returns toric equivalent of the FS Kahler potential for each point.
+
+        .. math::
+
+            J = t^\alpha J_\alpha \quad \text{ with: }
+                J_\alpha = \frac{i}{2\pi} \partial \bar\partial \ln \rho_\alpha
+
+        :math:`\rho_\alpha` is a basis of sections.
+
+        Args:
+            points (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
+            pb (tf.tensor([bSize, nfold, ncoords], tf.float32)):
+                Pullback at each point. Overwrite j_elim. Defaults to None.
+            j_elim (tf.tensor([bSize, nHyper], tf.int64), optional):
+                Coordinates(s) to be eliminated in the pullbacks.
+                If None will take max(dQ/dz). Defaults to None.
+
+        Returns:
+            tf.tensor([bSize, nfold, nfold], tf.complex64):
+                Kaehler metric at each point.
+        """
+        cpoints = tf.complex(points[:, :self.ncoords], points[:, self.ncoords:])
+
+        k_fs = self._fubini_study_n_potentials(cpoints, t=self.kmoduli[0])
+        if len(self.kmoduli) != 1:
+            for i in range(1, len(self.kmoduli)):
+                k_fs += self._fubini_study_n_potentials(cpoints, t=self.kmoduli[i])
+
+        k_fs += tf.reshape(self.model(points), [-1])
+        return k_fs
+
+
 
     def compute_volk_loss(self, input_tensor, weights, pred=None):
         r"""Computes volk loss.
