@@ -1028,7 +1028,7 @@ class PhiFSModelToric(ToricModel):
         return tf.math.add(fs_cont, dd_phi)
 
     @tf.function
-    def _fubini_study_n_potentials(self, points, t=tf.complex(1., 0.)):
+    def _fubini_study_n_potentials(self, points, n=None, t=tf.complex(1., 0.)):
         r"""Computes the Fubini-Study equivalent on the ambient space for each
         Kaehler modulus.
 
@@ -1077,7 +1077,7 @@ class PhiFSModelToric(ToricModel):
         k_fs = self._fubini_study_n_potentials(cpoints, t=self.kmoduli[0])
         if len(self.kmoduli) != 1:
             for i in range(1, len(self.kmoduli)):
-                k_fs += self._fubini_study_n_potentials(cpoints, t=self.kmoduli[i])
+                k_fs += self._fubini_study_n_potentials(cpoints, i, t=self.kmoduli[i])
 
         k_fs += tf.reshape(self.model(points), [-1])
         return k_fs
