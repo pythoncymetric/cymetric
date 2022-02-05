@@ -1072,7 +1072,7 @@ class PhiFSModelToric(ToricModel):
             tf.tensor([bSize, nfold, nfold], tf.complex64):
                 Kaehler metric at each point.
         """
-        cpoints = tf.complex(points[:, :self.ncoords], points[:, self.ncoords:])
+        cpoints = tf.cast(tf.complex(points[:, :self.ncoords], points[:, self.ncoords:]), dtype=tf.complex64)
 
         k_fs = self._fubini_study_n_potentials(cpoints, t=self.kmoduli[0])
         if len(self.kmoduli) != 1:
