@@ -576,7 +576,7 @@ If[Length[Dimensions[dataset]]==1,pts={dataset},pts=dataset];
 ];
 {omegaSquared,tmp}=GetOmegaSquared[dataset,"Python"->python,"Session"->session,"Dir"->outDir];
 {gs,tmp}=CYMetric[pts,"Python"->python,"Session"->session,"Model"->model,"Dir"->outDir];
-dets=Table[Det[gs[[i,2]]],{i,Length[gs]}];
+dets=Det/@gs;
 dets=dets /volJNorm;
 res=omegaSquared/dets;
 Return[{Re[Normal[res]],session}];
