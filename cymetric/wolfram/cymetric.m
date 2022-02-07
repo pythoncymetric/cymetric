@@ -443,16 +443,18 @@ Return[{Chop[Normal[res]],session}];
 )];
 
 Options[GetKahlerPotential]={"Python"->Null,"Session"->Null,"Dir"->FileNameJoin[{$WORKDIR,"test"}]};
-GetKahlerPotential[dataset_:"all",OptionsPattern[]]:=
+GetKahlerPotential[dataset_:{},OptionsPattern[]]:=
 Module[{python,session,outDir,res,pts,args},(
 python=OptionValue["Python"];
 session=OptionValue["Session"];
 outDir=OptionValue["Dir"];
 session=GetSession[python,session];
+res={};
 If[session===Null,Return[{"Could not start a Python Kernel with all dependencies installed.",session}]];
 If[!ListQ[dataset],
 Print["Please speicfy the points as a list of list of complex numbers"];
 Return[{{},session}];
+,
 If[Length[dataset]==0,Return[{{},session}]];
 If[Length[Dimensions[dataset]]==1,pts={Join[Re[dataset],Im[dataset[[;;]]]]},pts=Table[Join[Re[dataset[[i]]],Im[dataset[[i]]]],{i,Length[dataset]}]];
 args="{
@@ -461,7 +463,6 @@ args="{
        }";
 res=ExternalEvaluate[session,"mcy.get_kahler_potential"->args];
 If[FailureQ[res],Print["An error occurred."];Print[res];Return[{res,session}]];
-
 ];
 Return[{Normal[res],session}];
 )];

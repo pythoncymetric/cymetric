@@ -336,7 +336,7 @@ def get_kahler_potential(my_args):
     elif args['model'] == 'PhiFSToric':
         fsmodel = PhiFSModelToric(model, BASIS, toric_data=toric_data)
     else:
-        mcy_logger.error("Calculating the Kahler potential for model {} is notsupported".format(args['model']))
+        mcy_logger.error("Calculating the Kahler potential for model {} is not supported".format(args['model']))
         return []
 
     ks = fsmodel.get_kahler_potential(pts)
