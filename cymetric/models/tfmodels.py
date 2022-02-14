@@ -573,19 +573,25 @@ class PhiFSModel(FreeModel):
         super(PhiFSModel, self).__init__(*args, **kwargs)
         # automatic in Phi network
         self.learn_kaehler = tf.cast(False, dtype=tf.bool)
-    
+        if self.model.layers[-1].bias is None:
+            # then there won't be issues with tracing.
+            self.learn_volk = tf.cast(False, dtype=tf.bool)
+        else:
+            # at least set loss coefficient to zero.
+            self.alpha[-1] = tf.Variable(0., dtype=tf.float32)
+
     def call(self, input_tensor, training=True, j_elim=None):
         r"""Prediction of the model.
 
-        .. math:: 
-        
+        .. math::
+
             g_{\text{out}; ij} = g_{\text{FS}; ij} + \
                 partial_i \bar{\partial}_j \phi_{\text{NN}}
 
         Args:
             input_tensor (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
             training (bool, optional): Not used. Defaults to True.
-            j_elim (tf.tensor([bSize, nHyper], tf.int64), optional): 
+            j_elim (tf.tensor([bSize, nHyper], tf.int64), optional):
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
 
@@ -612,29 +618,29 @@ class PhiFSModel(FreeModel):
         dd_phi = tf.complex(dx_dx_phi + dy_dy_phi, dx_dy_phi - dy_dx_phi)
         pbs = self.pullbacks(input_tensor, j_elim=j_elim)
         dd_phi = tf.einsum('xai,xij,xbj->xab', pbs, dd_phi, tf.math.conj(pbs))
-        
+
         # fs metric
         fs_cont = self.fubini_study_pb(input_tensor, pb=pbs, j_elim=j_elim)
         # return g_fs + \del\bar\del\phi
         return tf.math.add(fs_cont, dd_phi)
 
     def compute_volk_loss(self, input_tensor, weights, pred=None):
-        r"""Computes volk loss. 
+        r"""Computes volk loss.
 
         .. math::
-        
+
             \mathcal{L}_{\text{vol}_k} = \int_X \phi
 
         The last term is constant over the whole batch. Thus, the volk loss
-        is *batch dependent*. This loss contribution should be satisfied by 
+        is *batch dependent*. This loss contribution should be satisfied by
         construction but is included for tracing purposes.
-        
+
         Args:
             input_tensor (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
             weights (tf.tensor([bSize], tf.float32)): Weights.
-            pred (tf.tensor([bSize, nfold, nfold], tf.complex64), optional): 
+            pred (tf.tensor([bSize, nfold, nfold], tf.complex64), optional):
                 Prediction from `self(input_tensor)`. Ignored for Phi model.
-            
+
         Returns:
             tf.tensor([bSize], tf.float32): Volk loss.
         """
@@ -646,6 +652,40 @@ class PhiFSModel(FreeModel):
         phi_pred = tf.math.abs(phi_pred)
 
         return 1. / tf.math.reduce_mean(weights, axis=-1) * phi_pred
+
+    def compute_transition_loss(self, points):
+        r"""Computes transition loss at each point. In the case of the Phi model, we demand that \phi(\lambda^q_i z_i)=\phi(z_i)
+
+        Args:
+            points (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
+
+        Returns:
+            tf.tensor([bSize], tf.float32): Transition loss at each point.
+        """
+        inv_one_mask = self._get_inv_one_mask(points)
+        patch_indices = tf.where(~inv_one_mask)[:, 1]
+        patch_indices = tf.reshape(patch_indices, (-1, self.nProjective))
+        current_patch_mask = self._indices_to_mask(patch_indices)
+        fixed = self._find_max_dQ_coords(points)
+        cpoints = tf.complex(points[:, :self.ncoords], points[:, self.ncoords:])
+        if self.nhyper == 1:
+            other_patches = tf.gather(self.fixed_patches, fixed)
+        else:
+            combined = tf.concat((fixed, patch_indices), axis=-1)
+            other_patches = self._generate_patches_vec(combined)
+
+        other_patches = tf.reshape(other_patches, (-1, self.nProjective))
+        other_patch_mask = self._indices_to_mask(other_patches)
+        # NOTE: This will include same to same patch transitions
+        exp_points = tf.repeat(cpoints, self.nTransitions, axis=-2)
+        patch_points = self._get_patch_coordinates(exp_points, tf.cast(other_patch_mask, dtype=tf.bool))
+        real_patch_points = tf.concat((tf.math.real(patch_points), tf.math.imag(patch_points)), axis=-1)
+        gj = self.model(real_patch_points, training=True)
+        gi = tf.repeat(self.model(points), self.nTransitions, axis=0)
+        all_t_loss = tf.math.abs(gi-gj)
+        all_t_loss = tf.reshape(all_t_loss, (-1, self.nTransitions))
+        all_t_loss = tf.math.reduce_sum(all_t_loss**self.n[2], axis=-1)
+        return all_t_loss/(self.nTransitions*self.nfold**2)
 
     def get_kahler_potential(self, points):
         r"""Computes the Kahler potential.
