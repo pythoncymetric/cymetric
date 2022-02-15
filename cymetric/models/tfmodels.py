@@ -1067,6 +1067,46 @@ class PhiFSModelToric(ToricModel):
         # return g_fs + \del\bar\del\phi
         return tf.math.add(fs_cont, dd_phi)
 
+    def compute_transition_loss(self, points, num_random_scalings=10):
+        r"""Computes transition loss at each point. In the case of the Phi model, we demand that \phi(\lambda^q_i z_i)=\phi(z_i)
+
+        Args:
+            points (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
+            num_random_scalings (int): If None, uses scalings for each patch to set one coordinate to one. 
+                                       If a number, uses this many random scalings for \lambda
+
+        Returns:
+            tf.tensor([bSize], tf.float32): Transition loss at each point.
+        """
+        if num_random_scalings is None:
+        	return super(PhiFSModelToric, self).compute_transition_loss(points)
+        
+        cpoints = tf.complex(points[:, :self.ncoords], points[:, self.ncoords:])
+        num_pns = self.glsm_charges.shape[0]
+        
+        # we scale the lambdas_rand to have abs value in [0.1, 0.9]
+        scale_factor_rand = tf.cast(tf.random.uniform(minval=0.1, maxval=0.9, shape=(num_random_scalings, num_pns), dtype=tf.float32), dtype=tf.complex64)
+		scale_factor_rand = tf.repeat(tf.expand_dims(scale_factor_rand, -1), repeats=self.ncoords, axis=-1)        
+        
+        # real and imaginary part of random lambdas (we draw a different one for each ambient P^n)
+		lambdas_rand = tf.random.uniform(minval=-1, maxval=1, shape=(num_random_scalings, num_pns, 2), dtype=tf.float32)
+		lambdas_rand = tf.complex(lambdas_rand[:,:,0], lambdas_rand[:,:,1])
+		lambdas_rand = tf.repeat(tf.expand_dims(lambdas_rand, -1), repeats=self.ncoords, axis=-1)
+		lambdas_rand = scale_factor_rand * lambdas_rand/(lambdas_rand * tf.math.conj(lambdas_rand))**(.5)  # rescale \lambdas
+		lambdas_rand = lambdas_rand ** self.glsm_charges
+		lambdas_rand = tf.reduce_prod(lambdas_rand, 1)
+
+		scaled_points = tf.einsum('xi,ai->xai', cpoints, lambdas_rand)
+		scaled_points = tf.reshape(scaled_points, (-1, self.ncoords))  # this has now shape (batch_size*num_random_scalings, ncoords)
+        
+        real_patch_points = tf.concat((tf.math.real(scaled_points), tf.math.imag(scaled_points)), axis=-1)
+        gj = self.model(real_patch_points, training=True)
+        gi = tf.repeat(self.model(points), num_random_scalings, axis=0)
+        all_t_loss = tf.math.abs(gi-gj)
+        all_t_loss = tf.reshape(all_t_loss, (-1, num_random_scalings))
+        all_t_loss = tf.math.reduce_sum(all_t_loss**self.n[2], axis=-1)
+        return all_t_loss / num_random_scalings    
+ 
     @tf.function
     def _fubini_study_n_potentials(self, points, n=None, t=tf.complex(1., 0.)):
         r"""Computes the Fubini-Study equivalent on the ambient space for each
