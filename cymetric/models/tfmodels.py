@@ -653,7 +653,43 @@ class PhiFSModel(FreeModel):
 
         return 1. / tf.math.reduce_mean(weights, axis=-1) * phi_pred
 
-    def compute_transition_loss(self, points):
+    def compute_transition_loss(self, points, num_random_scalings=10):
+        r"""Computes transition loss at each point. In the case of the Phi model, we demand that \phi(\lambda^q_i z_i)=\phi(z_i)
+
+        Args:
+            points (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
+            num_random_scalings (int): If None, uses scalings for each patch to set one coordinate to one. 
+                                       If a number, uses this many random scalings for \lambda
+
+        Returns:
+            tf.tensor([bSize], tf.float32): Transition loss at each point.
+        """
+        if num_random_scalings is None:
+        	return compute_transition_loss2(points)
+        
+        cpoints = tf.complex(points[:, :self.ncoords], points[:, self.ncoords:])
+        
+        num_pns = len(self.degrees)
+        # real and imaginary part of random lambdas (we draw a different one for each ambient P^n)
+        lambdas_rand = tf.random.uniform(minval=-1, maxval=1, shape=(num_random_scalings, num_pns, 2), dtype=tf.float32)
+        # we scale the lambdas_rand to have abs value in [0.1, 0.9]
+        scale_factor_rand = tf.cast(tf.random.uniform(minval=0.1, maxval=0.9, shape=(num_random_scalings, num_pns), dtype=tf.float32), dtype=tf.complex64)
+        scale_factor_rand = tf.repeat(scale_factor_rand, repeats=self.degrees, axis=-1)
+        lambdas_rand = tf.complex(lambdas_rand[:,:,0], lambdas_rand[:,:,1])
+        lambdas_rand = tf.repeat(lambdas_rand, repeats=self.degrees, axis=-1)  # user same lambda_i on all P^n coordinates
+        lambdas_rand = scale_factor_rand * lambdas_rand/(lambdas_rand * tf.math.conj(lambdas_rand))**(.5)  # rescale \lambdas
+        scaled_points = tf.einsum('xi,ai->xai', cpoints, lambdas_rand)
+        scaled_points = tf.reshape(scaled_points, (-1, self.ncoords)) # scaled_points now has shape (batch_size * num_random_scalings, self.ncoords)
+        
+        real_patch_points = tf.concat((tf.math.real(scaled_points), tf.math.imag(scaled_points)), axis=-1)
+        gj = self.model(real_patch_points, training=True)
+        gi = tf.repeat(self.model(points), num_random_scalings, axis=0)
+        all_t_loss = tf.math.abs(gi-gj)
+        all_t_loss = tf.reshape(all_t_loss, (-1, num_random_scalings))
+        all_t_loss = tf.math.reduce_sum(all_t_loss**self.n[2], axis=-1)
+        return all_t_loss / num_random_scalings
+        
+    def compute_transition_loss2(self, points):
         r"""Computes transition loss at each point. In the case of the Phi model, we demand that \phi(\lambda^q_i z_i)=\phi(z_i)
 
         Args:
@@ -673,7 +709,7 @@ class PhiFSModel(FreeModel):
         else:
             combined = tf.concat((fixed, patch_indices), axis=-1)
             other_patches = self._generate_patches_vec(combined)
-
+        
         other_patches = tf.reshape(other_patches, (-1, self.nProjective))
         other_patch_mask = self._indices_to_mask(other_patches)
         # NOTE: This will include same to same patch transitions
