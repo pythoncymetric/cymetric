@@ -56,23 +56,23 @@ def get_w_of_nowhere_vanishing_monomial(fan, kahler_cone_div, patch_index):
     return w_star
 
     
-def intersection_numbers(TV):
+def intersection_numbers(tv):
     """ Takes TV, returns intersection numbers  """
     HH = TV.cohomology_ring()
-    c1 = HH(-TV.K())
+    c1 = HH(-tv.K())
     dim_cy = TV.ambient_space().dimension() - 1
 
     # generator of Kahler cone
     J = []
-    for D in TV.Kaehler_cone().rays():
+    for D in tv.Kaehler_cone().rays():
         J += [HH(D.lift())]
 
-    intersection_nums = np.zeros(tuple([len(J) for _ in dim_cy]), dtype=np.int32)
+    intersection_nums = np.zeros(tuple([len(J) for _ in range(int(dim_cy))]), dtype=np.int32)
     for inds in itertools.product(range(len(J)), repeat=dim_cy):
         integrand = c1
         for i in inds:
             integrand *= J[i]
-        intersection_nums[inds] += TV.integrate(integrand)
+        intersection_nums[inds] += tv.integrate(integrand)
 
     return intersection_nums
 
