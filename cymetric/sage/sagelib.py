@@ -60,7 +60,7 @@ def intersection_numbers(TV):
     """ Takes TV, returns intersection numbers  """
     HH = TV.cohomology_ring()
     c1 = HH(-TV.K())
-    dim_cy  = tv.ambient_space().dimension() - 1
+    dim_cy = TV.ambient_space().dimension() - 1
 
     # generator of Kahler cone
     J = []
@@ -71,7 +71,7 @@ def intersection_numbers(TV):
     for inds in itertools.product(range(len(J)), repeat=dim_cy):
         integrand = c1
         for i in inds:
-        	integrand *= J[i]
+            integrand *= J[i]
         intersection_nums[inds] += TV.integrate(integrand)
 
     return intersection_nums
