@@ -1,6 +1,6 @@
 # tested with Sage 9.x
 from sage.all import *
-import itertools as it
+import itertools
 import numpy as np
 import os
 import pickle
@@ -55,22 +55,26 @@ def get_w_of_nowhere_vanishing_monomial(fan, kahler_cone_div, patch_index):
     w_star = section_vertices_dual_poly[no_vanish_pos]
     return w_star
 
-
-def triple_intersection(TV):
-    """ Takes TV, returns triple intersection numbers  """
+    
+def intersection_numbers(TV):
+    """ Takes TV, returns intersection numbers  """
     HH = TV.cohomology_ring()
     c1 = HH(-TV.K())
+    dim_cy  = tv.ambient_space().dimension() - 1
 
-    # generator of kahlercone
+    # generator of Kahler cone
     J = []
     for D in TV.Kaehler_cone().rays():
         J += [HH(D.lift())]
 
-    triple = np.zeros((len(J), len(J), len(J)), dtype=np.int32)
-    for i, j, k in it.product(range(len(J)), repeat=3):
-        triple[i, j, k] += TV.integrate(c1 * J[i] * J[j] * J[k])
+    intersection_nums = np.zeros(tuple([len(J) for _ in dim_cy]), dtype=np.int32)
+    for inds in itertools.product(range(len(J)), repeat=dim_cy):
+        integrand = c1
+        for i in inds:
+        	integrand *= J[i]
+        intersection_nums[inds] += TV.integrate(integrand)
 
-    return triple
+    return intersection_nums
 
 
 def get_homogeneous_coords_from_s_alphas(fan, kahler_cone_div, patch_index):
@@ -176,8 +180,11 @@ def prepare_toric_cy_data(tv, out_dir, exp_aK=None, coeff_aK=None, use_groebner=
 
     # compute volume normalization at (t_1,t_2,...) = (1,1,...)
     kahler_form = sum(r.lift().cohomology_class() for r in KC.rays())
-    vol_j = tv.integrate(-tv.K().cohomology_class() * kahler_form * kahler_form * kahler_form)
-    triple = triple_intersection(tv)
+    integrand = -tv.K().cohomology_class()
+    for _ in range(int(dim_cy)):
+        integrand *= kahler_form
+    vol_j = tv.integrate(integrand)
+    int_nums = intersection_numbers(tv)
     res = {
         "dim_cy":		 int(dim_cy),
         "vol_j_norm":	 int(vol_j),
@@ -188,7 +195,7 @@ def prepare_toric_cy_data(tv, out_dir, exp_aK=None, coeff_aK=None, use_groebner=
         "glsm_charges":	 [[int(x[i]) for i in range(len(x)-1)] for x in MC.rays()],
         "non_ci_coeffs": section_relation_coeffs,
         "non_ci_exps":	 section_relation_exps,
-        "triple":		 triple,
+        "int_nums":		 int_nums,
     }
 
     os.makedirs(os.path.dirname(out_dir), exist_ok=True)
