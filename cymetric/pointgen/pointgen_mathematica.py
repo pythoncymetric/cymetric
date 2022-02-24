@@ -196,6 +196,7 @@ class PointGeneratorMathematica(CICYPointGenerator):
             point_weights['omega'] = self.holomorphic_volume_form(points[0:n_p])
         return point_weights
 
+
 class ToricPointGeneratorMathematica(PointGeneratorMathematica):
     r"""ToricPointGeneratorMathematica class.
 
