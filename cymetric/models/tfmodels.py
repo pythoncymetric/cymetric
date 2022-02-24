@@ -383,16 +383,20 @@ class FreeModel(FSModel):
         """
         if pred is None:
             pred = self(input_tensor)
+        weight_norm = tf.einsum('i,j->ij', weights, tf.ones_like(weights))
+        weight_norm = tf.math.reduce_mean(weight_norm, axis=-1)
         # hack to make tracing work even though we reduce over batch dimension
         det_pred = tf.math.real(tf.linalg.det(pred))
         det_pred = tf.einsum('i,j->ij', det_pred, tf.ones_like(det_pred))
         det_pred = tf.einsum('ij,i->ji', det_pred, weights)
         det_pred = tf.math.reduce_mean(det_pred, axis=-1)
+        det_pred /= weight_norm
         g_fs = self.fubini_study_pb(input_tensor)
         det_fs = tf.math.real(tf.linalg.det(g_fs))
         det_fs = tf.einsum('i,j->ij', det_fs, tf.ones_like(det_fs))
         det_fs = tf.einsum('ij,i->ji', det_fs, weights)
         det_fs = tf.math.reduce_mean(det_fs*weights)
+        det_fs /= weight_norm
         return tf.math.abs(det_fs-det_pred)**self.n[4]
 
     def save(self, filepath, **kwargs):
