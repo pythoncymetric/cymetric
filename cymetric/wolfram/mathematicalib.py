@@ -119,7 +119,6 @@ def train_NN(my_args):
     
     args = to_numpy_arrays(eval(my_args))
     mcy_logger.setLevel(args['logger_level'])
-    mcy_logger.setLevel(logging.DEBUG)
     mcy_logger.debug(args)
     
     
