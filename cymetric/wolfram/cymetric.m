@@ -1,655 +1,1238 @@
 (* ::Package:: *)
 
-(* ::Input::Initialization:: *)
 BeginPackage["cymetric`"]
 
 
-(* ::Input::Initialization:: *)
 (*
 This package provides a Mathematica interface for the Python cymetric paper. Authors Fabian Ruehle and Robin Schneider. For more information visit https://github.com/pythoncymetric/cymetric 
 *)
-GetSetting::usage="GetSetting[k] retrieves the value of k from $SETTINGSFILE.\n* Input:\n  - k (string): The entry whose value shall be retrieved\n* Return:\n  - The value v (string) of entry k, or Null if entry k not found\n* Example:\n  - GetSetting[\"Python\"]";
-ChangeSetting::usage="ChangeSetting[k, v] sets the value of entry k to v in $SETTINGSFILE.\n* Input:\n  - k (string): The entry whose value shall be set\n  - v (string): The value for entry k\n* Return:\n  - Null\n* Example:\n  - ChangeSetting[\"Python\",\"/usr/bin/python3\"]";
-DeleteSetting::usage="DeleteSetting[k] deletes the entry k in $SETTINGSFILE.\n* Input:\n  - k (string): The entry that shall be deleted\n* Return:\n  - Null\n* Example:\n  - DeleteSetting[\"Python\"]";
-Setup::usage="Setup[path, Options] finds a valid Python executable; if setup has been run before, it uses the path from global settings. Else it finds a good Python 3 interpreter and creates a virtual environment and patches mathematica to work with python >= 3.7.\n* Input:\n  - path (string): Sets up a python venv in path (defaults to ./venv).\n* Options (run Options[Setup] to see default values):\n  - ForceReinstall (bool): Whether the venv should be reinstalled if it already exists\n  - PythonForVENV (str): Path to Python executable that should be used for creating the virtual environment. If not provided, mathematica will search compatible ones and use the first one that works. \n* Return:\n  - python (string): path to python venv executable\n* Example:\n  - Setup[]";
-GeneratePoints::usage="GeneratePoints[poly,dimPs,variables,Options] generates points on the CY specified by poly in an ambient space of dimPs.\n* Input:\n  - poly (list of polynomials): list of polynomials that define the CY.\n  - dimPs (list of ints): list of dimensions of the product of projective ambient spaces.\n  - variables [optional] (list of list of vars): list of list of variables (one for each projective ambient space). If not provided, alphabetical ordering is assumed.\n* Options (run Options[GeneratePoints] to see default values):\n  - KahlerModuli (list of floats): Kahler moduli \!\(\*SubscriptBox[\(t\), \(i\)]\) of the i'th ambient space factor (defaults to all 1)\n  - Points (int): Number of points to generate (defaults to 200,000)\n  - Precision (int): WorkingPrecision to use when generating the points (defaults to 20)\n  - VolJNorm (float): Normalization for the volume, input int_X J^n at t1=t2=...=1 (defaults to 1)\n  - Python (string): python executable to use (defaults to the one of $SETTINGSFILE)\n  - Session (ExternalSessionObject): Python session with all dependencies loaded (if not provided, a new one will be generated)\n  - Dir (string): Directory where points will be saved\n  - Verbose (int): Verbose level (the higher, the more info is printed)\n* Return:\n  - res (object): Null if no error occured, otherwise a string with the error\n  - session (ExternalSessionObject): The session object used in the coomputation (for potential faster future reuse) \n* Example:\n  - GeneratePoints[{\!\(\*SuperscriptBox[SubscriptBox[\(z\), \(0\)], \(5\)]\)+\!\(\*SuperscriptBox[SubscriptBox[\(z\), \(1\)], \(5\)]\)+\!\(\*SuperscriptBox[SubscriptBox[\(z\), \(2\)], \(5\)]\)+\!\(\*SuperscriptBox[SubscriptBox[\(z\), \(3\)], \(5\)]\)+\!\(\*SuperscriptBox[SubscriptBox[\(z\), \(4\)], \(5\)]\)},{4},\"Points\"\[Rule]200000,\"KahlerModuli\"\[Rule]{1},\"Dir\"\[Rule]\"./test\"]";
-GeneratePointsToric::usage="GeneratePointsToric[PathToToricInfo,Options] generates points on the CY specified by the toric variety that has been analyzed by SAGE in PathToToricInfo. \n* Input:\n  - PathToToricInfo (str): Path where SAGE stored the info on the toirc CY.\n* Options (run Options[GeneratePoints] to see default values):\n  - KahlerModuli (list of floats): Kahler moduli \!\(\*SubscriptBox[\(t\), \(i\)]\) of the i'th ambient space factor (defaults to all 1)\n  - Points (int): Number of points to generate (defaults to 200,000)\n  - Precision (int): WorkingPrecision to use when generating the points (defaults to 20)\n  - Python (string): python executable to use (defaults to the one of $SETTINGSFILE)\n  - Session (ExternalSessionObject): Python session with all dependencies loaded (if not provided, a new one will be generated)\n  - Dir (string): Directory where points will be saved\n  - Verbose (int): Verbose level (the higher, the more info is printed)\n* Return:\n  - res (object): Null if no error occured, otherwise a string with the error\n  - session (ExternalSessionObject): The session object used in the coomputation (for potential faster future reuse) \n* Example:\n  - GeneratePoints[{\!\(\*SuperscriptBox[SubscriptBox[\(z\), \(0\)], \(5\)]\)+\!\(\*SuperscriptBox[SubscriptBox[\(z\), \(1\)], \(5\)]\)+\!\(\*SuperscriptBox[SubscriptBox[\(z\), \(2\)], \(5\)]\)+\!\(\*SuperscriptBox[SubscriptBox[\(z\), \(3\)], \(5\)]\)+\!\(\*SuperscriptBox[SubscriptBox[\(z\), \(4\)], \(5\)]\)},{4},\"Points\"\[Rule]200000,\"KahlerModuli\"\[Rule]{1},\"Dir\"\[Rule]\"./test\"]";
-TrainNN::usage="TrainNN[Options] trains a NN to approximate the CY metric.\n* Options (run Options[TrainNN] to see default values):\n  - Model (string): Choices are:\n     - PhiFS: The NN learns a scalar function \[Phi] s.t. \!\(\*SubscriptBox[\(g\), \(CY\)]\)=\!\(\*SubscriptBox[\(g\), \(FS\)]\)+\[PartialD]\!\(\*OverscriptBox[\(\[PartialD]\), \(_\)]\)\[Phi]\n     - PhiFSToric: Like PhiFS, but for CYs built from 4D toric varieties (need to specify location of toric info as generated from SAGE in Option ToricDataPath).\n     - MultFS: The NN learns a matrix \!\(\*SubscriptBox[\(g\), \(NN\)]\) s.t. \!\(\*SubscriptBox[\(g\), \(CY\)]\)=\!\(\*SubscriptBox[\(g\), \(FS\)]\) * (id + \!\(\*SubscriptBox[\(g\), \(NN\)]\)) where id is the identity matrix and \"*\" is component-wise multiplication \n     - MatrixMultFS: The NN learns a matrix \!\(\*SubscriptBox[\(g\), \(NN\)]\) s.t. \!\(\*SubscriptBox[\(g\), \(CY\)]\)=\!\(\*SubscriptBox[\(g\), \(FS\)]\)(id + \!\(\*SubscriptBox[\(g\), \(NN\)]\)) where id is the identity matrix and the multiplication is standard matrix multiplication \n     - AddFS: The NN learns a matrix \!\(\*SubscriptBox[\(g\), \(NN\)]\) s.t. \!\(\*SubscriptBox[\(g\), \(CY\)]\)=\!\(\*SubscriptBox[\(g\), \(FS\)]\) + \!\(\*SubscriptBox[\(g\), \(NN\)]\) \n     - Free: The NN learns the CY metric directly, i.e. \!\(\*SubscriptBox[\(g\), \(CY\)]\)=\!\(\*SubscriptBox[\(g\), \(NN\)]\)  \n     - MatrixMultFSToric: Like MatrixMultFS, but for CYs built from 4D toric varieties (need to specify location of toric info as generated from SAGE in Option ToricDataPath).\n  - EvaluateModel (bool): If True, computes different quantities for the test set, such as the \[Sigma]-measure, Kahler Loss, Transition Loss, change of Kahler class, and Ricci Scalar. Especially the Kahler and Ricci evaluations can be very slow, so only activate if feasible performance-wise  \n  - HiddenLayers (list of ints): Number of hidden nodes in each hidden layer \n  - ActivationFunctions (list of strings): Tensorflow activation function to use\n  - Epochs (int): Number of training epochs\n  - BatchSize (int): Batch size for training\n  - Alphas (list of floats): Relative weight of losses (Sigma, Kahler, Transition, Ricci, volK); at the moment, the value for Ricci is ignored since we do not train against the Ricci loss\n  - Python (string): python executable to use (defaults to the one of $SETTINGSFILE)\n  - Session (ExternalSessionObject): Python session with all dependencies loaded (if not provided, a new one will be generated)\n  - Dir (string): Directory where the training points will be read from and the trained NN will be saved to\n  - Verbose (int): Verbose level (the higher, the more info is printed)\n* Return:\n  - res (object): Null if no error occured, otherwise a string with the error\n  - session (ExternalSessionObject): The session object used in the coomputation (for potential faster future reuse) \n* Example:\n  - TrainNN[\"HiddenLayers\"\[Rule]{64,64,64},\"ActivationFunctions\"\[Rule]{\"gelu\",\"gelu\",\"gelu\"},\"Epochs\"\[Rule]20,\"BatchSize\"\[Rule]64,\"Dir\"\[Rule]\"./test\"]";
-GetPoints::usage="GetPoints[dataset,Options] gets the CY points generated by the point generator.\n* Input:\n  - dataset (string): \"train\" for training dataset, \"val\" for validation dataset, \"all\" for both training and validation dataset\n* Options (run Options[GetPoints] to see default values):\n  - Python (string): python executable to use (defaults to the one of $SETTINGSFILE)\n  - Session (ExternalSessionObject): Python session with all dependencies loaded (if not provided, a new one will be generated)\n  - Dir (string): Directory where points are saved\n* Return:\n  - res (object): points (as list of complex lists) if no error occured, otherwise a string with the error\n  - session (ExternalSessionObject): The session object used in the coomputation (for potential faster future reuse) \n* Example:\n  - GetPoints[\"val\",\"Dir\"\[Rule]\"./test\"]";
-GetWeights::usage="GetWeights[dataset,Options] gets the weights of the CY points generated by the point generator with the auxiliary measure induced by the sampling method according to Shiffman-Zelditch.\n* Input:\n  - dataset (string or list): \"train\" for training dataset, \"val\" for validation dataset, \"all\" for both training and validation dataset\n* Options (run Options[GetWeights] to see default values):\n  - Python (string): python executable to use (defaults to the one of $SETTINGSFILE)\n  - Session (ExternalSessionObject): Python session with all dependencies loaded (if not provided, a new one will be generated)\n  - Dir (string): Directory where CY information is saved\n* Return:\n  - res (object): weights (as list of floats) if no error occured, otherwise a string with the error\n  - session (ExternalSessionObject): The session object used in the coomputation (for potential faster future reuse) \n* Example:\n  - GetWeights[\"val\",\"Dir\"\[Rule]\"./test\"]";
-GetKahlerPotential::usage="GetKahlerPotential[dataset,Options] gets the Kahler potential of the CY metric for points.\n* Input:\n  - dataset (list): list of points\n* Options (run Options[GetKahlerPotential] to see default values):\n  - Model (string): Computing the Kahler potential is supported for Phi FS and Phi FS toric models only.\n  - Python (string): python executable to use (defaults to the one of $SETTINGSFILE)\n - Session (ExternalSessionObject): Python session with all dependencies loaded (if not provided, a new one will be generated)\n  - Dir (string): Directory where CY information is saved\n* Return:\n  - res (object): CY Kahler potential (as list of floats) if no error occured, otherwise a string with the error\n  - session (ExternalSessionObject): The session object used in the coomputation (for potential faster future reuse) \n* Example:\n  - GetKahlerPotential[{{1.,2.,3.,4.,5.}},\"Dir\"\[Rule]\"./test\"]";
-GetAuxiliaryWeights::usage="GetAuxiliaryWeights[dataset,Options] gets the weights w.r.t the auxiliary measure induced by the sampling method according to Shiffman-Zelditch. This can be used for integration as int_X f = sum_i f(p) w_aux(p). So in particular vol(X)=sum_i det(g) w_aux. In fact, w_aux=w/|\[CapitalOmega]|^2. \n* Input:\n  - dataset (string or list): \"train\" for training dataset, \"val\" for validation dataset, \"all\" for both training and validation dataset.\n* Options (run Options[GetAuxiliaryWeights] to see default values):\n  - Python (string): python executable to use (defaults to the one of $SETTINGSFILE)\n  - Session (ExternalSessionObject): Python session with all dependencies loaded (if not provided, a new one will be generated)\n  - Dir (string): Directory where CY information is saved\n* Return:\n  - res (object): auxiliary weights (as list of floats) if no error occured, otherwise a string with the error\n  - session (ExternalSessionObject): The session object used in the coomputation (for potential faster future reuse) \n* Example:\n  - GetAuxiliaryWeights[\"val\",\"Dir\"\[Rule]\"./test\"]";
-GetOmegaSquared::usage="GetOmegaSquared[dataset,Options] gets (|\[CapitalOmega]|\!\(\*SuperscriptBox[\()\), \(2\)]\) of the CY generated by the point generator.\n* Input:\n  - dataset (string): \"train\" for training dataset, \"val\" for validation dataset, \"all\" for both training and validation dataset, or a list of points\n* Options (run Options[GetOmegaSquared] to see default values):\n  - Python (string): python executable to use (defaults to the one of $SETTINGSFILE)\n  - Session (ExternalSessionObject): Python session with all dependencies loaded (if not provided, a new one will be generated)\n  - Dir (string): Directory where Omegas are saved\n* Return:\n  - res (object): (|\[CapitalOmega]|\!\(\*SuperscriptBox[\()\), \(2\)]\) (as list of floats) if no error occured, otherwise a string with the error\n  - session (ExternalSessionObject): The session object used in the coomputation (for potential faster future reuse) \n* Example:\n  - GetOmegaSquared[\"val\",\"Dir\"\[Rule]\"./test\"]";
-GetCYWeights::usage="GetCYWeights[dataset,Options] gets the weights of the CY points for the CY metric.\n* Input:\n  - dataset (string): \"train\" for training dataset, \"val\" for validation dataset, \"all\" for both training and validation dataset, or a list of points\n* Options (run Options[GetCYWeights] to see default values):\n  - Python (string): python executable to use (defaults to the one of $SETTINGSFILE)\n  - Session (ExternalSessionObject): Python session with all dependencies loaded (if not provided, a new one will be generated)\n  - Model (string): Choices are:\n     - PhiFS: The NN learns a scalar function \[Phi] s.t. \!\(\*SubscriptBox[\(g\), \(CY\)]\)=\!\(\*SubscriptBox[\(g\), \(FS\)]\)+\[PartialD]\!\(\*OverscriptBox[\(\[PartialD]\), \(_\)]\)\[Phi]\n     - MultFS: The NN learns a matrix \!\(\*SubscriptBox[\(g\), \(NN\)]\) s.t. \!\(\*SubscriptBox[\(g\), \(CY\)]\)=\!\(\*SubscriptBox[\(g\), \(FS\)]\) * (id + \!\(\*SubscriptBox[\(g\), \(NN\)]\)) where id is the identity matrix and \"*\" is component-wise multiplication \n     - MatrixMultFS: The NN learns a matrix \!\(\*SubscriptBox[\(g\), \(NN\)]\) s.t. \!\(\*SubscriptBox[\(g\), \(CY\)]\)=\!\(\*SubscriptBox[\(g\), \(FS\)]\)(id + \!\(\*SubscriptBox[\(g\), \(NN\)]\)) where id is the identity matrix and the multiplication is standard matrix multiplication \n     - AddFS: The NN learns a matrix \!\(\*SubscriptBox[\(g\), \(NN\)]\) s.t. \!\(\*SubscriptBox[\(g\), \(CY\)]\)=\!\(\*SubscriptBox[\(g\), \(FS\)]\) + \!\(\*SubscriptBox[\(g\), \(NN\)]\) \n     - Free: The NN learns the CY metric directly, i.e. \!\(\*SubscriptBox[\(g\), \(CY\)]\)=\!\(\*SubscriptBox[\(g\), \(NN\)]\)\n  - Dir (string): Directory where weights and the trained NN are saved\n* Return:\n  - res (object): weights (as list of floats) if no error occured, otherwise a string with the error\n  - session (ExternalSessionObject): The session object used in the coomputation (for potential faster future reuse) \n* Example:\n  - GetCYWeights[\"val\",\"Dir\"\[Rule]\"./test\"]";
-GetPullbacks::usage="GetPullbacks[points,Options] computes the pullbacks from the ambient space coordinates to the CY at the given points. You need to call GeneratePoints[] first. The pullback will work for any point (not just the generated ones), but GeneratePoints[] computes several quantities (such as derivatives) needed for the pullback matrix. \n* Input:\n  - points (list): list of list of complex numbers that specify points on the CY\n* Options (run Options[GetPullbacks] to see default values):\n  - Python (string): python executable to use (defaults to the one of $SETTINGSFILE)\n  - Session (ExternalSessionObject): Python session with all dependencies loaded (if not provided, a new one will be generated)\n  - Dir (string): Directory where the point generator is saved.\n* Return:\n  - res (object): pullbacks (as list of float matrices) if no error occured, otherwise a string with the error\n  - session (ExternalSessionObject): The session object used in the computation (for potential faster future reuse) \n* Example:\n  - GetPullbacks[{{1,2,3,4,5}},\"Dir\"\[Rule]\"./test\"]";
-CYMetric::usage="CYMetric[points,Options] computes the CY metric at the given points.\n* Input:\n  - points (list): list of list of complex numbers that specify points on the CY\n* Options (run Options[CYMetric] to see default values):\n  - Python (string): python executable to use (defaults to the one of $SETTINGSFILE)\n  - Session (ExternalSessionObject): Python session with all dependencies loaded (if not provided, a new one will be generated)\n  - Model (string): Choices are:\n     - PhiFS: The NN learns a scalar function \[Phi] s.t. \!\(\*SubscriptBox[\(g\), \(CY\)]\)=\!\(\*SubscriptBox[\(g\), \(FS\)]\)+\[PartialD]\!\(\*OverscriptBox[\(\[PartialD]\), \(_\)]\)\[Phi]\n     - MultFS: The NN learns a matrix \!\(\*SubscriptBox[\(g\), \(NN\)]\) s.t. \!\(\*SubscriptBox[\(g\), \(CY\)]\)=\!\(\*SubscriptBox[\(g\), \(FS\)]\) * (id + \!\(\*SubscriptBox[\(g\), \(NN\)]\)) where id is the identity matrix and \"*\" is component-wise multiplication \n     - MatrixMultFS: The NN learns a matrix \!\(\*SubscriptBox[\(g\), \(NN\)]\) s.t. \!\(\*SubscriptBox[\(g\), \(CY\)]\)=\!\(\*SubscriptBox[\(g\), \(FS\)]\)(id + \!\(\*SubscriptBox[\(g\), \(NN\)]\)) where id is the identity matrix and the multiplication is standard matrix multiplication \n     - AddFS: The NN learns a matrix \!\(\*SubscriptBox[\(g\), \(NN\)]\) s.t. \!\(\*SubscriptBox[\(g\), \(CY\)]\)=\!\(\*SubscriptBox[\(g\), \(FS\)]\) + \!\(\*SubscriptBox[\(g\), \(NN\)]\) \n     - Free: The NN learns the CY metric directly, i.e. \!\(\*SubscriptBox[\(g\), \(CY\)]\)=\!\(\*SubscriptBox[\(g\), \(NN\)]\)\n  - Dir (string): Directory where weights and the trained NN are saved\n* Return:\n  - res (object): CY metrics (as list of float matrices) if no error occured, otherwise a string with the error\n  - session (ExternalSessionObject): The session object used in the coomputation (for potential faster future reuse) \n* Example:\n  - CYMetric[{{1,2,3,4,5}},\"Dir\"\[Rule]\"./test\"]";
-FSMetric::usage="FSMetric[points,Options] computes the pullback of the Fubini-Study metric from the ambient space to the CY at the given points.\n* Input:\n  - points (list): list of list of complex numbers that specify points on the CY\n* Options (run Options[FSMetric] to see default values):\n  - Python (string): python executable to use (defaults to the one of $SETTINGSFILE)\n  - Session (ExternalSessionObject): Python session with all dependencies loaded (if not provided, a new one will be generated)\n  - KahlerModuli(list): Point in Kahler moduli space.\n  - Dir (string): Directory where the point generator is saved.\n* Return:\n  - res (object): FS metrics at input points (as list of float matrices) if no error occured, otherwise a string with the error\n  - session (ExternalSessionObject): The session object used in the computation (for potential faster future reuse) \n* Example:\n  - FSMetric[{{1,2,3,4,5}},\"Dir\"\[Rule]\"./test\"]";
-DiscoverPython::usage="DiscoverPython[useForVENV,Options] finds a Python executable for python3 with version <3.9.\n* Input:\n  - useForVENV (string): If False, keeps looking until it finds an environment with all necessary packages installed. Otherwise just uses the latest Python 3 version <3.9\n* Options (run Options[DiscoverPython] to see default values):\n  - Version (string): Specify a Python version to use \n* Return:\n  - python (string): path to python venv executable\n* Example:\n  - DiscoverPython[]";
-SetupPythonVENV::usage="SetupPythonVENV[exec,Options] sets up a Python virtual environment.\n* Input:\n  - exec (string): Path to Python that will be used to create the venv.\n* Options (run Options[SetupPythonVENV] to see default values):\n  - VENVPath (string): Path where venv will be created\n  - Patch (bool): Whether Mathematica should be patched to fix a bug for Python >3.5 (this only changes a text file used for Python interop and does not interfere with the Mathematica installation) \n* Return:\n  - python (string): path to python venv executable\n* Example:\n  - SetupPythonVENV[\"/usr/bin/python3\"]";
-GetSession::usage="GetSession[exec,mysession] returns a Python session with the cymetric package loaded.\n* Input:\n  - exec (string): Path to Python that will be used to create the session. If not specified, the installation from $SETTINGSFILE is used\n  - mysession (ExternalSessionObject): If mysession is a valid Python session, the cypackage and all dependencies are loaded intyo the session if necessary \n* Return:\n  - session (ExternalSessionObject): session with cymetric package and all dependencies loaded\n* Example:\n  - GetSession[]";
+GlobalOptions::usage = 
+"Global Options for the package. These are default values that hopefully work for you and need not be changed too often. You can see all with GetGlobalOptions[], and change them easily with ChangeSetting[<option>, <value>]
+  - ActivationFunctions (list of strings): Tensorflow activation function to use (defaults to 'gelu')
+  - Alphas (list of floats): Relative weight of losses (Sigma, Kahler, Transition, Ricci, volK); at the moment, the value for Ricci is ignored since we do not train against the Ricci loss (defaults to all 1)
+  - BatchSize (int): Batch size for training (defaults to 64)
+  - Dir (string): Directory where points will be saved (defaults to 'results' within the current $WORKDIR)
+  - DisableGPU (bool): If True, no Hardware acceleration (GPU, M1) will be used even if it is available. If no supported GPU is available, this is ignored and CPU is used. Defaults to False.
+  - HiddenLayers (list of ints): Number of hidden nodes in each hidden layer 
+  - LearningRate (float): Learning rate used during training (defaults to 0.001)
+  - Model (string): Defaults to PhiFS. Choices are:
+     - AddFS: The NN learns a matrix \!\(\*SubscriptBox[\(g\), \(NN\)]\) s.t. \!\(\*SubscriptBox[\(g\), \(CY\)]\)=\!\(\*SubscriptBox[\(g\), \(FS\)]\) + \!\(\*SubscriptBox[\(g\), \(NN\)]\) 
+     - Free: The NN learns the CY metric directly, i.e. \!\(\*SubscriptBox[\(g\), \(CY\)]\)=\!\(\*SubscriptBox[\(g\), \(NN\)]\)  
+     - MatrixMultFS: The NN learns a matrix \!\(\*SubscriptBox[\(g\), \(NN\)]\) s.t. \!\(\*SubscriptBox[\(g\), \(CY\)]\)=\!\(\*SubscriptBox[\(g\), \(FS\)]\)(id + \!\(\*SubscriptBox[\(g\), \(NN\)]\)) where id is the identity matrix and the multiplication is standard matrix multiplication 
+     - MatrixMultFSToric: Like MatrixMultFS, but for CYs built from 4D toric varieties (need to specify location of toric info as generated from SAGE in Option ToricDataPath when calling TrainNN[]).
+     - MultFS: The NN learns a matrix \!\(\*SubscriptBox[\(g\), \(NN\)]\) s.t. \!\(\*SubscriptBox[\(g\), \(CY\)]\)=\!\(\*SubscriptBox[\(g\), \(FS\)]\) * (id + \!\(\*SubscriptBox[\(g\), \(NN\)]\)) where id is the identity matrix and \"*\" is component-wise multiplication 
+     - PhiFS: The NN learns a scalar function \[Phi] s.t. \!\(\*SubscriptBox[\(g\), \(CY\)]\)=\!\(\*SubscriptBox[\(g\), \(FS\)]\)+\[PartialD]\!\(\*OverscriptBox[\(\[PartialD]\), \(_\)]\)\[Phi]
+     - PhiFSToric: Like PhiFS, but for CYs built from 4D toric varieties (need to specify location of toric info as generated from SAGE in Option ToricDataPath when calling TrainNN[]).
+  - Points (int): Number of points to generate (defaults to 200,000)
+  - Precision (int): WorkingPrecision to use when generating the points (defaults to 10)
+  - PrintLosses (list of bool): Specifies which losses will be printed. Order is the same as in Alphas. Defaults to all True
+  - PrintMeasures (list of bools): Specifies which performance measures will be printed. Order is the same as in Alphas. Defaults to all True.
+  - Python (string): python executable to use (defaults to the one of $SETTINGSFILE)
+  - Verbose (int): Verbose level (the higher, the more info is printed). Defaults to 1, i.e. some info is printed.";
+
+cymetric::usage = 
+"\!\(\*
+StyleBox[\"Setup\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\":\",\nFontWeight->\"Bold\"]\)
+* Setup:                         Loads a valid pythoin environment as specified in the settings file. If no valid python environment is found, Setup will create one with all packages installed
+* GetGlobalOptions:     Returns all global options used in this package
+* GetSetting:                 Retrieves the value of entry k from the settings file
+* ChangeSetting:          Sets the value of entry k to v in the settings file
+* DeleteSetting:            Deletes the entry k from the settings file
+\!\(\*
+StyleBox[\"Point\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\" \",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\"generation\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\":\",\nFontWeight->\"Bold\"]\)
+* GeneratePoints:          Generates points on the CY specified by polynomials in an ambient space of projective spaces
+* GeneratePointsToric:  Generates points on the CY specified as a hypersurface in a toric ambient space
+* GetPoints:                    Retrieve the CY points generated by the point generator.
+* GetOmegaSquared:     Calculates (|\[CapitalOmega]|\!\(\*SuperscriptBox[\()\), \(2\)]\) of the CY
+* GetAuxiliaryWeights:   Calculates the weights w.r.t the auxiliary measure induced by the sampling method according to Shiffman-Zelditch.
+* GetCYWeights:            Calculates the weights of the CY points for the CY metric.
+* GetWeights:                 Retrieve the weights of the CY points generated by the point generator with the auxiliary measure induced by the sampling method according to Shiffman-Zelditch
+\!\(\*
+StyleBox[\"Metrics\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\":\",\nFontWeight->\"Bold\"]\)
+* TrainNN:                       Trains a NN to approximate the CY metric
+* GetKahlerPotential:      Calculates the Kahler potential of the CY metric for points
+* CYMetric:                      Calculates the CY metric at the given points
+* FSMetric:                       Calculates the FS metric at the given points
+\!\(\*
+StyleBox[\"Other\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\" \",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\"functions\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\" \",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\"(\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\"you\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\" \",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\"should\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\" \",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\"never\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\" \",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\"have\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\" \",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\"to\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\" \",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\"use\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\" \",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\"them\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\",\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\" \",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\"but\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\" \",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\"we\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\" \",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\"provide\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\" \",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\"an\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\" \",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\"interface\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\" \",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\"for\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\" \",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\"them\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\" \",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\"anyways\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\" \",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\"in\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\" \",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\"case\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\" \",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\"you\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\" \",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\"find\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\" \",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\"yourself\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\" \",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\"needing\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\" \",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\"them\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\" \",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\"for\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\" \",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\"whatever\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\" \",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\"reason\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\")\",\nFontWeight->\"Bold\"]\)\!\(\*
+StyleBox[\":\",\nFontWeight->\"Bold\"]\)
+* GetPullbacks:                Calculates the pullbacks from the ambient space coordinates to the CY at the given points. You should not have to call this manually
+* GetSession:                   Resets the Python session. You should never have to call this manually
+* DiscoverPython:            Finds a Python executable for python3 with version <3.10. You should not have to call this manually
+* SetupPythonVENV:       Sets up a Python virtual environment. You should not have to call this manually
+* ToPython:                      Converts input to Python form. You should never have to call this manually.
+"
+
+GetGlobalOptions::usage = 
+"GetGlobalOptions[] returns all global options used in this package.
+* Input:
+  - None
+* Return:
+  - (Association): All options as (key -> value) pairs
+* Example:
+  - GetGlobalOptions[]"; 
+
+GetSetting::usage = 
+"GetSetting[k] retrieves the value of entry k from $SETTINGSFILE.
+* Input:
+  - k (string): The entry whose value shall be retrieved
+* Return:
+  - The value v (string) of entry k, or Null if entry k not found
+* Example:
+  - GetSetting[\"Python\"]"; 
+
+ChangeSetting::usage = 
+"ChangeSetting[k, v] sets the value of entry k to v in $SETTINGSFILE.
+* Input:
+  - k (string): The entry whose value shall be set
+  - v (string): The value for entry k
+* Return:
+  - Null
+* Example: 
+  - ChangeSetting[\"Python\",\"/usr/bin/python3\"]"; 
+
+DeleteSetting::usage = 
+"DeleteSetting[k] deletes the entry k in $SETTINGSFILE. Note that deleting settings can lead to the program not working properly anymore
+* Input:
+  - k (string): The entry that shall be deleted
+* Return:
+  - Null
+* Example:
+  - DeleteSetting[\"Python\"]"; 
+
+Setup::usage = 
+"Setup[path, Options] finds a valid Python executable; if setup has been run before, it uses the path from global settings. Else it finds a good Python 3 interpreter and creates a virtual environment and patches mathematica to work with python >= 3.7.
+* Input:
+  - path (string): Sets up a python venv in path (defaults to ./venv).
+* Options (run Options[Setup] to see default values):
+  - ForceReinstall (bool): Whether the venv should be reinstalled if it already exists
+  - PythonForVENV (str): Path to Python executable that should be used for creating the virtual environment. If not provided, mathematica will search compatible ones and use the first one that works.
+* Return:
+  - python (string): path to python venv executable
+* Example:
+  - Setup[]"; 
+
+GetSession::usage = 
+"GetSession[exec,mysession] generates a Python session with the cymetric package loaded. You should never have to call this manually.
+* Input:
+  - exec (string): Path to Python that will be used to create the session. If not specified, the installation from $SETTINGSFILE is used
+  - mysession (ExternalSessionObject): If mysession is a valid Python session, the cypackage and all dependencies are loaded into the session if necessary 
+* Return:
+  - session (ExternalSessionObject): session with cymetric package and all dependencies loaded. Note that this session will also be stored in the variable cymetric`Private`GlobalPythonSession
+* Example:
+  - GetSession[]"; 
+
+GeneratePoints::usage = 
+"GeneratePoints[poly, dimPs, variables, Options] generates points on the CY specified by poly in an ambient space of dimPs.
+* Input:
+  - poly (list of polynomials): list of polynomials that define the CY.
+  - dimPs (list of ints): list of dimensions of the product of projective ambient spaces.
+  - variables [optional] (list of list of vars): list of list of variables (one for each projective ambient space). If not provided, alphabetical ordering is assumed.
+* Options (run Options[GeneratePoints] to see default values):
+  - KahlerModuli (list of floats): Kahler moduli \!\(\*SubscriptBox[\(t\), \(i\)]\) of the i'th ambient space factor (defaults to all 1)
+  - Points (int): Number of points to generate (defaults to 200,000)
+  - VolJNorm (float): Normalization for the volume, input int_X J^n at t1=t2=...=1 (defaults to 1)
+* Return:
+  - res (object): Null if no error occured, otherwise a string with the error
+* Example:
+  - GeneratePoints[{\!\(\*SuperscriptBox[SubscriptBox[\(z\), \(0\)], \(5\)]\)+\!\(\*SuperscriptBox[SubscriptBox[\(z\), \(1\)], \(5\)]\)+\!\(\*SuperscriptBox[SubscriptBox[\(z\), \(2\)], \(5\)]\)+\!\(\*SuperscriptBox[SubscriptBox[\(z\), \(3\)], \(5\)]\)+\!\(\*SuperscriptBox[SubscriptBox[\(z\), \(4\)], \(5\)]\)},{4}, \"Points\"\[Rule]200000, \"KahlerModuli\"\[Rule]{1}]"; 
+
+GeneratePointsToric::usage = 
+"GeneratePointsToric[PathToToricInfo,Options] generates points on the CY specified by the toric variety that has been analyzed by SAGE in PathToToricInfo.
+* Input:
+  - PathToToricInfo (str): Path where SAGE stored the info on the toric CY.
+* Options (run Options[GeneratePoints] to see default values):
+  - KahlerModuli (list of floats): Kahler moduli \!\(\*SubscriptBox[\(t\), \(i\)]\) of the i'th ambient space factor (defaults to all 1)
+  - Points (int): Number of points to generate (defaults to 200,000)\n  
+* Return:
+  - res (object): Null if no error occured, otherwise a string with the error
+* Example:
+  - GeneratePointsToric[\"./toric_data.pickle\", {4}, \"Points\"\[Rule]200000, \"KahlerModuli\"\[Rule]{1}]"; 
+
+TrainNN::usage = 
+"TrainNN[Options] trains a NN to approximate the CY metric. Many hyperparameters are specified in GlobalOptions. Run ?GlobalOptions for more Info
+* Options (run Options[TrainNN] to see default values):
+  - EvaluateModel (bool): If True, computes different quantities for the test set, such as the \[Sigma]-measure, Kahler Loss, Transition Loss, change of Kahler class, and Ricci Scalar. Especially the Kahler and Ricci evaluations can be very slow, so only activate if feasible performance-wise. YOu can also control which ones are computed on a more fine-grained level using GlobalOptions. See ?GlobalOptions for details.  
+  - Epochs (int): Number of training epochs
+  - Verbose (int): Verbose level (the higher, the more info is printed). Defaults to the value set in GlobalOptions.;
+* Return:
+  - res (object): Null if no error occured, otherwise a string with the error
+* Example:
+  - TrainNN[\"Epochs\"\[Rule]20]"; 
+
+ToPython::usage = 
+"ToPython[input] returns input in Python format.
+* Input:
+  - input (string or list): Mathematica expression
+* Return:
+  - input converted to Python syntax
+* Example:
+  - ToPython[{1.3 \[ImaginaryI]}]"; 
+
+GetPoints::usage = 
+"GetPoints[dataset] gets the CY points generated by the point generator.
+* Input:
+  - dataset (string): \"train\" for training dataset, \"val\" for validation dataset, \"all\" for both training and validation dataset
+  - asComplex (bool): If True, the points will be returned as complex numbers. Otherwise, they are returned as a list of lists, where for each points we first give all real parts, and then all imaginary parts
+* Options:
+   - None
+* Return:
+  - res (object): points (as list of complex lists) if no error occured, otherwise a string with the error
+* Example:
+  - GetPoints[\"val\"]"; 
+
+GetKahlerPotential::usage = 
+"GetKahlerPotential[points] gets the Kahler potential of the CY metric for points. Note that this requires that the Model is one of the Phi Models (since these learn a Kahler potential correction rather than a metric correction). You need to call GeneratePoints[] first. The function will work for any point (not just the generated ones), but GeneratePoints[] computes several quantities needed for the computation.
+* Input:
+  - points (string or list): \"train\" for training dataset, \"val\" for validation dataset, \"all\" for both training and validation dataset, or a list of complex points
+* Options:
+   - None
+* Return:
+  - res (object): CY Kahler potential (as list of floats) if no error occured, otherwise a string with the error
+* Example:
+  - GetKahlerPotential[{{1.,2.,3.,4.,5.}}]"; 
+
+GetWeights::usage = 
+"GetWeights[dataset] gets the weights of the CY points generated by the point generator with the auxiliary measure induced by the sampling method according to Shiffman-Zelditch.
+* Input:
+  - dataset (string): \"train\" for training dataset, \"val\" for validation dataset, \"all\" for both training and validation dataset (note that the weights rely on the sampling and can hence only be computed for points generated by the point generator, which samples according to Shiffman-Zelditch)
+* Options:
+   - None
+* Return:
+  - res (object): weights (as list of floats) if no error occured, otherwise a string with the error
+* Example:
+  - GetWeights[\"val\"]"; 
+
+GetAuxiliaryWeights::usage = 
+"GetAuxiliaryWeights[dataset] gets the weights w.r.t the auxiliary measure induced by the sampling method according to Shiffman-Zelditch. This can be used for integration as int_X f = sum_i f(p) w_aux(p). So in particular vol(X)=sum_i det(g) w_aux. In fact, w_aux=w/|\[CapitalOmega]|^2. 
+* Input:
+  - dataset (string): \"train\" for training dataset, \"val\" for validation dataset, \"all\" for both training and validation dataset (note that the auxiliary measure relies on the sampling and can hence only be computed for points generated by the point generator, which samples according to Shiffman-Zelditch)
+* Options:
+   - None
+* Return:
+  - res (object): auxiliary weights (as list of floats) if no error occured, otherwise a string with the error
+* Example: 
+  - GetAuxiliaryWeights[\"val\"]"; 
+
+GetOmegaSquared::usage = 
+"GetOmegaSquared[points] gets (|\[CapitalOmega]|\!\(\*SuperscriptBox[\()\), \(2\)]\) of the CY. You need to call GeneratePoints[] first. The function will work for any point (not just the generated ones), but GeneratePoints[] computes several quantities needed for the computation
+* Input:
+  - points (string or list): \"train\" for training dataset, \"val\" for validation dataset, \"all\" for both training and validation dataset, or a list of complex points
+* Options:
+   - None
+* Return:
+  - res (object): (|\[CapitalOmega]|\!\(\*SuperscriptBox[\()\), \(2\)]\) (as list of floats) if no error occured, otherwise a string with the error
+* Example:
+  - GetOmegaSquared[\"val\"]"; 
+
+GetCYWeights::usage = 
+"GetCYWeights[dataset,Options] gets the weights of the CY points for the CY metric. You need to call GeneratePoints[] first. The function will work for any point (not just the generated ones), but GeneratePoints[] computes several quantities needed for the computation
+* Input:
+  - points (string or list): \"train\" for training dataset, \"val\" for validation dataset, \"all\" for both training and validation dataset, or a list of complex points
+* Options:
+   - None
+* Return:
+  - res (object): weights (as list of floats) if no error occured, otherwise a string with the error
+* Example:
+  - GetCYWeights[\"val\"]"; 
+
+GetPullbacks::usage = 
+"GetPullbacks[points,Options] computes the pullbacks from the ambient space coordinates to the CY at the given points. You need to call GeneratePoints[] first. The function will work for any point (not just the generated ones), but GeneratePoints[] computes several quantities needed for the computation.
+* Input:
+  - points (list): list of list of complex numbers that specify points on the CY
+* Options
+  - None
+* Return:
+  - res (object): pullbacks (as list of float matrices) if no error occured, otherwise a string with the error
+* Example:
+  - GetPullbacks[{{1,2,3,4,5}}]"; 
+
+CYMetric::usage = 
+"CYMetric[points] computes the CY metric at the given points. This needs to know the Model that was used to calculate the CY metric. Check GetSettings[\"Model\"] to make sure this is configured correctly. You also need to call GeneratePoints[] first. The function will work for any point (not just the generated ones), but GeneratePoints[] computes several quantities needed for the computation.
+* Input:
+  - points (list): list of list of complex numbers that specify points on the CY
+* Options:
+  - None 
+* Return:
+  - res (object): CY metrics (as list of float matrices) if no error occured, otherwise a string with the error
+* Example:
+  - CYMetric[{{1,2,3,4,5}}]"; 
+
+FSMetric::usage = "FSMetric[points, KahlerModuli] computes the pullback of the Fubini-Study metric from the ambient space to the CY at the given points. . You need to call GeneratePoints[] first. The function will work for any point (not just the generated ones), but GeneratePoints[] computes several quantities needed for the computation
+* Input:
+  - points (list): list of list of complex numbers that specify points on the CY
+  - KahlerModuli(list): list of floats specifying the Kahler moduli for which the FS metric is to be evaluated
+* Options:
+  - None
+* Return:
+  - res (object): FS metrics at input points (as list of float matrices) if no error occured, otherwise a string with the error
+* Example:
+  - FSMetric[{{1,2,3,4,5}}"; 
+
+DiscoverPython::usage = 
+"DiscoverPython[useForVENV, Options] finds a Python executable for python3 with version <3.10.
+* Input:
+  - useForVENV (string): If False, keeps looking until it finds an environment with all necessary packages installed. Otherwise just uses the latest Python 3 version <3.10
+* Options (run Options[DiscoverPython] to see default values):
+  - Version (string): Specify a Python version to use 
+* Return:
+  - python (string): path to python venv executable
+* Example:
+  - DiscoverPython[]"; 
+
+SetupPythonVENV::usage = 
+"SetupPythonVENV[exec, Options] sets up a Python virtual environment.
+* Input:
+  - exec (string): Path to Python that will be used to create the venv.
+* Options (run Options[SetupPythonVENV] to see default values):
+  - VENVPath (string): Path where venv will be created
+  - Patch (bool): Whether Mathematica should be patched to fix a bug for Python >3.5 (this only changes a text file used for Python interop and does not interfere with the Mathematica installation)
+* Return:
+  - python (string): path to python venv executable
+* Example:
+  - SetupPythonVENV[\"/usr/bin/python3\"]"; 
 
 
 
-(* ::Input::Initialization:: *)
 Begin["`Private`"];
-$SETTINGSFILE=Quiet[Check[FileNameJoin[{NotebookDirectory[],FileBaseName[NotebookFileName[]]<>"-cymetricsettings.txt"}],""]];
+
+
+$SETTINGSFILE=Quiet[Check[FileNameJoin[{NotebookDirectory[],FileBaseName[NotebookFileName[]]<>".m"}],""]];
 $WORKDIR=Quiet[Check[NotebookDirectory[],"~/"]];
-GetSetting::fileNotFound="Could not retrieve `1`. No settings file found.";
-GetSetting[k_]:=Module[{settings},(
-If[!FileExistsQ[$SETTINGSFILE],Message[GetSetting::fileNotFound,k];Return[];];
-settings=ToExpression[Import[$SETTINGSFILE]];
-If[KeyExistsQ[settings,k],Return[settings[k]];];
-Return[Null];
-)];
 
-ChangeSetting[k_,v_]:=Module[{settings,hnd},(
+
+GetSetting::fileNotFound = "Could not retrieve `1`. No settings file found."; 
+GetSetting[k_] :=
+  Module[{settings},
+    If[!FileExistsQ[$SETTINGSFILE],
+      Message[GetSetting::fileNotFound, k];
+      Return[];
+    ];
+    settings = Import[$SETTINGSFILE];
+    If[KeyExistsQ[settings, k],
+      Return[settings[k]];
+    ];
+    Return[];
+  ]; 
+
+
+(*[SigmaLoss(),KaehlerLoss(),TransitionLoss(),VolkLoss(),RicciLoss()]*)
+(*[SigmaCallback(), KaehlerCallback(), TransitionCallback(), VolkCallback(),RicciCallback()]*)
+GlobalOptions = Association[{
+  "ActivationFunctions"->{"gelu", "gelu", "gelu"},
+  "Alphas"->{1.,1.,1.,1.,1.},
+  "BatchSize"->64,
+  "Dir" -> FileNameJoin[{$WORKDIR, "results"}],
+  "DisableGPU" -> False, 
+  "HiddenLayers"->{64, 64, 64},
+  "LearningRate" -> 0.001, 
+  "Model"->"PhiFS",
+  "Precision" -> 10, 
+  "PrintLosses" -> {True, True, True, True, True}, 
+  "PrintMeasures" -> {True, True, True, True, True}, 
+  "Python" -> Quiet[Check[GetSetting["Python"], "Not Configured"]],
+  "Verbose" -> 1
+}];
+GetGlobalOptions[]:=Return[GlobalOptions];
+
 If[!FileExistsQ[$SETTINGSFILE],
-Export[$SETTINGSFILE,Association[]];
+  Export[$SETTINGSFILE, GlobalOptions];
+  ,
+  GlobalOptions = Import[$SETTINGSFILE];
 ];
-settings=ToExpression[Import[$SETTINGSFILE]];
-settings[k]=v;
-hnd=OpenWrite[$SETTINGSFILE];
-Write[hnd,settings];
-Close[hnd];
-Return[];
-)];
+GlobalPythonSession = Null;
 
-DeleteSetting[k_]:=Module[{settings,hnd},(
-If[!FileExistsQ[$SETTINGSFILE],
-Export[$SETTINGSFILE,Association[]];
-];
-settings=ToExpression[Import[$SETTINGSFILE]];
-If[KeyExistsQ[settings,k],KeyDropFrom[settings,k]];
-hnd=OpenWrite[$SETTINGSFILE];
-Write[hnd,settings];
-Close[hnd];
-Return[];
-)];
-ToPython::usage="ToPython[input] returns input in Python format.\n* Input:\n  - input (string or list): Mathematica expression\n* Return:\n  - input converted to Python syntax\n* Example:\n  - ToPython[{1.3 \[ImaginaryI]}]";
-ToPython[input_]:=(
-SetOptions[$Output,PageWidth->Infinity];
-If[StringQ[input],Return[input]];
-Return[StringReplace[ToString[InputForm[input,NumberMarks->False]], {"{"->"[","}"->"]", "*^"->"e", "^"->"**", "I"->"1.j"}]];
-)
 
-Options[Setup]={"ForceReinstall"->False,"PythonForVENV"->Null};
-Setup[path_String:FileNameJoin[{$WORKDIR,"venv"}],OptionsPattern[]]:=Module[{exec,res,pythonVENV,settings,forceReinstall,python, packageDir,session},(
-forceReinstall=OptionValue["ForceReinstall"];
-pythonVENV=OptionValue["PythonForVENV"];
-(*Auto-detect whether venv is already set up in the folder*)
-If[!forceReinstall,
-python=Quiet[Check[GetSetting["Python"],Null]];
-If[!python===Null,
-If[!FileExistsQ[python],Print["Found settings file for this notebook, but the path to the virtual environment specified in this file does not exist. Please set a new one with changeSettings[Python-><path/to/python>], or run again with option ForceReinstall->True"];Return[""];
-];
-session=StartExternalSession[<|"System"->"Python","Executable"->python|>];
-packageDir=ExternalEvaluate[session,"import cymetric;import os;os.path.dirname(cymetric.__file__)"];
-Begin["cymetric`Private`"];
-Get[FileNameJoin[{packageDir,"wolfram/PointGeneratorMathematica.m"}]];
+ChangeSetting[k_, v_] :=
+  Module[{settings, hnd},
+    (
+      If[!FileExistsQ[$SETTINGSFILE],
+        Export[$SETTINGSFILE, GlobalOptions];
+      ];
+      settings = Import[$SETTINGSFILE];
+      settings[k] = v;
+      GlobalOptions[k] = v;
+      Export[$SETTINGSFILE, GlobalOptions];
+      Return[];
+    )
+  ]; 
+
+
+DeleteSetting[k_] :=
+  Module[{settings, hnd},
+    (
+      If[!FileExistsQ[$SETTINGSFILE],
+        Export[$SETTINGSFILE, Association[]];
+      ];
+      settings = ToExpression[Import[$SETTINGSFILE]];
+      If[KeyExistsQ[settings, k],
+        KeyDropFrom[settings, k];
+        GlobalOptions = settings;
+      ];
+      Export[$SETTINGSFILE, GlobalOptions];
+      Return[];
+    )
+  ]; 
+
+
+ToPython[input_] :=
+  (
+    Return[StringReplace[ExportString[input, "PythonExpression"], "Complex(" -> "complex("]];
+  ); 
+
+
+GetLoggerLevel[verbose_] :=
+  Module[{loggerLevel},
+    (
+      loggerLevel = "logging.ERROR"; (*Taken for verbose \[LessEqual] 0*)
+      If[verbose == 1,
+        loggerLevel = "logging.WARNING"
+      ];
+      If[verbose == 2,
+        loggerLevel = "logging.INFO"
+      ];
+      If[verbose >= 3,
+        loggerLevel = "logging.DEBUG"
+      ];
+      Return[loggerLevel]
+    )
+  ]; 
+
+
+Options[Setup] = {"ForceReinstall" -> False, "PythonForVENV" -> Null}; 
+Setup[path_String:FileNameJoin[{$WORKDIR, "venv"}], OptionsPattern[]] :=
+  Module[{exec, res, pythonVENV, settings, forceReinstall, python, packageDir, session},
+    (
+      forceReinstall = OptionValue["ForceReinstall"];
+      pythonVENV = OptionValue["PythonForVENV"];
+      (*Auto-detect whether venv is already set up in the folder*)
+      If[!forceReinstall,
+        python = Quiet[Check[GetSetting["Python"], Null]];
+        If[python != "Not Configured",
+          If[!FileExistsQ[python],
+            Print["Found settings file for this notebook, but the path to the virtual environment specified in this file does not exist. Please set a new one with changeSettings[Python-><path/to/python>], or run again with option ForceReinstall->True"];
+            Return[""];
+          ];
+          GlobalOptions["Python"] = python;
+          session = StartExternalSession[<|"System" -> "Python", "Executable" -> python|>];
+          packageDir = ExternalEvaluate[session, "import cymetric;import os;os.path.dirname(cymetric.__file__)"];
+          Begin["cymetric`Private`"];
+          Get[FileNameJoin[{packageDir, "wolfram/PointGeneratorMathematica.m"}]];
+          End[];
+          Return[python];
+        ];
+        If[FileExistsQ[$SETTINGSFILE] && python != "Not Configured",
+          Print["Settings file does not contain a path to a Python environment. Please set one with changeSettings[Python-><path/to/python>], or run again with option ForceReinstall->True"];
+          Return[""];
+        ];
+      ];
+      If[!pythonVENV === Null,
+        If[!FileExistsQ[pythonVENV],
+          Print["Could not find specified Python executable ", pythonVENV];
+          Return[""];
+        ];
+        exec = pythonVENV;
+        ,
+        exec = DiscoverPython[True];
+      ];
+      res = SetupPythonVENV[exec, "Patch" -> True, "VENVPath" -> path];
+      ChangeSetting["Python", res];
+      session = StartExternalSession[<|"System" -> "Python", "Executable" -> res|>];
+      packageDir = ExternalEvaluate[session, "import cymetric;import os;os.path.dirname(cymetric.__file__)"];
+      (*Import the mathematica point generation functions into the current session*)
+      Begin["cymetric`Private`"];
+      Get[FileNameJoin[{packageDir, "wolfram/PointGeneratorMathematica.m"}]];
+      End[];
+      Return[res];
+    )
+  ]; 
+
+
+Options[DiscoverPython] = {"Version" -> Null}; 
+DiscoverPython[useForVENV_:False, OptionsPattern[]] :=
+  Module[{pythonEnvs, exec, session, res, version, i},
+    (
+      version = OptionValue["Version"];
+      pythonEnvs = FindExternalEvaluators["Python", "ResetCache" -> True];
+      pythonEnvs = Reverse[SortBy[pythonEnvs, "Version"]]; (*Start with latest Python on the system and work your way down. ATM, there's no TF for python 3.10, so we skip that*)
+      Print["Mathematica discovered the following Python environments on your system:"
+        ];
+      Print[pythonEnvs];
+      Print["Looking for Python 3"];
+      For[i = 1, i <= Length[pythonEnvs], i++,
+        If[StringTake[pythonEnvs[i]["Version"], 1] != "3" || StringTake[pythonEnvs[i]["Version"], 3] == "3.10",
+          Continue[]
+        ];
+        If[!version === Null,
+          If[version != pythonEnvs[i]["Version"],
+            Continue[];
+          ]
+        ];
+        exec = pythonEnvs[i]["Executable"];
+        Print["Found Python version ", pythonEnvs[i]["Version"], " at ",
+           exec, "."];
+        If[useForVENV,
+          Return[exec]
+        ];
+        Print["Looking for pyzmq for Mathematica interop and tensorflow..."];
+        session = Quiet[Check[StartExternalSession[<|"System" -> "Python", "Executable" -> exec|>],
+              Print["Mathematica couldn't start this Python session. Trying next Python environment..."];
+              Continue[];];
+          ];
+        DeleteObject[session];
+        (*Attempt to load*)
+        session = GetSession[exec];
+        If[session === Null,
+          Continue[];
+          ,
+          Print["Found good Python environment: ", exec]
+        ];
+        Quiet[Check[DeleteObject[session], Continue[]]];
+        Return[exec];
+      ];
+    )
+  ]; 
+
+
+Options[SetupPythonVENV] = {"VENVPath" -> FileNameJoin[{$WORKDIR, "venv"}], "Patch" -> False}; 
+SetupPythonVENV[exec_String, OptionsPattern[]] :=
+  Module[{path, patchEE, setupVENV, python, pip, installPackages, packages, session, res, hnd, content, i},
+    (
+      path = OptionValue["VENVPath"];
+      patchEE = OptionValue["Patch"];
+      Print["Creating virtual environment at ", path];
+      setupVENV = RunProcess[{exec, "-m", "venv", path}];
+      If[setupVENV["ExitCode"] != 0,
+        Print["An error occurred. Here's the output"];
+        Print[setupVENV["StandardOutput"]];
+        Print[setupVENV["StandardError"]];
+        Return[];
+      ];
+      python = FileNameJoin[{path, "bin", "python"}];
+      pip = FileNameJoin[{path, "bin", "pip"}];
+      If[!FileExistsQ[pip],
+        pip = FileNameJoin[{path, "bin", "pip3"}];
+      ];
+      If[!FileExistsQ[pip],
+        Print["Error: Couldn't find pip at ", FileNameJoin[{path, "bin"}]];
+        Return[python];
+      ];
+      packages = {"h5py", "joblib", "numpy", "pyyaml", "pyzmq", "scipy", "sympy", "wolframclient"};
+      Print["Upgrading pip, wheel, setuptools..."];
+      installPackages = RunProcess[{pip, "install", "--upgrade", "pip"}];
+      installPackages = RunProcess[{pip, "install", "--upgrade", "wheel"}];
+      installPackages = RunProcess[{pip, "install", "--upgrade", "setuptools"}];
+      If[installPackages["ExitCode"] != 0,
+        Print["An error occurred. Here's the output"];
+        Print[installPackages["StandardOutput"]];
+        Print[installPackages["StandardError"]];
+        Return[python];
+      ];
+      For[i = 1, i <= Length[packages], i++,
+        Print["Installing ", packages[[i]], "..."];
+        installPackages = RunProcess[{pip, "install", packages[[i]]}];
+        If[installPackages["ExitCode"] != 0,
+          Print["An error occurred. Here's the output"];
+          Print[installPackages["StandardOutput"]];
+          Print[installPackages["StandardError"]];
+          Return[python];
+        ];
+      ];
+      Print["Installing cymetric..."];
+      installPackages = RunProcess[{pip, "install", "git+https://github.com/pythoncymetric/cymetric.git"}];
+      If[installPackages["ExitCode"] != 0,
+        Print["An error occurred. Here's the output"];
+        Print[installPackages["StandardOutput"]];
+        Print[installPackages["StandardError"]];
+        Return[python];
+      ];
+      Print["Registering venv with mathematica..."];
+      RegisterExternalEvaluator["Python", python];
+      Print["Checking whether 'externalevaluate.py' needs to be patched for this version..."];
+      session = StartExternalSession[Association["System" -> "Python", "Executable" -> python]];
+      res = Quiet[ExternalEvaluate[session, {"import os;x=0;x"}]];
+      If[ListQ[res],
+        res = res[[1]]
+      ];
+      If[res["Message"] == "required field \"type_ignores\" missing from Module",
+        Print["Patch needs to be applied"];
+        If[!patchEE,
+          Print["Option for automatically applying patch not set. Please apply manually and try again."];
+          DeleteObject[session];
+          Return[python];
+          ,
+          Print["Applying patch..."];
+          hnd = OpenRead[FileNameJoin[{$InstallationDirectory, "/SystemFiles/Links/WolframClientForPython/wolframclient/utils/externalevaluate.py"}]];
+          content = ReadString[hnd];
+          Close[hnd];
+          content = StringReplace[content, {"exec(compile(ast.Module(expressions), '', 'exec'), current)"-> "exec(compile(ast.Module(expressions, []), '', 'exec'), current)  # exec(compile(ast.Module(expressions), '', 'exec'), current) # changed by CYMetrics"}];
+          hnd = OpenWrite[FileNameJoin[{$InstallationDirectory, "/SystemFiles/Links/WolframClientForPython/wolframclient/utils/externalevaluate.py"}]];
+          WriteString[hnd, content];
+          Close[hnd];
+        ];
+      ];
+      Print["Testing new environment..."];
+      session = GetSession[python];
+      If[!session === Null,
+        DeleteObject[session]
+        ,
+        Return[python]
+      ];
+      Print["Everything is working!"];
+      Return[python];
+    )
+  ]; 
+
+
+GetSession[exec_:Null, mysession_:Null] := Module[{validSession, session, python, res},
+    (
+      python = exec;
+      session = mysession;
+      validSession = Quiet[Check[ExternalEvaluate[session, "2+2==4"], False]];
+      If[session === Null || !validSession,
+        If[python === Null,
+          python = Check[GetSetting["Python"], Null]
+        ];
+        If[python === Null,
+          Print["No python interpreter configured. Please provide one with the option \"Python-><path/to/python>\""];
+          Return[Null];
+        ];
+        (*Start session, load in prepare data file*)
+        session = StartExternalSession[<|"System" -> "Python", "Executable" -> python|>];
+        res = ExternalEvaluate[session, "import cymetric;import cymetric.wolfram.mathematicalib as mcy;"];
+        If[FailureQ[res],
+          Print[res];
+          Return[Null];
+        ];
+      ];
+      (*Check whether mathematica_lib.py has been loaded; if not, load it into session*)
+      res = ExternalEvaluate[session, "import sys;'cymetric' in sys.modules"];
+      If[FailureQ[res],
+        Print[res];
+        Return[Null];
+      ];
+      If[!res,
+        res = ExternalEvaluate[session, "import cymetric;import cymetric.wolfram.mathematicalib as mcy;"];
+      ];
+      If[FailureQ[res],
+        Print[res];
+        Return[Null];
+      ];
+      GlobalPythonSession = session;
+      Return[GlobalPythonSession];
+    )
+  ]; 
+
+
+Options[GeneratePoints] = {"KahlerModuli" -> {}, "Points" -> 200000, "VolJNorm" -> 1}; 
+GeneratePoints[poly_, dimPs_, variables_List:{}, OptionsPattern[]] :=
+  Module[{python, points, numPts, pointsFile, verbose, session, outDir, res, startPos, monomials, coeffs, kahlerModuli, precision, loggerLevel, functionArgs, args, vars, randomPoint, i, prev, curr, isSymmetric, pointsBatched, volJNorm, numParamsInPn},
+    (
+      python = GlobalOptions["Python"];
+      (*Start session, load in prepare data file*)
+      session = GetSession[python, GlobalPythonSession];
+      numPts = OptionValue["Points"];
+      kahlerModuli = OptionValue["KahlerModuli"];
+      verbose = GlobalOptions["Verbose"];
+      precision = GlobalOptions["Precision"];
+      outDir = GlobalOptions["Dir"];
+      volJNorm = OptionValue["VolJNorm"];
+      
+      If[session === Null,
+        Return["Could not start a Python Kernel with all dependencies installed."]
+      ];
+      loggerLevel = GetLoggerLevel[GlobalOptions["Verbose"]];
+      (*Find coefficients and exponents of the polynomials*)
+      If[!ListQ[poly],
+        poly = {poly}
+      ];
+      If[variables == {},
+        If[verbose > 0,
+          Print["Warning: No variables specified, assuming alphabetical monomial ordering."];
+        ];
+        vars = Sort[Variables[Flatten[poly]]];
+        If[verbose > 1,
+          Print["Variables have been assigned to the ambient space factors as follows:"];
+          startPos = 1;
+          For[i = 1, i <= Length[dimPs], i++,
+            Print[i, ".) ", SymbolName[P]^ToString[dimPs[[i]]], ": ", vars[[startPos ;; startPos + dimPs[[i]]]]];
+            startPos += dimPs[[i]] + 1;
+          ];
+          ,
+          vars = Flatten[vars];
+        ];
+        ,
+        vars = Flatten[variables];
+      ];
+      
+      monomials = {};
+      coeffs = {};
+      For[i = 1, i <= Length[poly], i++,
+        res = Association[CoefficientRules[poly[[i]], vars]];
+        AppendTo[monomials, Keys[res]];
+        AppendTo[coeffs, Values[res]];
+      ];
+      If[kahlerModuli == {}, 
+        kahlerModuli = Table[1, {i, Length[dimPs]}];
+      ];
+      pointsFile = FileNameJoin[{outDir, "points.pickle"}];
+      Print["Generating ", numPts, " points..."];
+      {points, numParamsInPn} = GeneratePointsM[numPts, dimPs, coeffs, monomials, precision, verbose, True];
+      
+      Print["Writing points to ", pointsFile];
+      If[!DirectoryQ[outDir], CreateDirectory[outDir]];
+      res = ExternalEvaluate[session,"def write_points_from_mathematica(pts, pts_path): import pickle;import numpy as np;pickle.dump(pts, open(pts_path,'wb'))" -> {NumericArray[points, "ComplexReal32"], pointsFile}];
+      (* batch the conversion, otherwise there is an error for long points *)
+      (* pointsBatched = Partition[points, UpTo[1000]];
+      ExternalEvaluate[session, "generated_pts=[];"];
+      For[i = 1, i <= Length[pointsBatched], i++,
+        res = ExternalEvaluate[session, "generated_pts +=" <> ToPython[pointsBatched[[i]]] <> ";"];
+        If[FailureQ[res],
+          Print["An error occurred."];
+          Print[res];
+          Break[];
+        ];
+      ];
+      ExternalEvaluate[session, "generated_pts=[];"];
+      *)
+      If[FailureQ[res],
+        Print["An error occurred."];
+        Print[res];
+      ];
+      
+      functionArgs = Keys[Options[GeneratePoints]];
+      args = Join[GlobalOptions, Association[Table[functionArgs[[i]] -> OptionValue[functionArgs[[i]]],{i, Length[functionArgs]}]]];
+      args["num_pts"] = numPts;
+      args["logger_level"] = loggerLevel;
+      args["KahlerModuli"] = NumericArray[kahlerModuli, "Real32"];
+      args["selected_t"] = numParamsInPn;
+      args["point_file_path"] = pointsFile;
+      args["monomials"] = NumericArray[monomials, "Integer32"];
+      args["coeffs"] = NumericArray[coeffs, "Real32"];
+      args["ambient_dims"] = dimPs;
+      args["VolJNorm"] = volJNorm;
+      
+      res = ExternalEvaluate[session, "mcy.generate_points" -> args];
+        
+      If[FailureQ[res],
+        Print["An error occurred."];
+        Print[res];
+        ,
+        DeleteFile[pointsFile];
+      ];
+      Return[res];
+    )
+  ]; 
+
+
+Options[GeneratePointsToric] = {"KahlerModuli" -> {}, "Points" -> 200000}; 
+GeneratePointsToric[PathToToricInfo_, OptionsPattern[]] := 
+  Module[{python, points, numPts, pointsFile, functionArgs, verbose, session, outDir, res, startPos, monomials, coeffs, kahlerModuli, precision, loggerLevel, args, vars, randomPoint, i, prev, curr, isSymmetric, pointsBatched, volJNorm, dimCY, coefficients, dimPs, patchMasks, GLSMcharges, sections},
+    (
+      python = GlobalOptions["Python"];
+      numPts = OptionValue["Points"];
+      verbose = GlobalOptions["Verbose"];
+      session = GetSession[python, GlobalPythonSession];
+      outDir = GlobalOptions["Dir"];
+      kahlerModuli = OptionValue["KahlerModuli"];
+      precision = GlobalOptions["Precision"];
+      (*Start session, load in prepare data file*)
+      If[session === Null,
+        Return["Could not start a Python Kernel with all dependencies installed."];
+      ];
+      ChangeSetting["ToricDataPath", PathToToricInfo];
+      
+      loggerLevel = GetLoggerLevel[GlobalOptions["Verbose"]];
+      
+      (*Read in toric data*)
+      res = ExternalEvaluate[session, "import pickle;import numpy as np;pickle.load(open(\"" <> PathToToricInfo <> "\",'rb'))"];
+      If[FailureQ[res],
+        Print["An error occurred."];
+        Print[res];
+        Return[res]
+      ];
+      dimCY = res[["dim_cy"]];
+      monomials = res[["exp_aK"]];
+      coefficients = res[["coeff_aK"]];
+      patchMasks = res[["patch_masks"]];
+      GLSMcharges = res[["glsm_charges"]];
+      sections = res[["exps_sections"]];
+      volJNorm = res["vol_j_norm"];
+      dimPs = {Length[monomials[[1]]]};
+      If[kahlerModuli == {},
+        kahlerModuli = Table[1, {i, Length[dimPs]}]
+      ];
+      
+      pointsFile = FileNameJoin[{outDir, "points.pickle"}];
+      Print["Generating ", numPts, " points..."];
+      points = GenerateToricPointsM[numPts, dimCY, coefficients, monomials, sections, patchMasks, GLSMcharges, precision, verbose];
+      Print["Writing points to ", pointsFile];
+      If[!DirectoryQ[outDir], CreateDirectory[outDir]];
+      res = ExternalEvaluate[session, "def write_points_from_mathematica(pts, pts_path): import pickle;import numpy as np;pickle.dump(pts, open(pts_path,'wb'))" -> {NumericArray[points,"ComplexReal32"], pointsFile}];
+      If[FailureQ[res],
+        Print["An error occurred."];
+        Print[res];
+      ];
+      
+      functionArgs = Keys[Options[GeneratePointsToric]];
+      args = Join[GlobalOptions, Association[Table[functionArgs[[i]] -> OptionValue[functionArgs[[i]]],{i, Length[functionArgs]}]]];
+      args["toric_file_path"] = PathToToricInfo;
+      args["num_pts"] = numPts;
+      args["logger_level"] = loggerLevel;
+       
+      res = ExternalEvaluate[session, "mcy.generate_points_toric" -> args];
+      If[FailureQ[res],
+        Print["An error occurred."];
+        Print[res];
+        ,
+        DeleteFile[pointsFile];
+      ];
+      Return[res];
+    )
+  ]; 
+
+
+Options[TrainNN] = {"Epochs" -> 20, "EvaluateModel" -> False, Verbose -> GetGlobalOptions["Verbose"]}; 
+TrainNN[OptionsPattern[]] :=
+  Module[{python, model, callbacks, nHiddens, acts, nEpochs, batchSize, alphas, outDir, verbose, session, res, loggerLevel, args, validSession, toricDataPath, printLosses, printMeasures, functionArgs},
+    (
+      python = GlobalOptions["Python"];
+      outDir = GlobalOptions["Dir"];
+      session = GetSession[python, GlobalPythonSession];
+      model = GlobalOptions["Model"];
+      callbacks = GlobalOptions["EvaluateModel"];
+      nHiddens = GlobalOptions["HiddenLayers"];
+      acts = GlobalOptions["ActivationFunctions"];
+      nEpochs = OptionValue["Epochs"];
+      batchSize = GlobalOptions["BatchSize"];
+      alphas = GlobalOptions["Alphas"];
+      verbose = OptionValue["Verbose"];
+      toricDataPath = GetSetting[""];
+      printLosses = GlobalOptions["PrintLosses"];
+      printMeasures = GlobalOptions["PrintMeasures"];
+      If[(toricDataPath == "" || toricDataPath === None || toricDataPath === Null) && (model == "PhiFSToric" || model == "MatrixMultFSToric"),
+        Print["Need to specify path to toric info as generated by SAGE."];
+        Return[{"Need to specify path to toric info as generated by SAGE.", session}]
+      ];
+      If[session === Null,
+        Return["Could not start a Python Kernel with all dependencies installed."]
+      ];
+      loggerLevel = GetLoggerLevel[verbose];
+      
+      functionArgs = Keys[Options[TrainNN]];
+      args = Join[GlobalOptions, Association[Table[functionArgs[[i]] -> OptionValue[functionArgs[[i]]],{i, Length[functionArgs]}]]];
+      args["logger_level"] = loggerLevel;
+      
+      res = ExternalEvaluate[session, "mcy.train_NN" -> args];
+      If[FailureQ[res],
+        Print["An error occurred"];
+        Print[res];
+        Return[res]
+      ];
+      Print["Writing training information to " <> FileNameJoin[{outDir, "training_history_mathematica.m"}]];
+      Export[FileNameJoin[{outDir, "trianing_history_mathematica.m"}], res];
+      Return[res];
+    )
+  ]; 
+
+
+GetPoints[dataset_:"all", asComplex_:True] :=
+  Module[{python, session, outDir, res, lenPts},
+    (
+      python = GlobalOptions["Python"];
+      outDir = GlobalOptions["Dir"];
+      session = GetSession[python, GlobalPythonSession];
+      If[session === Null,
+        Return["Could not start a Python Kernel with all dependencies installed."];
+      ];
+      If[dataset == "all",
+        res = Join[
+                   ExternalEvaluate[session, "import numpy as np;import os;data=np.load(os.path.join(" <> ToPython[outDir] <> ", 'dataset.npz'));data['X_train']"], 
+                   ExternalEvaluate[session, "import numpy as np;import os;data=np.load(os.path.join(" <> ToPython[outDir] <> ", 'dataset.npz'));data['X_val']"]
+              ];
+        ,
+        res = ExternalEvaluate[session, "import numpy as np;import os;data=np.load(os.path.join(" <> ToPython[outDir] <> ", 'dataset.npz'));data['X_" <> dataset <> "']"];
+      ];
+      If[FailureQ[res],
+        Print["An error occurred."];
+        Print[res];
+        Return[res];
+      ];
+      If[asComplex && Length[res] > 0,
+        lenPts = Floor[Length[res[[1]]] / 2];
+        res = res[[;;, 1 ;; lenPts]] + I * res[[;;, lenPts + 1 ;; ]];
+        ,
+        If[Length[res] == 0,
+          res = {};
+        ];
+      ];
+      Return[Chop[Normal[res]]];
+    )
+  ]; 
+
+
+GetKahlerPotential[dataset_:{}] :=
+  Module[{model, python, session, outDir, res, pts, args},
+    (
+      python = GlobalOptions["Python"];
+      outDir = GlobalOptions["Dir"];
+      model = GlobalOptions["Model"];
+      session = GetSession[python, GlobalPythonSession];
+      If[session === Null,
+        Return["Could not start a Python Kernel with all dependencies installed."];
+      ];  
+      If[ListQ[dataset],
+        If[Length[Dimensions[dataset]] == 1,
+          pts = {Join[Re[dataset], Im[dataset]]}
+          ,
+          pts = Table[Join[Re[dataset[[i]]], Im[dataset[[i]]]], {i, Length[dataset]}]
+        ];
+        ,
+        pts = GetPoints[dataset, False];
+        If[FailureQ[pts],
+          Print["An error occurred."];
+          Print[pts];
+          Return[pts]
+        ];
+      ];
+      args = GlobalOptions;
+      args["points"] = NumericArray[pts, "Real32"];
+      args["logger_level"] = GetLoggerLevel[GlobalOptions["Verbose"]];
+      res = ExternalEvaluate[session, "mcy.get_kahler_potential" -> args];
+      If[FailureQ[res],
+        Print["An error occurred."];
+        Print[res];
+        Return[res];
+      ];
+      Return[Chop[Normal[res]]];
+    )
+  ]; 
+
+
+GetWeights[dataset_:"all"] :=
+  Module[{python, session, outDir, res, pts, args, loggerLevel},
+    (
+      python = GlobalOptions["Python"];
+      outDir = GlobalOptions["Dir"];
+      session = GetSession[python, GlobalPythonSession];
+      If[session === Null,
+        Return["Could not start a Python Kernel with all dependencies installed."];
+      ];
+      res = GetPoints[dataset, False];
+      If[FailureQ[res],
+        Print["An error occurred."];
+        Print[res];
+        Return[res]
+      ];
+      args = GlobalOptions;
+      args["points"] = NumericArray[res, "Real32"];
+      args["logger_level"] = GetLoggerLevel[GlobalOptions["Verbose"]];
+      res = ExternalEvaluate[session, "mcy.get_weights" -> args];
+      If[FailureQ[res],
+        Print["An error occurred."];
+        Print[res];
+        Return[res]
+      ];
+      Return[Re[Normal[res]]];
+    )
+  ]; 
+
+
+GetAuxiliaryWeights[dataset_:"all"] :=
+  Module[{python, session, outDir, res, pts, args},
+    (
+      python = GlobalOptions["Python"];
+      outDir = GlobalOptions["Dir"];
+      session = GetSession[python, GlobalPythonSession];
+      If[session === Null,
+        Return["Could not start a Python Kernel with all dependencies installed."];
+      ];
+      If[dataset == "all",
+        res = Join[
+                   ExternalEvaluate[session, "import numpy as np;import os;data=np.load(os.path.join(" <> ToPython[outDir] <> ", 'dataset.npz'));data['y_train']"], 
+                   ExternalEvaluate[session, "import numpy as np;import os;data=np.load(os.path.join(" <> ToPython[outDir] <> ", 'dataset.npz'));data['y_val']"]
+              ];
+        ,
+        res = ExternalEvaluate[session, "import numpy as np;import os;data=np.load(os.path.join(" <> ToPython[outDir] <> ", 'dataset.npz'));data['y_" <> dataset <> "']"];
+      ];
+      If[FailureQ[res],
+        Print["An error occurred."];
+        Print[res];
+        Return[res];
+      ];
+      If[Length[res] > 0,
+        res = res[[;;, -2]] / res[[;;, -1]];
+        ,
+        res = {};
+      ];
+      Return[Re[Normal[res]]];
+    )
+  ]; 
+
+
+GetOmegaSquared[dataset_:"all", OptionsPattern[]] :=
+  Module[{python, session, outDir, res, pts, args},
+    (
+      python = GlobalOptions["Python"];
+      outDir = GlobalOptions["Dir"];
+      session = GetSession[python, GlobalPythonSession];
+      If[session === Null,
+        Return["Could not start a Python Kernel with all dependencies installed."];
+      ];
+      If[ListQ[dataset],
+        If[Length[Dimensions[dataset]] == 1,
+          pts = {Join[Re[dataset], Im[dataset]]}
+          ,
+          pts = Table[Join[Re[dataset[[i]]], Im[dataset[[i]]]], {i, Length[dataset]}]
+        ];
+        args = GlobalOptions;
+        args["points"] = NumericArray[pts, "Real32"];
+        args["logger_level"] = GetLoggerLevel[GlobalOptions["Verbose"]];
+        res = ExternalEvaluate[session, "mcy.get_omegas" -> args];
+        If[FailureQ[res],
+          Print["An error occurred."];
+          Print[res];
+          Return[res]
+        ];
+        ,
+        If[dataset == "all",
+          res = Join[ExternalEvaluate[session, "import numpy as np;import os;data=np.load(os.path.join(" <> ToPython[outDir] <> ", 'dataset.npz'));data['y_train']"], 
+                     ExternalEvaluate[session, "import numpy as np;import os;data=np.load(os.path.join(" <> ToPython[outDir] <> ", 'dataset.npz'));data['y_val']"]
+                     ];
+          ,
+          res = ExternalEvaluate[session, "import numpy as np;import os;data=np.load(os.path.join(" <> ToPython[outDir] <> ", 'dataset.npz'));data['y_" <> dataset <> "']"];
+        ];
+        If[FailureQ[res],
+          Print["An error occurred."];
+          Print[res];
+          Return[res]
+        ];
+        If[Length[res] > 0,
+          res = res[[;;, -1]];
+          ,
+          res = {};
+        ];
+      ];
+      Return[Re[Normal[res]]];
+    )
+  ]; 
+
+
+GetCYWeights[dataset_:"all", VolJNorm_:1.] :=
+  Module[{python, outDir, session, res, pts, omegaSquared, gs, dets, dimX, tmp, i, model},
+    (
+      python = GlobalOptions["Python"];
+      outDir = GlobalOptions["Dir"];
+      session = GetSession[python, GlobalPythonSession];
+      If[session === Null,
+        Return["Could not start a Python Kernel with all dependencies installed."];
+      ];
+      If[ListQ[dataset],
+        If[Length[Dimensions[dataset]] == 1,
+          pts = {dataset}
+          ,
+          pts = dataset
+        ];
+        ,
+        pts = GetPoints[dataset];
+        If[FailureQ[pts],
+          Print["An error occurred."];
+          Print[pts];
+          Return[pts]
+        ];
+      ];
+      omegaSquared = GetOmegaSquared[dataset];
+      gs = CYMetric[pts];
+      dets = Det /@ gs;
+      dets = dets / VolJNorm;
+      res = omegaSquared / dets;
+      Return[Re[Normal[res]]];
+    )
+  ]; 
+
+
+GetPullbacks[points_] :=
+  Module[{python, outDir, session, res, args, pts, model},
+    (
+      python = GlobalOptions["Python"];
+      outDir = GlobalOptions["Dir"];
+      session = GetSession[python, GlobalPythonSession];
+      If[session === Null,
+        Return["Could not start a Python Kernel with all dependencies installed."];
+      ];
+      If[StringQ[points],
+        pts = GetPoints[points, False];
+        If[FailureQ[pts],
+          Print["An error occurred."];
+          Print[pts];
+          Return[pts]
+        ];
+        ,
+        If[Length[points] == 0,
+          Return[{}]
+        ];
+        If[Length[Dimensions[points]] == 1,
+          pts = {Join[Re[points], Im[points]]}
+          ,
+          pts = Table[Join[Re[points[[i]]], Im[points[[i]]]], {i, Length[points]}]
+        ];
+      ];
+      args = GlobalOptions;
+      args["points"] = NumericArray[pts, "Real32"];
+      args["logger_level"] = GetLoggerLevel[GlobalOptions["Verbose"]];
+      res = ExternalEvaluate[session, "mcy.get_pullbacks" -> args];
+      If[FailureQ[res],
+        Print["An error occurred."];
+        Print[res];
+        Return[res]
+      ];
+      Return[Chop[Normal[res]]];
+    )
+  ]; 
+
+
+CYMetric[points_] :=
+  Module[{python, outDir, session, res, args, pts, model},
+    (
+      python = GlobalOptions["Python"];
+      outDir = GlobalOptions["Dir"];
+      session = GetSession[python, GlobalPythonSession];
+      If[session === Null,
+        Return["Could not start a Python Kernel with all dependencies installed."];
+      ];
+      If[StringQ[points],
+        pts = GetPoints[points, False];
+        If[FailureQ[pts],
+          Print["An error occurred."];
+          Print[pts];
+          Return[pts]
+        ];
+        ,
+        If[Length[points] == 0,
+          Return[{}]
+        ];
+        If[Length[Dimensions[points]] == 1,
+          pts = {Join[Re[points], Im[points]]}
+          ,
+          pts = Table[Join[Re[points[[i]]], Im[points[[i]]]], {i, Length[points]}]
+        ];
+      ];
+      args = GlobalOptions;
+      args["points"] = NumericArray[pts, "Real32"];
+      args["logger_level"] = GetLoggerLevel[GlobalOptions["Verbose"]];
+      res = ExternalEvaluate[session, "mcy.get_g" -> args];
+      If[FailureQ[res],
+        Print["An error occurred."];
+        Print[res];
+        Return[res]
+      ];
+      Return[Chop[Normal[res]]];
+    )
+  ]; 
+
+
+FSMetric[points_, KahlerModuli_] :=
+  Module[{python, outDir, session, res, args, pts},
+    (
+      python = GlobalOptions["Python"];
+      outDir = GlobalOptions["Dir"];
+      session = GetSession[python, GlobalPythonSession];
+      If[session === Null,
+        Return["Could not start a Python Kernel with all dependencies installed."];
+      ];
+      If[StringQ[points],
+        pts = GetPoints[points, False];
+        If[FailureQ[pts],
+          Print["An error occurred."];
+          Print[pts];
+          Return[pts]
+        ];
+        ,
+        If[Length[points] == 0,
+          Return[{}]
+        ];
+        If[Length[Dimensions[points]] == 1,
+          pts = {Join[Re[points], Im[points]]}
+          ,
+          pts = Table[Join[Re[points[[i]]], Im[points[[i]]]], {i, Length[points]}]
+        ];
+      ];
+      args = GlobalOptions;
+      args["points"] = NumericArray[pts, "Real32"];
+      args["logger_level"] = GetLoggerLevel[GlobalOptions["Verbose"]];
+      args["ts"] = KahlerModuli;
+      res = ExternalEvaluate[session, "mcy.get_g_fs" -> args];
+      If[FailureQ[res],
+        Print["An error occurred."];
+        Print[res];
+        Return[res]
+      ];
+      Return[Chop[Normal[res]]];
+    )
+  ]; 
+
+
 End[];
-Return[python];];
-If[FileExistsQ[$SETTINGSFILE],Print["Settings file does not contain a path to a Python environment. Please set one with changeSettings[Python-><path/to/python>], or run again with option ForceReinstall->True"];Return[""];
-];
-];
-If[!pythonVENV===Null,
-If[!FileExistsQ[pythonVENV],Print["Could not find specified Python executable ", pythonVENV]; Return[""];];
-exec=pythonVENV;
-,
-exec=DiscoverPython[True];
-];
-res=SetupPythonVENV[exec,"Patch"->True,"VENVPath"->path];
-ChangeSetting["Python",res];
-session=StartExternalSession[<|"System"->"Python","Executable"->res|>];
-packageDir=ExternalEvaluate[session,"import cymetric;import os;os.path.dirname(cymetric.__file__)"];
-(*Import the mathematica point generation functions into the current session*)
-Begin["cymetric`Private`"];
-Get[FileNameJoin[{packageDir,"wolfram/PointGeneratorMathematica.m"}]];
-End[];
-Return[res];
-)];
-
-Options[DiscoverPython]={"Version"->Null};
-DiscoverPython[useForVENV_:False,OptionsPattern[]]:=Module[{pythonEnvs,exec,session,res,version,i},(
-version=OptionValue["Version"];
-pythonEnvs=FindExternalEvaluators["Python","ResetCache"->True];
-pythonEnvs=Reverse[SortBy[pythonEnvs,"Version"]];(*Start with latest Python on tyhe system and work your way down. ATM, there's no TF for python 3.9, so we skip that*)
-Print["Mathematica discovered the following Python environments on your system:"];
-Print[pythonEnvs];
-Print["Looking for Python 3"];
-For [i=1,i<=Length[pythonEnvs],i++,
-If[StringTake[pythonEnvs[i]["Version"],1]!="3"||StringTake[pythonEnvs[i]["Version"],3]=="3.10", Continue[]];
-If[!version===Null,If[version!=pythonEnvs[i]["Version"],Continue[];]];
-exec=pythonEnvs[i]["Executable"];
-Print["Found Python version ",pythonEnvs[i]["Version"], " at ",exec,"."];
-If[useForVENV,Return[exec]];
-Print["Looking for pyzmq for Mathematica interop and tensorflow..."];
-session=Quiet[Check[StartExternalSession[<|"System"->"Python","Executable"->exec|>],Print["Mathematica couldn't start this Python session. Trying next Python environment..."];Continue[]]];
-DeleteObject[session];
-(*Attempt to load*)
-session=GetSession[exec];
-If[session===Null,Continue[];,Print["Found good Python environment: ",exec]];
-Quiet[Check[DeleteObject[session],Continue[]]];
-Return[exec];
-];
-)];
-
-Options[SetupPythonVENV]={"VENVPath"->FileNameJoin[{$WORKDIR,"venv"}],"Patch"->False};
-SetupPythonVENV[exec_String,OptionsPattern[]]:=Module[{path,patchEE,setupVENV,python,pip,installPackages,packages,session,res,hnd,content,i},(
-path=OptionValue["VENVPath"];
-patchEE=OptionValue["Patch"];
-Print["Creating virtual environment at ",path];
-setupVENV=RunProcess[{exec,"-m","venv",path}];
-If[setupVENV["ExitCode"]!=0,Print["An error occurred. Here's the output"];Print[setupVENV["StandardOutput"]];Print[setupVENV["StandardError"]];Return[];];
-python=FileNameJoin[{path,"bin","python"}];
-pip=FileNameJoin[{path,"bin","pip"}];
-If[!FileExistsQ[pip],pip=FileNameJoin[{path,"bin","pip3"}];];
-If[!FileExistsQ[pip],Print["Error: Couldn't find pip at ",FileNameJoin[{path,"bin"}]];Return[python];];
-(*Install packages*);
-packages={ "h5py","joblib","numpy","pyyaml","pyzmq","scipy","sympy","wolframclient"};
-Print["Upgrading pip, wheel, setuptools..."];
-installPackages=RunProcess[{pip,"install", "--upgrade", "pip"}];
-installPackages=RunProcess[{pip,"install", "--upgrade", "wheel"}];
-installPackages=RunProcess[{pip,"install", "--upgrade", "setuptools"}];
-If[installPackages["ExitCode"]!=0,Print["An error occurred. Here's the output"];Print[installPackages["StandardOutput"]];Print[installPackages["StandardError"]];Return[python];];
-For[i=1,i<=Length[packages],i++,
-Print["Installing ",packages[[i]],"..."];
-installPackages=RunProcess[{pip,"install",packages[[i]]}];
-If[installPackages["ExitCode"]!=0,Print["An error occurred. Here's the output"];Print[installPackages["StandardOutput"]];Print[installPackages["StandardError"]];Return[python];
-];
-];
-(*Install CY package*)
-Print["Installing cymetric..."];
-installPackages=RunProcess[{pip,"install","git+https://github.com/pythoncymetric/cymetric.git"}];
-If[installPackages["ExitCode"]!=0,Print["An error occurred. Here's the output"];Print[installPackages["StandardOutput"]];Print[installPackages["StandardError"]];Return[python];
-];
-(*Register for use with Mathematica*)
-Print["Registering venv with mathematica..."];
-RegisterExternalEvaluator["Python",python];
-Print["Checking whether 'externalevaluate.py' needs to be patched for this version..."];
-session=StartExternalSession[<|"System"->"Python","Executable"->python|>];
-res=Quiet[ExternalEvaluate[session,{"import os;x=0;x"}]];
-If [ListQ[res],res= res[[1]]];
-If[res["Message"]=="required field \"type_ignores\" missing from Module",
-Print["Patch needs to be applied"];
-If[!patchEE,
-Print["Option for automatically applying patch not set. Please apply manually and try again."];
-DeleteObject[session];
-Return[python];
-,
-Print["Applying patch..."];
-hnd=OpenRead[FileNameJoin[{ $InstallationDirectory,"/SystemFiles/Links/WolframClientForPython/wolframclient/utils/externalevaluate.py"}]];
-content=ReadString[hnd];
-Close[hnd];
-content=StringReplace[content,{"exec(compile(ast.Module(expressions), '', 'exec'), current)"->"exec(compile(ast.Module(expressions, []), '', 'exec'), current)  # exec(compile(ast.Module(expressions), '', 'exec'), current) # changed by CYMetrics"}];
-hnd=OpenWrite[FileNameJoin[{ $InstallationDirectory,"/SystemFiles/Links/WolframClientForPython/wolframclient/utils/externalevaluate.py"}]];
-WriteString[hnd,content];
-Close[hnd];
-];
-];
-Print["Testing new environment..."];
-session=GetSession[python];
-If[!session===Null,DeleteObject[session],Return[python]];
-Print["Everything is working!"];
-Return[python];
-)];
-
-GetSession[exec_:Null,mysession_:Null]:=
-Module[{validSession,session,python,res},(
-python=exec;
-session=mysession;
-validSession=Quiet[Check[ExternalEvaluate[session,"2+2==4"],False]];
-If[session===Null||!validSession,
-If[python===Null,python=Check[GetSetting["Python"],Null]];
-If[python===Null,Print["No python interpreter configured. Please provide one with the option \"Python-><path/to/python>\""];Return[Null];];
-(*Start session, load in prepare data file*)
-session=StartExternalSession[<|"System"->"Python","Executable"->python|>];
-res=ExternalEvaluate[session,"import cymetric;import cymetric.wolfram.mathematicalib as mcy;"];
-If[FailureQ[res], Print[res];Return[Null];];
-];
-(*Check whether mathematica_lib.py has been loaded; if not, load it into session*)
-res=ExternalEvaluate[session,"import sys;'cymetric' in sys.modules"];
-If[FailureQ[res], Print[res];Return[Null];];
-If[!res,res=ExternalEvaluate[session,"import cymetric;import cymetric.wolfram.mathematicalib as mcy;"]];
-If[FailureQ[res], Print[res];Return[Null];];
-Return[session];
-)];
-
-Options[GeneratePoints]={"KahlerModuli"->{},"Points"->200000,"Precision"->20,"VolJNorm"->1,"Python"->Null,"Session"->Null,"Dir"->FileNameJoin[{$WORKDIR,"test"}],"Verbose"->3};
-GeneratePoints[poly_,dimPs_,variables_List:{},OptionsPattern[]]:=
-Module[{python,points,numPts,pointsFile,verbose,session,outDir,res,startPos, monomials, coeffs,kahlerModuli, precision,loggerLevel,args,vars,randomPoint,i,prev,curr,isSymmetric,pointsBatched,volJNorm,numParamsInPn},(
-python=OptionValue["Python"];
-numPts=OptionValue["Points"];
-verbose=OptionValue["Verbose"];
-session=OptionValue["Session"];
-outDir=OptionValue["Dir"];
-kahlerModuli=OptionValue["KahlerModuli"];
-precision=OptionValue["Precision"];
-volJNorm=OptionValue["VolJNorm"];
-(*Start session, load in prepare data file*)
-session=GetSession[python,session];
-If[session===Null,Return[{"Could not start a Python Kernel with all dependencies installed.",session}]];
-
-loggerLevel="ERROR";(*Taken for verbose \[LessEqual] 0*)
-If[verbose==1, loggerLevel="WARNING"];
-If[verbose==2, loggerLevel="INFO"];
-If[verbose>=3, loggerLevel="DEBUG"];
-
-(*Find coefficients and exponents of the polynomials*)
-If[!ListQ[poly],poly={poly}];
-If[variables=={},
-If[verbose >0,Print["Warning: No variables specified, assuming alphabetical monomial ordering."]];
-vars=Sort[Variables[Flatten[poly]]];
-If[verbose >1,
-Print["Variables have been assigned to the ambient space factors as follows:"];
-startPos=1;
-For[i=1,i<=Length[dimPs],i++,
-Print[i,".) ",SymbolName[P]^ToString[dimPs[[i]]],": ",vars[[startPos;;startPos+dimPs[[i]]]]];
-startPos+=dimPs[[i]]+1;
-];
-,
-vars=Flatten[vars];
-];
-,
-vars=Flatten[variables];
-];
-monomials={};coeffs={};
-For[i=1,i<=Length[poly],i++,
-res=Association[CoefficientRules[poly[[i]],vars]];
-AppendTo[monomials,Keys[res]];
-AppendTo[coeffs ,Values[res]];
-];
-(*If[Length[poly]\[Equal]1,monomials=monomials[[1]];coeffs=coeffs[[1]]];*)
-(*Return[{monomials,coeffs}];*)
-kahlerModuli = If[kahlerModuli=={}, Table[1,{i,Length[dimPs]}],kahlerModuli];
-pointsFile=FileNameJoin[{outDir,"points.pickle"}];
-Print["Generating ",numPts," points..."];
-{points,numParamsInPn}=GeneratePointsM[numPts,dimPs,coeffs,monomials,precision,verbose,True];
-Print["Writing points to ",pointsFile];
-If[!DirectoryQ[outDir],CreateDirectory[outDir]];
-(* batch the conversion, otherwise there is an error for long points*)
-pointsBatched=Partition[points,UpTo[1000]];
-ExternalEvaluate[session,"generated_pts=[];"];
-For[i=1,i<=Length[pointsBatched],i++,
-res=ExternalEvaluate[session,"generated_pts +="<>ToPython[pointsBatched[[i]]]<>";"];
-If[FailureQ[res],Print["An error occurred."];Print[res];Break[];];
-];
-res=ExternalEvaluate[session,"import pickle;import numpy as np;pickle.dump(np.array(generated_pts), open(\""<>pointsFile<>"\",'wb'));"];
-ExternalEvaluate[session,"generated_pts=[];"];
-If[FailureQ[res],Print["An error occurred."];Print[res];];
-
-args="{
-        'outdir':        \""<>ToPython[outDir]<>"\",
-        'logger_level':  logging."<>loggerLevel<>",
-        'num_pts':       "<>ToPython[numPts]<>",
-        'monomials':     "<>ToPython[monomials]<>",       
-        'coeffs':        "<>ToPython[coeffs]<>",
-        'k_moduli':      "<>ToPython[kahlerModuli]<>",
-        'ambient_dims':  "<>ToPython[dimPs] <>",
-        'precision':     "<>ToPython[precision] <>",
-        'vol_j_norm':    "<>ToPython[volJNorm] <>",
-        'selected_t': "<>ToPython[numParamsInPn] <>",
-        'point_file_path':\""<>ToPython[pointsFile] <>"\"
-       }";
-res=ExternalEvaluate[session,"mcy.generate_points"->args];
-If[FailureQ[res],
-Print["An error occurred."];Print[res];,
-DeleteFile[pointsFile];
-];
-Return[{res,session}];
-)];
-
-Options[GeneratePointsToric]={"KahlerModuli"->{},"Points"->200000,"Precision"->20,"Python"->Null,"Session"->Null,"Dir"->FileNameJoin[{$WORKDIR,"test"}],"Verbose"->3};
-GeneratePointsToric[PathToToricInfo_,OptionsPattern[]]:=
-Module[{python,points,numPts,pointsFile,verbose,session,outDir,res,startPos, monomials, coeffs,kahlerModuli, precision,loggerLevel,args,vars,randomPoint,i,prev,curr,isSymmetric,pointsBatched,volJNorm,dimCY,coefficients,dimPs,patchMasks,GLSMcharges,sections},(
-python=OptionValue["Python"];
-numPts=OptionValue["Points"];
-verbose=OptionValue["Verbose"];
-session=OptionValue["Session"];
-outDir=OptionValue["Dir"];
-kahlerModuli=OptionValue["KahlerModuli"];
-precision=OptionValue["Precision"];
-(*Start session, load in prepare data file*)
-session=GetSession[python,session];
-If[session===Null,Return[{"Could not start a Python Kernel with all dependencies installed.",session}]];
-
-loggerLevel="ERROR";(*Taken for verbose \[LessEqual] 0*)
-If[verbose==1, loggerLevel="WARNING"];
-If[verbose==2, loggerLevel="INFO"];
-If[verbose>=3, loggerLevel="DEBUG"];
-
-(*Read in toric data*)
-res=ExternalEvaluate[session,"import pickle;import numpy as np;pickle.load(open(\""<>PathToToricInfo<>"\",'rb'))"];
-If[FailureQ[res],Print["An error occurred."];Print[res];Return[res,session]];
-dimCY=res[["dim_cy"]];
-monomials=res[["exp_aK"]];
-coefficients=res[["coeff_aK"]];
-patchMasks=res[["patch_masks"]];
-GLSMcharges=res[["glsm_charges"]];
-sections=res[["exps_sections"]];
-volJNorm=res["vol_j_norm"];
-dimPs={Length[monomials[[1]]]};
-kahlerModuli = If[kahlerModuli=={}, Table[1,{i,Length[dimPs]}],kahlerModuli];
-pointsFile=FileNameJoin[{outDir,"points.pickle"}];
-args="{
-        'toric_file_path': \""<>PathToToricInfo<>"\",
-        'outdir':        \""<>ToPython[outDir]<>"\",
-        'logger_level':  logging."<>loggerLevel<>",
-        'num_pts':       "<>ToPython[numPts]<>",
-        'dim_cy':        "<>ToPython[dimCY]<>",
-        'monomials':     "<>ToPython[monomials]<>",
-        'coeffs':        "<>ToPython[coefficients]<>",
-        'k_moduli':      "<>ToPython[kahlerModuli]<>",
-        'ambient_dims':  "<>ToPython[dimPs]<>",
-        'sections':      "<>ToPython[sections]<>",
-        'patch_masks':   "<>ToPython[patchMasks]<>",
-        'glsm_charges':  "<>ToPython[GLSMcharges]<>",
-        'precision':     "<>ToPython[precision] <>",
-        'vol_j_norm':    "<>ToPython[volJNorm] <>",
-        'verbose':       "<>ToPython[verbose] <>",
-        'point_file_path':\""<>ToPython[pointsFile]<>"\"
-       }";
-Print["Generating ",numPts," points..."];
-points=GenerateToricPointsM[numPts,dimCY,coefficients,monomials,sections,patchMasks,GLSMcharges,precision,verbose];
-Print["Writing points to ",pointsFile];
-If[!DirectoryQ[outDir],CreateDirectory[outDir]];
-(* batch the conversion, otherwise there is an error for long points*)
-pointsBatched=Partition[points,UpTo[1000]];
-ExternalEvaluate[session,"generated_pts=[];"];
-For[i=1,i<=Length[pointsBatched],i++,
-res=ExternalEvaluate[session,"generated_pts +="<>ToPython[pointsBatched[[i]]]<>";"];
-If[FailureQ[res],Print["An error occurred."];Print[res];Break[];];
-];
-res=ExternalEvaluate[session,"import pickle;import numpy as np;pickle.dump(np.array(generated_pts), open(\""<>pointsFile<>"\",'wb'));"];
-ExternalEvaluate[session,"generated_pts=[];"];
-If[FailureQ[res],Print["An error occurred."];Print[res];];
-res=ExternalEvaluate[session,"mcy.generate_points_toric"->args];
-If[FailureQ[res],
-Print["An error occurred."];Print[res];,
-DeleteFile[pointsFile];
-];
-Return[{res,session}];
-)];
-
-Options[TrainNN]={"Model"->"MultFS","EvaluateModel"->False,"HiddenLayers"->{64,64,64},"ActivationFunctions"->{"gelu","gelu","gelu"},"Epochs"->20,"BatchSize"->64,"Alphas"->{1.,1.,1.,1.,1.},"Python"->Null,"Session"->Null,"Dir"->FileNameJoin[{$WORKDIR,"test"}],"ToricDataPath"->"","Verbose"->3};
-TrainNN[OptionsPattern[]]:=
-Module[{python,model,callbacks,nHiddens,acts,nEpochs,batchSize,alphas,outDir,verbose,session,res, loggerLevel,args,validSession,toricDataPath},(
-python=OptionValue["Python"];
-outDir=OptionValue["Dir"];
-session=OptionValue["Session"];
-model=OptionValue["Model"];
-callbacks=OptionValue["EvaluateModel"];
-nHiddens=OptionValue["HiddenLayers"];
-acts=OptionValue["ActivationFunctions"];
-nEpochs=OptionValue["Epochs"];
-batchSize=OptionValue["BatchSize"];
-alphas=OptionValue["Alphas"];
-verbose=OptionValue["Verbose"];
-toricDataPath=OptionValue["ToricDataPath"];
-
-If[toricDataPath==""&&(model=="PhiFSToric"||model=="MatrixMultFSToric"),Print["Need to specify path to toric info as generated by SAGE."];Return[{"Need to specify path to toric info as generated by SAGE.",session}]];
-
-session=GetSession[python,session];
-If[session===Null,Return[{"Could not start a Python Kernel with all dependencies installed.",session}]];
-
-loggerLevel="ERROR";(*Taken for verbose \[LessEqual] 0*)
-If[verbose==1, loggerLevel="WARNING"];
-If[verbose==2, loggerLevel="INFO"];
-If[verbose>=3, loggerLevel="DEBUG"];
-
-args="{
-        'outdir':        \""<>ToPython[outDir]<>"\",
-        'logger_level':  logging."<>loggerLevel<>",
-        'model':         \""<>ToPython[model]<>"\",
-        'callbacks':     "<>ToPython[callbacks]<>",
-        'n_hiddens':     "<>ToPython[nHiddens]<>",
-		'acts':          "<>ToPython[acts]<>",
-		'n_epochs':      "<>ToPython[nEpochs]<>",
-		'batch_size':    "<>ToPython[batchSize]<>",
-		'alphas':        "<>ToPython[alphas]<>",
-        'toric_data_path':\""<>ToPython[toricDataPath]<>"\"
-       }";
-If[verbose>=3,Print[args]];
-res=ExternalEvaluate[session,"mcy.train_NN"->args];
-If[FailureQ[res],Print["An error occurred"];Print[res];Return[res,session]];
-Print["Writing training information to "<>FileNameJoin[{outDir,"training_history_mathematica.m"}]];
-Export[FileNameJoin[{outDir,"trianing_history_mathematica.m"}],res];
-Return[{res,session}];
-)];
-
-Options[GetPoints]={"Python"->Null,"Session"->Null,"Dir"->FileNameJoin[{$WORKDIR,"test"}]};
-GetPoints[dataset_:"all",OptionsPattern[]]:=
-Module[{python,session,outDir,res,lenPts},(
-python=OptionValue["Python"];
-session=OptionValue["Session"];
-outDir=OptionValue["Dir"];
-session=GetSession[python,session];
-If[session===Null,Return[{"Could not start a Python Kernel with all dependencies installed.",session}]];
-
-If[dataset=="all",
-res=Join[
-ExternalEvaluate[session,"import numpy as np;import os;data=np.load(os.path.join('"<>ToPython[outDir]<>"', 'dataset.npz'));data['X_train']"],ExternalEvaluate[session,"import numpy as np;import os;data=np.load(os.path.join('"<>ToPython[outDir]<>"', 'dataset.npz'));data['X_val']"]
-];,
-res=ExternalEvaluate[session,"import numpy as np;import os;data=np.load(os.path.join('"<>ToPython[outDir]<>"', 'dataset.npz'));data['X_"<>dataset<>"']"]
-];
-If[FailureQ[res],Print["An error occurred."];Print[res];Return[{res,session}]];
-
-If[Length[res]>0,
-lenPts=Floor[Length[res[[1]]]/2];
-res=res[[;;,1;;lenPts]]+I*res[[;;,lenPts+1;;]];
-,
-res={};
-];
-Return[{Chop[Normal[res]],session}];
-)];
-
-Options[GetKahlerPotential]={"Model"->"PhiFS","Python"->Null,"Session"->Null,"Dir"->FileNameJoin[{$WORKDIR,"test"}]};
-GetKahlerPotential[dataset_:{},OptionsPattern[]]:=
-Module[{model,python,session,outDir,res,pts,args},(
-python=OptionValue["Python"];
-session=OptionValue["Session"];
-outDir=OptionValue["Dir"];
-model=OptionValue["Model"];
-session=GetSession[python,session];
-res={};
-If[session===Null,Return[{"Could not start a Python Kernel with all dependencies installed.",session}]];
-If[!ListQ[dataset],
-Print["Please speicfy the points as a list of list of complex numbers"];
-Return[{{},session}];
-,
-If[Length[dataset]==0,Return[{{},session}]];
-If[Length[Dimensions[dataset]]==1,pts={Join[Re[dataset],Im[dataset[[;;]]]]},pts=Table[Join[Re[dataset[[i]]],Im[dataset[[i]]]],{i,Length[dataset]}]];
-args="{
-        'model':       \""<>ToPython[model]<>"\",
-        'outdir':      \""<>ToPython[outDir]<>"\",
-        'points':        "<>ToPython[pts]<>"
-       }";
-res=ExternalEvaluate[session,"mcy.get_kahler_potential"->args];
-If[FailureQ[res],Print["An error occurred."];Print[res];Return[{res,session}]];
-];
-Return[{Normal[res],session}];
-)];
-
-Options[GetWeights]={"Python"->Null,"Session"->Null,"Dir"->FileNameJoin[{$WORKDIR,"test"}]};
-GetWeights[dataset_:"all",OptionsPattern[]]:=
-Module[{python,session,outDir,res,pts,args},(
-python=OptionValue["Python"];
-session=OptionValue["Session"];
-outDir=OptionValue["Dir"];
-session=GetSession[python,session];
-If[session===Null,Return[{"Could not start a Python Kernel with all dependencies installed.",session}]];
-If[ListQ[dataset],
-If[Length[dataset]==0,Return[{{},session}]];
-If[Length[Dimensions[dataset]]==1,pts={Join[Re[dataset],Im[dataset[[;;]]]]},pts=Table[Join[Re[dataset[[i]]],Im[dataset[[i]]]],{i,Length[dataset]}]];
-args="{
-        'outdir':      \""<>ToPython[outDir]<>"\",
-        'points':        "<>ToPython[pts]<>"
-       }";
-res=ExternalEvaluate[session,"mcy.get_weights"->args];
-If[FailureQ[res],Print["An error occurred."];Print[res];Return[{res,session}]];
-,
-If[dataset=="all",
-res=Join[
-ExternalEvaluate[session,"import numpy as np;import os;data=np.load(os.path.join('"<>ToPython[outDir]<>"', 'dataset.npz'));data['y_train']"],ExternalEvaluate[session,"import numpy as np;import os;data=np.load(os.path.join('"<>ToPython[outDir]<>"', 'dataset.npz'));data['y_val']"]
-];,
-res=ExternalEvaluate[session,"import numpy as np;import os;data=np.load(os.path.join('"<>ToPython[outDir]<>"', 'dataset.npz'));data['y_"<>dataset<>"']"]
-];
-If[FailureQ[res],Print["An error occurred."];Print[res];Return[{res,session}]];
-If[Length[res]>0,
-res=res[[;;,-2]];
-,
-res={};
-];
-];
-Return[{Normal[res],session}];
-)];
-
-Options[GetAuxiliaryWeights]={"Python"->Null,"Session"->Null,"Dir"->FileNameJoin[{$WORKDIR,"test"}]};
-GetAuxiliaryWeights[dataset_:"all",OptionsPattern[]]:=
-Module[{python,session,outDir,res,pts,args},(
-python=OptionValue["Python"];
-session=OptionValue["Session"];
-outDir=OptionValue["Dir"];
-session=GetSession[python,session];
-If[session===Null,Return[{"Could not start a Python Kernel with all dependencies installed.",session}]];
-If[dataset=="all",
-res=Join[
-ExternalEvaluate[session,"import numpy as np;import os;data=np.load(os.path.join('"<>ToPython[outDir]<>"', 'dataset.npz'));data['y_train']"],ExternalEvaluate[session,"import numpy as np;import os;data=np.load(os.path.join('"<>ToPython[outDir]<>"', 'dataset.npz'));data['y_val']"]
-];,
-res=ExternalEvaluate[session,"import numpy as np;import os;data=np.load(os.path.join('"<>ToPython[outDir]<>"', 'dataset.npz'));data['y_"<>dataset<>"']"]
-];
-If[FailureQ[res],Print["An error occurred."];Print[res];Return[{res,session}]];
-If[Length[res]>0,
-res=res[[;;,-2]]/res[[;;,-1]];
-,
-res={};
-];
-
-Return[{Normal[res],session}];
-)];
-
-Options[GetOmegaSquared]={"Python"->Null,"Session"->Null,"Dir"->FileNameJoin[{$WORKDIR,"test"}]};
-GetOmegaSquared[dataset_:"all",OptionsPattern[]]:=
-Module[{python,session,outDir,res,pts,args},(
-python=OptionValue["Python"];
-session=OptionValue["Session"];
-outDir=OptionValue["Dir"];
-session=GetSession[python,session];
-If[session===Null,Return[{"Could not start a Python Kernel with all dependencies installed.",session}]];
-If[ListQ[dataset],
-If[Length[dataset]==0,Return[{{},session}]];
-If[Length[Dimensions[dataset]]==1,pts={Join[Re[dataset],Im[dataset[[;;]]]]},pts=Table[Join[Re[dataset[[i]]],Im[dataset[[i]]]],{i,Length[dataset]}]];
-args="{
-        'outdir':      \""<>ToPython[outDir]<>"\",
-        'points':        "<>ToPython[pts]<>"
-       }";
-res=ExternalEvaluate[session,"mcy.get_omegas"->args];
-If[FailureQ[res],Print["An error occurred."];Print[res];Return[{res,session}]];
-,
-If[dataset=="all",
-res=Join[
-ExternalEvaluate[session,"import numpy as np;import os;data=np.load(os.path.join('"<>ToPython[outDir]<>"', 'dataset.npz'));data['y_train']"],ExternalEvaluate[session,"import numpy as np;import os;data=np.load(os.path.join('"<>ToPython[outDir]<>"', 'dataset.npz'));data['y_val']"]
-];,
-res=ExternalEvaluate[session,"import numpy as np;import os;data=np.load(os.path.join('"<>ToPython[outDir]<>"', 'dataset.npz'));data['y_"<>dataset<>"']"]
-];
-If[FailureQ[res],Print["An error occurred."];Print[res];Return[{res,session}]];
-If[Length[res]>0,
-res=res[[;;,-1]];
-,
-res={};
-];
-];
-Return[{Re[Normal[res]],session}];
-)];
-
-Options[GetCYWeights]={"Python"->Null,"Session"->Null,"Model"->"MultFS","VolJNorm"->1.,"Dir"->FileNameJoin[{$WORKDIR,"test"}],"DimX"->3};
-GetCYWeights[dataset_:"all",OptionsPattern[]]:=
-Module[{python,outDir,session,res,pts,omegaSquared,gs,dets,dimX,tmp,i,model,volJNorm},(
-python=OptionValue["Python"];
-session=OptionValue["Session"];
-model=OptionValue["Model"];
-outDir=OptionValue["Dir"];
-dimX=OptionValue["DimX"];
-volJNorm=OptionValue["VolJNorm"];
-session=GetSession[python,session];
-If[session===Null,Return[{"Could not start a Python Kernel with all dependencies installed.",session}]];
-If [ListQ[dataset],
-If[Length[Dimensions[dataset]]==1,pts={dataset},pts=dataset];
-,
-{pts,tmp}=GetPoints[dataset,"Python"->python,"Session"->session,"Dir"->outDir];
-];
-{omegaSquared,tmp}=GetOmegaSquared[dataset,"Python"->python,"Session"->session,"Dir"->outDir];
-{gs,tmp}=CYMetric[pts,"Python"->python,"Session"->session,"Model"->model,"Dir"->outDir];
-dets=Det/@gs;
-dets=dets /volJNorm;
-res=omegaSquared/dets;
-Return[{Re[Normal[res]],session}];
-)];
-
-Options[GetPullbacks]={"Python"->Null,"Session"->Null,"Dir"->FileNameJoin[{$WORKDIR,"test"}]};
-GetPullbacks[points_,OptionsPattern[]]:=
-Module[{python,outDir,session,res,args,pts,model},(
-python=OptionValue["Python"];
-session=OptionValue["Session"];
-outDir=OptionValue["Dir"];
-session=GetSession[python,session];
-If[session===Null,Return[{"Could not start a Python Kernel with all dependencies installed.",session}]];
-
-If[Length[points]==0,Return[{{},session}]];
-If[Length[Dimensions[points]]==1,pts={Join[Re[points],Im[points[[;;]]]]},pts=Table[Join[Re[points[[i]]],Im[points[[i]]]],{i,Length[points]}]];
-args="{
-        'outdir':      \""<>ToPython[outDir]<>"\",
-        'points':        "<>ToPython[pts]<>"
-       }";
-res=ExternalEvaluate[session,"mcy.get_pullbacks"->args];
-If[FailureQ[res],Print["An error occurred."];Print[res];Return[{res,session}]];
-Return[{Normal[res],session}];
-)];
-
-Options[CYMetric]={"Python"->Null,"Session"->Null,"Model"->"MultFS","Dir"->FileNameJoin[{$WORKDIR,"test"}]};
-CYMetric[points_,OptionsPattern[]]:=
-Module[{python,outDir,session,res,args,pts,model},(
-python=OptionValue["Python"];
-session=OptionValue["Session"];
-outDir=OptionValue["Dir"];
-model=OptionValue["Model"];
-session=GetSession[python,session];
-If[session===Null,Return[{"Could not start a Python Kernel with all dependencies installed.",session}]];
-
-If[Length[points]==0,Return[{{},session}]];
-If[Length[Dimensions[points]]==1,pts={Join[Re[points],Im[points[[;;]]]]},pts=Table[Join[Re[points[[i]]],Im[points[[i]]]],{i,Length[points]}]];
-args="{
-        'outdir':      \""<>ToPython[outDir]<>"\",
-        'points':        "<>ToPython[pts]<>",
-        'model':        \""<>ToPython[model]<>"\"
-       }";
-res=ExternalEvaluate[session,"mcy.get_g"->args];
-If[FailureQ[res],Print["An error occurred."];Print[res];Return[{res,session}]];
-Return[{Normal[res],session}];
-)];
-
-Options[FSMetric]={"Python"->Null,"Session"->Null,"KahlerModuli"->{},"Dir"->FileNameJoin[{$WORKDIR,"test"}]};
-FSMetric[points_,OptionsPattern[]]:=
-Module[{python,outDir,session,res,args,pts,ts},(
-python=OptionValue["Python"];
-session=OptionValue["Session"];
-outDir=OptionValue["Dir"];
-ts=OptionValue["KahlerModuli"];
-session=GetSession[python,session];
-If[session===Null,Return[{"Could not start a Python Kernel with all dependencies installed.",session}]];
-
-If[Length[points]==0,Return[{{},session}]];
-If[Length[Dimensions[points]]==1,pts={Join[Re[points],Im[points[[;;]]]]},pts=Table[Join[Re[points[[i]]],Im[points[[i]]]],{i,Length[points]}]];
-args="{
-        'outdir':      \""<>ToPython[outDir]<>"\",
-        'points':        "<>ToPython[pts]<>",
-        'ts':            "<>ToPython[ts]<>"
-       }";
-res=ExternalEvaluate[session,"mcy.get_g_fs"->args];
-If[FailureQ[res],Print["An error occurred."];Print[res];Return[{res,session}]];
-Return[{Normal[res],session}];
-)];
-End[];
 
 
-(* ::Input::Initialization:: *)
 EndPackage[];
