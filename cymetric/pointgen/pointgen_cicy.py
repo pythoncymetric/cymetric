@@ -107,6 +107,7 @@ class CICYPointGenerator(PointGenerator):
                 e = np.sum(ambient[:i + 1]) + i + 1
                 deg += [np.sum(m[0, s:e])]
             self.conf += [deg]
+        self.p_conf = [[a] + c for a, c in zip(self.ambient, self.conf)]
         self.nfold = np.sum(self.ambient) - self.nhyper
 
         # sympy variables
@@ -118,6 +119,7 @@ class CICYPointGenerator(PointGenerator):
         self._set_seed(2021)
         self.lc = get_levicivita_tensor(int(self.nfold))
         self._generate_all_bases()
+        self.intersection_tensor = self._generate_intersection_tensor()
 
     def _generate_all_bases(self):
         r"""This function calls a bunch of others

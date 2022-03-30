@@ -167,6 +167,7 @@ def prepare_basis(point_gen, dirname, kappa=1.):
                         KMODULI=point_gen.kmoduli,
                         NFOLD=point_gen.nfold,
                         NHYPER=point_gen.nhyper,
+                        INTNUMS=point_gen.intersection_tensor,
                         KAPPA=kappa
                         )
     return 0
@@ -191,6 +192,7 @@ def prepare_basis_pickle(point_gen, dirname, kappa=1.):
     new_dict['AMBIENT'] = point_gen.ambient
     new_dict['KMODULI'] = point_gen.kmoduli
     new_dict['NHYPER'] = point_gen.nhyper
+    new_dict['INTNUMS'] = point_gen.intersection_tensor
     new_dict['KAPPA'] = kappa
     
     with open(os.path.join(dirname, 'basis.pickle'), 'wb') as handle:

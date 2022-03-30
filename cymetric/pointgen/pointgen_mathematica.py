@@ -260,6 +260,7 @@ class ToricPointGeneratorMathematica(PointGeneratorMathematica):
         self.glsm_charges = toric_data['glsm_charges']
         self.precision = precision
         self.vol_j_norm = toric_data['vol_j_norm']
+        self.intersection_tensor = toric_data['int_nums']
         self.verbose = verbose
         self.selected_t = selected_t
         self.ambient_dims = np.array([len(s) + 1 for s in toric_data['exps_sections']])

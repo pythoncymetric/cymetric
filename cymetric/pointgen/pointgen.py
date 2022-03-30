@@ -11,6 +11,7 @@ import sympy as sp
 from cymetric.pointgen.nphelper import prepare_basis_pickle, prepare_dataset, get_levicivita_tensor
 from sympy.geometry.util import idiff
 from joblib import Parallel, delayed
+import itertools
 
 logging.basicConfig(format='%(name)s:%(levelname)s:%(message)s')
 logger = logging.getLogger('pointgen')
@@ -94,6 +95,7 @@ class PointGenerator:
         self.nmonomials, self.ncoords = monomials.shape
         self.nfold = np.sum(self.ambient) - self.nhyper
         self.backend = backend
+        self.p_conf = np.array([[a, d] for a, d in zip(self.ambient, self.degrees)])
         self.lc = get_levicivita_tensor(int(self.nfold))
         # sympy variables
         self.x = sp.var('x0:' + str(self.ncoords))
@@ -104,6 +106,11 @@ class PointGenerator:
         # self.gpoly = sum(self.c *
         #    np.multiply.reduce(np.power(self.x, self.monomials), axis=-1))
 
+        old_monoms = self.monomials.copy()  # make dimensions consistent with CICY case
+        self.monomials = np.array([self.monomials]) 
+        self.intersection_tensor = self._generate_intersection_tensor()
+        self.monomials = old_monoms  # undo change
+        
         # some more internal variables
         self._set_seed(2021)
         self._generate_all_bases()
@@ -246,6 +253,362 @@ class PointGenerator:
                 if i != j:
                     self.dzdz_basis[j][i], self.dzdz_factor[j][i] = \
                         self._frac_to_monomials(self.iderivatives[j][i])
+
+    def _generate_intersection_tensor(self):
+        if self.nfold == 1:
+            d = np.zeros([1])   # TODO: implement this
+        elif self.nfold == 2:
+            d = np.zeros([2, 2])   # TODO: implement this
+        elif self.nfold == 3:
+            comb = itertools.combinations_with_replacement(range(len(self.kmoduli)), 3)
+            d = np.zeros((len(self.kmoduli), len(self.kmoduli), len(self.kmoduli)), dtype=int)
+            for x in comb:
+                drst = self._drst(x[0], x[1], x[2])
+                entries = itertools.permutations(x, 3)
+                # there will be some redundant elements,
+                # but they will only have to be calculated once.
+                for b in entries:
+                    d[b] = drst
+        elif self.nfold == 4:
+            comb = itertools.combinations_with_replacement(range(len(self.kmoduli)), 4)
+            d = np.zeros((len(self.kmoduli), len(self.kmoduli), len(self.kmoduli), len(self.kmoduli)))
+            for x in comb:
+                drstu = self._drstu(x[0], x[1], x[2], x[3])
+                entries = itertools.permutations(x, 4)
+                # there will be some redundant elements,
+                # but they will only have to be calculated once.
+                for b in entries:
+                    d[b] = drstu
+        else:
+            raise NotImplementedError("Computation of intersection numbers is not supported for {}-folds".format(self.nfold))
+        
+        return d
+
+    def _drst(self, r, s, t):
+        r"""
+        Determines the triple intersection number d_rst.
+        We use:
+        .. math::
+            \begin{align}
+             d_{rst} = \int_X J_r \wedge J_s \wedge J_t = \int_A \mu \wedge J_r \wedge J_s \wedge J_t
+            \end{align}
+        where \mu is the top form
+
+        .. math::
+            \begin{align}
+            \mu = \bigwedge^K_{a=1} \left(  \sum_{p=1}^{m} q_a^p J_p  \right) \; .
+            \end{align}
+        Parameters
+        ----------
+        r : int
+            index r.
+        s : int
+            index s.
+        t : int
+            index t.
+
+        Returns
+        -------
+        drst: float
+            Returns the triple intersection number drst.
+
+        See also
+        --------
+        triple_intersection: Determines all triple intersection numbers.
+        second_chern: The second Chern class as a vector.
+        euler_characteristic: The euler_characteristicharacteristic.
+        quadruple_intersection: The quadruple intersection numbers for a four fold.
+        Example
+        -------
+        >>> M = CICY([[2,2,1],[3,1,3]])
+        >>> M.drst(0,1,1)
+        7.0
+        """
+        drst = 0
+        # Define the relevant part of \mu := \wedge^K_j \sum_r q_r^j J_r
+        combination = np.array([0 for _ in range(len(self.monomials))])
+        count = [0 for _ in range(len(self.kmoduli))]
+        # now there are 5 distinct cases:
+        # 1) r=s=t or 2) all neqal or the 2-5) three cases where two are equal
+        # 1)
+        if r == s == t:
+            if self.p_conf[r][0] < 3:
+                # then drst is zero
+                return 0
+            else:
+                i = 0
+                # now we want to fill combination and run over all m Projective spaces,
+                # and how often they occur
+                for j in range(len(self.kmoduli)):
+                    if j == r:
+                        # we obviously have to subtract 3 in the case of three
+                        # times the same index since we already have three kähler forms
+                        # in Ambient space coming from the intersection number
+                        count[j] = self.p_conf[j][0] - 3
+                        combination[i:i + count[j]] = j
+                        i += self.p_conf[j][0] - 3
+                    else:
+                        count[j] = self.p_conf[j][0]
+                        combination[i:i + count[j]] = j
+                        i += self.p_conf[j][0]
+        # 2)
+        if r != s and r != t and s != t:
+            i = 0
+            for j in range(len(self.kmoduli)):
+                if j == r or j == s or j == t:
+                    count[j] = self.p_conf[j][0] - 1
+                    combination[i:i + count[j]] = j
+                    i += self.p_conf[j][0] - 1
+                else:
+                    count[j] = self.p_conf[j][0]
+                    combination[i:i + count[j]] = j
+                    i += self.p_conf[j][0]
+        # 3)
+        if r == s and r != t:
+            if self.p_conf[r][0] < 2:
+                return 0
+            else:
+                i = 0
+                for j in range(len(self.kmoduli)):
+                    if j == r:
+                        count[j] = self.p_conf[j][0] - 2
+                        combination[i:i + count[j]] = j
+                        i += self.p_conf[j][0] - 2
+                    else:
+                        if j == t:
+                            count[j] = self.p_conf[j][0] - 1
+                            combination[i:i + count[j]] = j
+                            i += self.p_conf[j][0] - 1
+                        else:
+                            count[j] = self.p_conf[j][0]
+                            combination[i:i + count[j]] = j
+                            i += self.p_conf[j][0]
+        # 4)
+        if r == t and r != s:
+            i = 0
+            if self.p_conf[r][0] < 2:
+                return 0
+            else:
+                i = 0
+                for j in range(len(self.kmoduli)):
+                    if j == r:
+                        count[j] = self.p_conf[j][0] - 2
+                        combination[i:i + count[j]] = j
+                        i += self.p_conf[j][0] - 2
+                    else:
+                        if j == s:
+                            count[j] = self.p_conf[j][0] - 1
+                            combination[i:i + count[j]] = j
+                            i += self.p_conf[j][0] - 1
+                        else:
+                            count[j] = self.p_conf[j][0]
+                            combination[i:i + count[j]] = j
+                            i += self.p_conf[j][0]
+        # 5)
+        if s == t and s != r:
+            i = 0
+            if self.p_conf[s][0] < 2:
+                return 0
+            else:
+                i = 0
+                for j in range(len(self.kmoduli)):
+                    if j == s:
+                        count[j] = self.p_conf[j][0] - 2
+                        combination[i:i + count[j]] = j
+                        i += self.p_conf[j][0] - 2
+                    else:
+                        if j == r:
+                            count[j] = self.p_conf[j][0] - 1
+                            combination[i:i + count[j]] = j
+                            i += self.p_conf[j][0] - 1
+                        else:
+                            count[j] = self.p_conf[j][0]
+                            combination[i:i + count[j]] = j
+                            i += self.p_conf[j][0]
+        # the combinations of mu grow exponentially with len(self.monomials) and the number of ambient spaces
+        # Check, when the number of multiset_permutations become to large to handle
+        if len(self.monomials) < 8 and len(np.unique(combination)) < 6:
+            # Hence, for large K and small len(self.kmoduli), this might take really long.
+            mu = sp.utilities.iterables.multiset_permutations(combination)
+            # (len(self.monomials))!/(#x_1!*...*#x_n!)
+            for a in mu:
+                v = 1
+                for j in range(len(self.monomials)):
+                    if self.p_conf[a[j]][j + 1] == 0:
+                        v = 0
+                        break
+                    else:
+                        v *= self.p_conf[a[j]][j + 1]
+                drst += v
+            return drst
+        else:
+            # here we calculate the nonzero paths through the CICY
+            # much faster since CICYs with large K and large len(self.kmoduli) tend to
+            # be pretty sparse
+            nonzero = [[] for _ in range(len(self.monomials))]
+            combination = np.sort(combination)
+            count_2 = [0 for _ in range(len(self.kmoduli))]
+            # run over all K to find possible paths
+            for i in range(len(self.monomials)):
+                for j in range(len(self.kmoduli)):
+                    # possible paths are non zero and in combination
+                    if self.p_conf[j][i + 1] != 0 and j in combination:
+                        nonzero[i] += [j]
+                        count_2[j] += 1
+            # Next we run over all entries in count to see if any are fixed by number of occurence
+            for i in range(len(self.kmoduli)):
+                if count[i] == count_2[i]:
+                    # if equal we run over all entries in nonzero
+                    # count[i] = 0
+                    for j in range(len(self.monomials)):
+                        # and fix them to i if they contain it
+                        if i in nonzero[j]:
+                            # and len(nonzero[j]) != 1
+                            nonzero[j] = [i]
+            # There are some improvements here:
+            # 1) take the counts -= 1 if fixed and compare if the left allowed
+            # 2) here it would be even more efficient to write a product that respects
+            #   the allowed combinations from count.
+            mu = itertools.product(*nonzero)
+            # len(nonzero[0])*...*len(nonzero[K])
+            # since we in principle know the complexity of both calculations
+            # one could also do all the stuff before and then decide which way is faster
+            for a in mu:
+                # if allowed by count
+                c = list(a)
+                if np.array_equal(np.sort(c), combination):
+                    v = 1
+                    for j in range(len(self.monomials)):
+                        if self.p_conf[c[j]][j + 1] == 0:
+                            break
+                        else:
+                            v *= self.p_conf[c[j]][j + 1]
+                    drst += v
+            return drst
+
+    def _drstu(self, r, s, t, u):
+        r"""
+        Determines the quadruple intersection numbers, d_rstu, for Calabi Yau 4-folds.
+
+        Parameters
+        ----------
+        r : int
+            the index r.
+        s : int
+            the index s.
+        t : int
+            the index t.
+        u : int
+            the index u.
+
+        Returns
+        -------
+        drstu: float
+            The quadruple intersection number d_rstu.
+        See Also
+        --------
+        drst: Determines the triple intersection number d_rst.
+        euler_characteristic: The eulercharacteristic.
+        quadruple_intersection: All quadruple intersection numbers of a 4-fold.
+        Example
+        -------
+        >>> M = CICY([[2,3],[2,3],[1,2]])
+        >>> M.drstu(0,1,1,2)
+        3
+        References
+        ----------
+        .. [1] All CICY four-folds, by J. Gray, A. Haupt and A. Lukas.
+            https://arxiv.org/pdf/1303.1832.pdf
+        """
+
+        if self.nfold != 4:
+            logger.warning('CICY is not a 4-fold.')
+
+        drstu = 0
+        # Define the relevant part of \mu := \wedge^K_j \sum_r q_r^j J_r
+        combination = np.array([0 for _ in range(len(self.monomials))])
+        count = [0 for _ in range(len(self.kmoduli))]
+        # now there are 5 distinct cases:
+        # 1) r=s=t=u or 2) all neqal or the 3) two equal, two nonequal
+        # 4) two equal and two equal 5) three equal
+        un, unc = np.unique([r, s, t, u], return_counts=True)
+        for i in range(len(un)):
+            if self.p_conf[un[i]][0] < unc[i]:
+                return 0
+        i = 0
+        for j in range(len(self.kmoduli)):
+            # if j in rstu subtract
+            # else go full
+            contained = False
+            for a in range(len(un)):
+                if j == un[a]:
+                    contained = True
+                    count[j] = self.p_conf[j][0] - unc[a]
+                    combination[i:i + count[j]] = j
+                    i += self.p_conf[j][0] - unc[a]
+            if not contained:
+                count[j] = self.p_conf[j][0]
+                combination[i:i + count[j]] = j
+                i += self.p_conf[j][0]
+        # just copy from drst
+        # the combinations of mu grow exponentially with len(self.monomials) and the number of ambient spaces
+        # Check, when the number of multiset_permutations become to large to handle
+        if len(self.monomials) < 8 and len(np.unique(combination)) < 6:
+            # Hence, for large K and small, this might take really long.
+            mu = sp.utilities.iterables.multiset_permutations(combination)
+            # (len(self.monomials))!/(#x_1!*...*#x_n!)
+            for a in mu:
+                v = 1
+                for j in range(len(self.monomials)):
+                    if self.p_conf[a[j]][j + 1] == 0:
+                        v = 0
+                        break
+                    else:
+                        v *= self.p_conf[a[j]][j + 1]
+                drstu += v
+            return drstu
+        else:
+            # here we calculate the nonzero paths through the CICY
+            nonzero = [[] for _ in range(len(self.monomials))]
+            combination = np.sort(combination)
+            count_2 = [0 for _ in range(len(self.kmoduli))]
+            # run over all len(self.monomials) to find possible paths
+            for i in range(len(self.monomials)):
+                for j in range(len(self.kmoduli)):
+                    # possible paths are non zero and in combination
+                    if self.p_conf[j][i + 1] != 0 and j in combination:
+                        nonzero[i] += [j]
+                        count_2[j] += 1
+            # Next we run over all entries in count to see if any are fixed by number of occurence
+            for i in range(len(self.kmoduli)):
+                if count[i] == count_2[i]:
+                    # if equal we run over all entries in nonzero
+                    # count[i] = 0
+                    for j in range(len(self.monomials)):
+                        # and fix them to i if they contain it
+                        if i in nonzero[j]:
+                            # and len(nonzero[j]) != 1
+                            nonzero[j] = [i]
+            # There are some improvements here:
+            # 1) take the counts -= 1 if fixed and compare if the left allowed
+            # 2) here it would be even more efficient to write a product that respects
+            #   the allowed combinations from count, but I can't be bothered to do it atm.
+            mu = itertools.product(*nonzero)
+            # len(nonzero[0])*...*len(nonzero[K])
+            # since we in principle know the complexity here and from the other
+            # one should also do all the stuff before and then decide which way is faster
+            for a in mu:
+                # if allowed by count
+                c = list(a)
+                if np.array_equal(np.sort(c), combination):
+                    v = 1
+                    for j in range(len(self.monomials)):
+                        if self.p_conf[c[j]][j + 1] == 0:
+                            break
+                        else:
+                            v *= self.p_conf[c[j]][j + 1]
+                    drstu += v
+            return drstu
 
     def _implicit_diff(self, i, j):
         r"""Compute the implicit derivative of
