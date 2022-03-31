@@ -147,15 +147,17 @@ def train_NN(my_args):
         tcb = TransitionCallback((data['X_val'], data['y_val']))
         rcb = RicciCallback((data['X_val'], data['y_val']), data['val_pullbacks'])
         volkck = VolkCallback((data['X_val'], data['y_val']))
-        cb_list = [scb, kcb, tcb, rcb, volkck]
-        cb_list = [x for x, y in zip(cb_list, args['PrintMeasures']) if y]
+        cb_list1 = [scb, kcb, tcb, rcb]
+        cb_list1 = [x for x, y in zip(cb_list1, args['PrintMeasures']) if y]
+        cb_list2 = [] if not args['PrintMeasures'][-1] else [volkck]
     else:
         cb_list = []
     
     # metrics
     args['PrintLosses'][4] = False  # Ricci loss not computed at the moment
-    cmetrics = [SigmaLoss(), KaehlerLoss(), TransitionLoss(), RicciLoss(), VolkLoss()]
-    cmetrics = [x for x, y in zip(cmetrics, args['PrintLosses']) if y]
+    cmetrics1 = [SigmaLoss(), KaehlerLoss(), TransitionLoss(), RicciLoss()]
+    cmetrics1 = [x for x, y in zip(cmetrics1, args['PrintLosses']) if y]
+    cmetrics2 = [] if not args['PrintLosses'][-1] else [VolkLoss()]
     
     # build model
     if args['Model'] == 'PhiFS' or args['Model'] == 'PhiFSToric':
@@ -163,7 +165,7 @@ def train_NN(my_args):
         model.add(tfk.Input(shape=(n_in,)))
         for n_hidden, act in zip(n_hiddens, acts):
             model.add(tfk.layers.Dense(n_hidden, activation=act))
-        model.add(tfk.layers.Dense(n_out))
+        model.add(tfk.layers.Dense(n_out, use_bias=False))
 #       # reproduces the FS Kahler potential for the bicubic
 #       import math
 #       def reorder_input(x):
@@ -213,19 +215,20 @@ def train_NN(my_args):
     else:
         mcy_logger.error("{} is not a recognized option for a model".format(args['Model']))
         return {}
-    fsmodel.compile(custom_metrics=cmetrics, optimizer=tfk.optimizers.Adam(learning_rate=args['LearningRate']), loss=None)    
+    optimizer = tfk.optimizers.Adam(learning_rate=args['LearningRate'])
     model.summary(print_fn=mcy_logger.debug)
 
     # train model
-    training_history, alpha0_orig = {}, fmodel.alpha[0]
-    for epoch in range(nEpochs):
+    training_history, alpha0_orig = {}, fsmodel.alpha[0]
+    for epoch in range(args['Epochs']):
         batch_size = args['BatchSizes'][0]
-        fmodel.learn_kaehler = tf.cast(True, dtype=tf.bool)
-        fmodel.learn_transition = tf.cast(True, dtype=tf.bool)
-        fmodel.learn_volk = tf.cast(False, dtype=tf.bool)
-        fmodel.alpha[0] = alpha0_orig
-        fmodel.compile(custom_metrics=cmetrics, optimizer=opt)
-        history = fsmodel.fit(data['X_train'], data['y_train'], epochs=args['Epochs'], batch_size=batch_size, verbose=2, callbacks=cb_list)
+        fsmodel.learn_kaehler = tf.cast(True, dtype=tf.bool)
+        fsmodel.learn_transition = tf.cast(True, dtype=tf.bool)
+        fsmodel.learn_volk = tf.cast(False, dtype=tf.bool)
+        fsmodel.alpha[0] = alpha0_orig
+        fsmodel.compile(custom_metrics=cmetrics1, optimizer=optimizer)
+        print("Epoch {:2d}/{:d}".format(epoch + 1, args['Epochs']))
+        history = fsmodel.fit(data['X_train'], data['y_train'], epochs=1, batch_size=batch_size, verbose=2, callbacks=cb_list1)
         for k in history.history.keys():
             if "volk" in k:
                 continue
@@ -234,12 +237,12 @@ def train_NN(my_args):
             else:
                 training_history[k] += history.history[k]
         batch_size = min(args['BatchSizes'][1], len(data['X_train']))
-        fmodel.learn_kaehler = tf.cast(False, dtype=tf.bool)
-        fmodel.learn_transition = tf.cast(False, dtype=tf.bool)
-        fmodel.learn_volk = tf.cast(True, dtype=tf.bool)
-        fmodel.alpha[0] = tf.Variable(0., dtype=tf.float32)
-        fmodel.compile(custom_metrics=cmetrics, optimizer=opt)
-        history = fsmodel.fit(data['X_train'], data['y_train'], epochs=args['Epochs'], batch_size=batch_size, verbose=2, callbacks=cb_list)
+        fsmodel.learn_kaehler = tf.cast(False, dtype=tf.bool)
+        fsmodel.learn_transition = tf.cast(False, dtype=tf.bool)
+        fsmodel.learn_volk = tf.cast(True, dtype=tf.bool)
+        fsmodel.alpha[0] = tf.Variable(0., dtype=tf.float32)
+        fsmodel.compile(custom_metrics=cmetrics2, optimizer=optimizer)
+        history = fsmodel.fit(data['X_train'], data['y_train'], epochs=1, batch_size=batch_size, verbose=2, callbacks=cb_list2)
         for k in history.history.keys():
             if "volk" not in k:
                 continue

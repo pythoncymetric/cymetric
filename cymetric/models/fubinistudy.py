@@ -113,6 +113,7 @@ class FSModel(tfk.Model):
         ks = tf.eye(len(self.BASIS['KMODULI']), dtype=tf.complex64)
         return tf.einsum('abc, a, b, xc->x', self.BASIS['INTNUMS'], self.BASIS['KMODULI'], self.BASIS['KMODULI'], ks)
 
+    @tf.function
     def _calculate_slope(self, args):
         r"""Computes the slopes \mu(F_i) = \int J \wedge J \wegde F_i at the point in Kahler moduli space t_a = 1 for all a
         and for F_i = O_X(0, 0,... , 1, 0, ..., 0), i.e. the flux integers are k_i^a = \delta_{i,a}"""

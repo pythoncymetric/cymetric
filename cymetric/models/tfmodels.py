@@ -390,7 +390,7 @@ class FreeModel(FSModel):
         input_tensor = tf.repeat(tf.expand_dims(input_tensor, axis = 0), repeats=[len(self.BASIS['KMODULI'])], axis=0)
         ks = tf.expand_dims(tf.eye(len(self.BASIS['KMODULI']), dtype=tf.complex64), axis=0)
         
-        actual_slopes = tf.vectorized_map(self._calculate_slope, [input_tensor, pred, ks])
+        actual_slopes = tf.map_fn(self._calculate_slope, [input_tensor, pred, ks])
         actual_slopes = tf.reduce_mean(aux_weights * actual_slopes, axis=-1)
         loss = tf.reduce_mean(tf.math.abs(actual_slopes - self.slopes)**self.n[4])
 
@@ -614,12 +614,6 @@ class PhiFSModel(FreeModel):
         super(PhiFSModel, self).__init__(*args, **kwargs)
         # automatic in Phi network
         self.learn_kaehler = tf.cast(False, dtype=tf.bool)
-        if self.model.layers[-1].bias is None:
-            # then there won't be issues with tracing.
-            self.learn_volk = tf.cast(False, dtype=tf.bool)
-        else:
-            # at least set loss coefficient to zero.
-            self.alpha[-1] = tf.Variable(0., dtype=tf.float32)
 
     def call(self, input_tensor, training=True, j_elim=None):
         r"""Prediction of the model.
@@ -665,72 +659,72 @@ class PhiFSModel(FreeModel):
         # return g_fs + \del\bar\del\phi
         return tf.math.add(fs_cont, dd_phi)
 
-#     def compute_volk_loss(self, input_tensor, weights, pred=None):
-#         r"""Computes volk loss.
-# 
-#         .. math::
-# 
-#             \mathcal{L}_{\text{vol}_k} = \int_X \phi
-# 
-#         The last term is constant over the whole batch. Thus, the volk loss
-#         is *batch dependent*. This loss contribution should be satisfied by
-#         construction but is included for tracing purposes.
-# 
-#         Args:
-#             input_tensor (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
-#             weights (tf.tensor([bSize], tf.float32)): Weights.
-#             pred (tf.tensor([bSize, nfold, nfold], tf.complex64), optional):
-#                 Prediction from `self(input_tensor)`. Ignored for Phi model.
-# 
-#         Returns:
-#             tf.tensor([bSize], tf.float32): Volk loss.
-#         """
-#         # sample_contribution = super().compute_volk_loss(input_tensor, weights=weights, pred=pred)
-#         phi_pred = tf.reshape(self.model(input_tensor), [-1])
-#         phi_pred = tf.einsum('i,j->ij', phi_pred, tf.ones_like(phi_pred))
-#         phi_pred = tf.einsum('ij,i->ji', phi_pred, weights)
-#         phi_pred = tf.math.reduce_mean(phi_pred, axis=-1)
-#         phi_pred = tf.math.abs(phi_pred)
+    # def compute_volk_loss(self, input_tensor, weights, pred=None):
+    #     r"""Computes volk loss.
+    #
+    #     .. math::
+    #
+    #         \mathcal{L}_{\text{vol}_k} = \int_X \phi
+    #
+    #     The last term is constant over the whole batch. Thus, the volk loss
+    #     is *batch dependent*. This loss contribution should be satisfied by
+    #     construction but is included for tracing purposes.
+    #
+    #     Args:
+    #         input_tensor (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
+    #         weights (tf.tensor([bSize], tf.float32)): Weights.
+    #         pred (tf.tensor([bSize, nfold, nfold], tf.complex64), optional):
+    #             Prediction from `self(input_tensor)`. Ignored for Phi model.
+    #
+    #     Returns:
+    #         tf.tensor([bSize], tf.float32): Volk loss.
+    #     """
+    #     # sample_contribution = super().compute_volk_loss(input_tensor, weights=weights, pred=pred)
+    #     phi_pred = tf.reshape(self.model(input_tensor), [-1])
+    #     phi_pred = tf.einsum('i,j->ij', phi_pred, tf.ones_like(phi_pred))
+    #     phi_pred = tf.einsum('ij,i->ji', phi_pred, weights)
+    #     phi_pred = tf.math.reduce_mean(phi_pred, axis=-1)
+    #     phi_pred = tf.math.abs(phi_pred)
+    #
+    #     return 1. / tf.math.reduce_mean(weights, axis=-1) * phi_pred
 
-        return 1. / tf.math.reduce_mean(weights, axis=-1) * phi_pred
-
-    def compute_transition_loss(self, points, num_random_scalings=10):
-        r"""Computes transition loss at each point. In the case of the Phi model, we demand that \phi(\lambda^q_i z_i)=\phi(z_i)
-
-        Args:
-            points (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
-            num_random_scalings (int): If None, uses scalings for each patch to set one coordinate to one. 
-                                       If a number, uses this many random scalings for \lambda
-
-        Returns:
-            tf.tensor([bSize], tf.float32): Transition loss at each point.
-        """
-        if num_random_scalings is None:
-            return compute_transition_loss2(points)
+    # def compute_transition_loss(self, points, num_random_scalings=10):
+    #     r"""Computes transition loss at each point. In the case of the Phi model, we demand that \phi(\lambda^q_i z_i)=\phi(z_i)
+    #
+    #     Args:
+    #         points (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
+    #         num_random_scalings (int): If None, uses scalings for each patch to set one coordinate to one.
+    #                                    If a number, uses this many random scalings for \lambda
+    #
+    #     Returns:
+    #         tf.tensor([bSize], tf.float32): Transition loss at each point.
+    #     """
+    #     if num_random_scalings is None:
+    #         return compute_transition_loss2(points)
+    #
+    #     cpoints = tf.complex(points[:, :self.ncoords], points[:, self.ncoords:])
+    #
+    #     num_pns = len(self.degrees)
+    #     # real and imaginary part of random lambdas (we draw a different one for each ambient P^n)
+    #     lambdas_rand = tf.random.uniform(minval=-1, maxval=1, shape=(num_random_scalings, num_pns, 2), dtype=tf.float32)
+    #     # we scale the lambdas_rand to have abs value in [0.1, 0.9]
+    #     scale_factor_rand = tf.cast(tf.random.uniform(minval=0.1, maxval=0.9, shape=(num_random_scalings, num_pns), dtype=tf.float32), dtype=tf.complex64)
+    #     scale_factor_rand = tf.repeat(scale_factor_rand, repeats=self.degrees, axis=-1)
+    #     lambdas_rand = tf.complex(lambdas_rand[:,:,0], lambdas_rand[:,:,1])
+    #     lambdas_rand = tf.repeat(lambdas_rand, repeats=self.degrees, axis=-1)  # user same lambda_i on all P^n coordinates
+    #     lambdas_rand = scale_factor_rand * lambdas_rand/(lambdas_rand * tf.math.conj(lambdas_rand))**(.5)  # rescale \lambdas
+    #     scaled_points = tf.einsum('xi,ai->xai', cpoints, lambdas_rand)
+    #     scaled_points = tf.reshape(scaled_points, (-1, self.ncoords)) # scaled_points now has shape (batch_size * num_random_scalings, self.ncoords)
+    #
+    #     real_patch_points = tf.concat((tf.math.real(scaled_points), tf.math.imag(scaled_points)), axis=-1)
+    #     gj = self.model(real_patch_points, training=True)
+    #     gi = tf.repeat(self.model(points), num_random_scalings, axis=0)
+    #     all_t_loss = tf.math.abs(gi-gj)
+    #     all_t_loss = tf.reshape(all_t_loss, (-1, num_random_scalings))
+    #     all_t_loss = tf.math.reduce_sum(all_t_loss**self.n[2], axis=-1)
+    #     return all_t_loss / num_random_scalings
         
-        cpoints = tf.complex(points[:, :self.ncoords], points[:, self.ncoords:])
-        
-        num_pns = len(self.degrees)
-        # real and imaginary part of random lambdas (we draw a different one for each ambient P^n)
-        lambdas_rand = tf.random.uniform(minval=-1, maxval=1, shape=(num_random_scalings, num_pns, 2), dtype=tf.float32)
-        # we scale the lambdas_rand to have abs value in [0.1, 0.9]
-        scale_factor_rand = tf.cast(tf.random.uniform(minval=0.1, maxval=0.9, shape=(num_random_scalings, num_pns), dtype=tf.float32), dtype=tf.complex64)
-        scale_factor_rand = tf.repeat(scale_factor_rand, repeats=self.degrees, axis=-1)
-        lambdas_rand = tf.complex(lambdas_rand[:,:,0], lambdas_rand[:,:,1])
-        lambdas_rand = tf.repeat(lambdas_rand, repeats=self.degrees, axis=-1)  # user same lambda_i on all P^n coordinates
-        lambdas_rand = scale_factor_rand * lambdas_rand/(lambdas_rand * tf.math.conj(lambdas_rand))**(.5)  # rescale \lambdas
-        scaled_points = tf.einsum('xi,ai->xai', cpoints, lambdas_rand)
-        scaled_points = tf.reshape(scaled_points, (-1, self.ncoords)) # scaled_points now has shape (batch_size * num_random_scalings, self.ncoords)
-        
-        real_patch_points = tf.concat((tf.math.real(scaled_points), tf.math.imag(scaled_points)), axis=-1)
-        gj = self.model(real_patch_points, training=True)
-        gi = tf.repeat(self.model(points), num_random_scalings, axis=0)
-        all_t_loss = tf.math.abs(gi-gj)
-        all_t_loss = tf.reshape(all_t_loss, (-1, num_random_scalings))
-        all_t_loss = tf.math.reduce_sum(all_t_loss**self.n[2], axis=-1)
-        return all_t_loss / num_random_scalings
-        
-    def compute_transition_loss2(self, points):
+    def compute_transition_loss(self, points):
         r"""Computes transition loss at each point. In the case of the Phi model, we demand that \phi(\lambda^q_i z_i)=\phi(z_i)
 
         Args:
