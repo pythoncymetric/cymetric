@@ -73,7 +73,7 @@ def generate_monomials(n, deg):
                 yield (i,) + j
 
 
-def prepare_dataset(point_gen, n_p, dirname, val_split=0.1, ltails=0, rtails=0, normalize_to_vol_j=False):
+def prepare_dataset(point_gen, n_p, dirname, val_split=0.1, ltails=0, rtails=0, normalize_to_vol_j=True):
     r"""Prepares training and validation data from point_gen.
 
     Note:
@@ -94,7 +94,7 @@ def prepare_dataset(point_gen, n_p, dirname, val_split=0.1, ltails=0, rtails=0, 
             
                 \int_X \det(g) = \sum_p \det(g) * w|_p  = d^{ijk} t_i t_j t_k
 
-            Defaults to False.
+            Defaults to True.
 
     Returns:
         np.float: kappa = vol_k / vol_cy

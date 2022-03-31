@@ -55,7 +55,7 @@ class PointGenerator:
         >>> pg.prepare_basis(dir_name)
     """
 
-    def __init__(self, monomials, coefficients, kmoduli, ambient, vol_j_norm=1, verbose=2, backend='multiprocessing'):
+    def __init__(self, monomials, coefficients, kmoduli, ambient, vol_j_norm=None, verbose=2, backend='multiprocessing'):
         r"""The PointGenerator uses the *joblib* module to parallelize 
         computations. 
 
@@ -71,7 +71,7 @@ class PointGenerator:
 
                 .. math:: \int_X J^n \; \text{ at } \; t_1=t_2=...=t_n = 1.
 
-                Defaults to 1.
+                Defaults to None, in which case the normalization will be computed automatically from the intersection numbers.
             verbose (int, optional): Controls logging. 1-Debug, 2-Info,
                 else Warning. Defaults to 2.
             backend (str, optional): Backend for Parallel. Defaults to
@@ -88,10 +88,8 @@ class PointGenerator:
         self.coefficients = coefficients
         self.kmoduli = kmoduli
         self.ambient = ambient.astype(np.int64)
-        self.vol_j_norm = vol_j_norm
         self.degrees = ambient + 1
         self.nhyper = 1
-        self.vol_j_norm = vol_j_norm
         self.nmonomials, self.ncoords = monomials.shape
         self.nfold = np.sum(self.ambient) - self.nhyper
         self.backend = backend
@@ -110,6 +108,9 @@ class PointGenerator:
         self.monomials = np.array([self.monomials]) 
         self.intersection_tensor = self._generate_intersection_tensor()
         self.monomials = old_monoms  # undo change
+        
+        self.vol_j_norm = self.get_volume_from_intersections(np.ones_like(self.kmoduli)) if vol_j_norm is None else vol_j_norm
+        
         
         # some more internal variables
         self._set_seed(2021)
@@ -610,6 +611,10 @@ class PointGenerator:
                     drstu += v
             return drstu
 
+    def get_volume_from_intersections(self, ts):
+        return np.einsum("abc,a,b,c", self.intersection_tensor, ts, ts, ts)
+        
+        
     def _implicit_diff(self, i, j):
         r"""Compute the implicit derivative of
 

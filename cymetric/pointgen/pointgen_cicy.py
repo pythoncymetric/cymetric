@@ -57,7 +57,7 @@ class CICYPointGenerator(PointGenerator):
         >>> pg.prepare_basis(dir_name)
     """
 
-    def __init__(self, monomials, coefficients, kmoduli, ambient, vol_j_norm=1, verbose=2, backend='multiprocessing'):
+    def __init__(self, monomials, coefficients, kmoduli, ambient, vol_j_norm=None, verbose=2, backend='multiprocessing'):
         r"""The CICYPointGenerator uses the *joblib* module to parallelize 
         computations.
 
@@ -91,7 +91,6 @@ class CICYPointGenerator(PointGenerator):
         self.coefficients = coefficients
         self.kmoduli = kmoduli
         self.ambient = ambient
-        self.vol_j_norm = vol_j_norm
         self.degrees = ambient + 1
         self.nhyper = len(monomials)
         self.nmonomials = []
@@ -120,6 +119,8 @@ class CICYPointGenerator(PointGenerator):
         self.lc = get_levicivita_tensor(int(self.nfold))
         self._generate_all_bases()
         self.intersection_tensor = self._generate_intersection_tensor()
+        self.vol_j_norm = self.get_volume_from_intersections(np.ones_like(self.kmoduli)) if vol_j_norm is None else vol_j_norm
+        
 
     def _generate_all_bases(self):
         r"""This function calls a bunch of others
