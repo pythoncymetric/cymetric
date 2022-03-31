@@ -3,7 +3,7 @@ Pullbacked fubini study metric implemented as a tfk.model.
 """
 import tensorflow as tf
 import itertools as it
-from cymetric.pointgen.nphelper import generate_monomials
+from cymetric.pointgen.nphelper import generate_monomials, get_levicivita_tensor
 import numpy as np
 tfk = tf.keras
 
@@ -51,6 +51,7 @@ class FSModel(tfk.Model):
         if self.nhyper == 1:
             self.fixed_patches = self._generate_all_patches()
         self._proj_indices = self._generate_proj_indices()
+        self.slopes = self._target_slopes()
 
     def _generate_proj_matrix(self):
         r"""TensorFlow does not allow for nice slicing. Here we create
@@ -108,6 +109,36 @@ class FSModel(tfk.Model):
         # over counting by one which is same to same transition
         return int(nTransitions)
 
+    def _target_slopes(self):
+        ks = tf.eye(len(self.BASIS['KMODULI']), dtype=tf.complex64)
+        return tf.einsum('abc, a, b, xc->x', self.BASIS['INTNUMS'], self.BASIS['KMODULI'], self.BASIS['KMODULI'], ks)
+
+    def _calculate_slope(self, args):
+        r"""Computes the slopes \mu(F_i) = \int J \wedge J \wegde F_i at the point in Kahler moduli space t_a = 1 for all a
+        and for F_i = O_X(0, 0,... , 1, 0, ..., 0), i.e. the flux integers are k_i^a = \delta_{i,a}"""
+        input_tensor, pred, k = args[0], args[1], args[2]
+        lc = get_levicivita_tensor(self.nfold)
+        f_a = self.fubini_study_pb(input_tensor, ts=k)
+        if self.nfold == 1:
+            slope = tf.einsum('xab->x',
+                              f_a)
+        elif self.nfold == 2:
+            slope = tf.einsum('xab,xcd,ac,bd->x',
+                              pred, f_a, lc, lc)
+        elif self.nfold == 3:
+            slope = tf.einsum('xab,xcd,xef,ace,bdf->x',
+                              pred, pred, f_a, lc, lc)
+        elif self.nfold == 4:
+            slope = tf.einsum('xab,xcd,xef,xgh,aceg,bdfh->x',
+                              pred, pred, pred, f_a, lc, lc)
+        elif self.nfold == 5:
+            slope = tf.einsum('xab,xcd,xef,xgh,xij,acegi,bdfhj->x',
+                              pred, pred, pred, pred, f_a, lc, lc)
+        else:
+            logger.error('Only implemented for nfold <= 5. Run the tensor contraction yourself :).')
+            slope = tf.zeros(len(self.BASIS['KMODULI']))
+        return tf.cast(1./tf.exp(tf.math.lgamma(tf.cast(self.BASIS['NFOLD'], dtype=tf.float32) + 1)), dtype=tf.complex64) * slope
+
     def call(self, input_tensor, training=True, j_elim=None):
         r"""Call method. Computes the pullbacked 
         Fubini-Study metric at each point in input_tensor.
@@ -158,7 +189,7 @@ class FSModel(tfk.Model):
         return cijk_loss
 
     @tf.function
-    def fubini_study_pb(self, points, pb=None, j_elim=None):
+    def fubini_study_pb(self, points, pb=None, j_elim=None, ts=None):
         r"""Computes the pullbacked Fubini-Study metric.
 
         NOTE:
@@ -177,18 +208,22 @@ class FSModel(tfk.Model):
             j_elim (tf.array([bSize], tf.int64)): index to be eliminated. 
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
+            ts (tf.array([len(kmoduli], tf.int64)):
+                Kahler parameters. Defaults to the ones specified at time of point generation
 
         Returns:
             tf.tensor([bSize, nfold, nfold], tf.complex64):
                 FS-metric at each point.
         """
+        if ts is None:
+            ts = self.BASIS['KMODULI']
         # TODO: Naming conventions here and in pointgen are different.
         if self.nProjective > 1:
             # we go through each ambient space factor and create fs.
             cpoints = tf.complex(
                 points[:, :self.degrees[0]],
                 points[:, self.ncoords:self.ncoords+self.degrees[0]])
-            fs = self._fubini_study_n_metrics(cpoints, n=self.degrees[0], t=self.BASIS['KMODULI'][0])
+            fs = self._fubini_study_n_metrics(cpoints, n=self.degrees[0], t=ts[0])
             fs = tf.einsum('xij,ia,bj->xab', fs, self.proj_matrix['0'], tf.transpose(self.proj_matrix['0']))
             for i in range(1, self.nProjective):
                 s = tf.reduce_sum(self.degrees[:i])
@@ -196,7 +231,7 @@ class FSModel(tfk.Model):
                 cpoints = tf.complex(points[:, s:e],
                                      points[:, self.ncoords+s:self.ncoords+e])
                 fs_tmp = self._fubini_study_n_metrics(
-                    cpoints, n=self.degrees[i], t=self.BASIS['KMODULI'][i])
+                    cpoints, n=self.degrees[i], t=self.ts[i])
                 fs_tmp = tf.einsum('xij,ia,bj->xab',
                                    fs_tmp, self.proj_matrix[str(i)],
                                    tf.transpose(self.proj_matrix[str(i)]))
@@ -206,7 +241,7 @@ class FSModel(tfk.Model):
                 points[:, :self.ncoords],
                 points[:, self.ncoords:2*self.ncoords])
             fs = self._fubini_study_n_metrics(cpoints,
-                                              t=self.BASIS['KMODULI'][0])
+                                              t=ts[0])
 
         if pb is None:
             pb = self.pullbacks(points, j_elim=j_elim)

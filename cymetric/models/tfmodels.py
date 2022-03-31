@@ -232,7 +232,7 @@ class FreeModel(FSModel):
             #                 lambda: tf.zeros_like(x[:, 0]))
             if self.learn_volk:
                 # is scalar and not batch vector
-                volk_loss = self.compute_volk_loss(x, weights=y[:, -2], pred=y_pred)
+                volk_loss = self.compute_volk_loss(x, y, y_pred) # self.compute_volk_loss(x, y[:, -2], pred=y_pred)
             else:
                 volk_loss = tf.zeros_like(cijk_loss)
 
@@ -309,7 +309,7 @@ class FreeModel(FSModel):
         else:
             r_loss = tf.zeros_like(cijk_loss)
         if self.learn_volk:
-            volk_loss = self.compute_volk_loss(x, weights=y[:, -2], pred=y_pred)
+            volk_loss = self.compute_volk_loss(x, y, y_pred)  # self.compute_volk_loss(x, weights=y[:, -2], pred=y_pred)
         else:
             volk_loss = tf.zeros_like(cijk_loss)
         
@@ -360,7 +360,44 @@ class FreeModel(FSModel):
         return out + low + tf.transpose(low, perm=[0, 2, 1], conjugate=True)
 
     @tf.function
-    def compute_volk_loss(self, input_tensor, weights, pred=None):
+    def compute_volk_loss(self, input_tensor, wo, pred=None):
+        r"""Computes volk loss.
+
+        NOTE:
+            This is an integral over the batch. Thus batch dependent.
+
+        .. math::
+
+            \mathcal{L}_{\text{vol}_k} = |\int_B g_{\text{FS}} -
+                \int_B g_{\text{out}}|_n
+
+        Args:
+            input_tensor (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
+            weights (tf.tensor([bSize], tf.float32)): Integration weights.
+            pred (tf.tensor([bSize, nfold, nfold], tf.complex64), optional):
+                Prediction from `self(input_tensor)`.
+                If None will be calculated. Defaults to None.
+
+        Returns:
+            tf.tensor([bSize], tf.float32): Volk loss.
+        """
+        if pred is None:
+            pred = self(input_tensor)
+        
+        aux_weights = tf.cast(wo[:, 0] / wo[:, 1], dtype=tf.complex64)
+        aux_weights = tf.repeat(tf.expand_dims(aux_weights, axis=0), repeats=[len(self.BASIS['KMODULI'])], axis=0)
+        pred = tf.repeat(tf.expand_dims(pred, axis=0), repeats=[len(self.BASIS['KMODULI'])], axis=0)
+        input_tensor = tf.repeat(tf.expand_dims(input_tensor, axis = 0), repeats=[len(self.BASIS['KMODULI'])], axis=0)
+        ks = tf.expand_dims(tf.eye(len(self.BASIS['KMODULI']), dtype=tf.complex64), axis=0)
+        
+        actual_slopes = tf.vectorized_map(self._calculate_slope, [input_tensor, pred, ks])
+        actual_slopes = tf.reduce_mean(aux_weights * actual_slopes, axis=-1)
+        loss = tf.reduce_mean(tf.math.abs(actual_slopes - self.slopes)**self.n[4])
+
+        return tf.repeat(tf.expand_dims(loss, axis = 0), repeats=[len(input_tensor)], axis=0)
+
+    @tf.function
+    def compute_volk_loss2(self, input_tensor, weights, pred=None):
         r"""Computes volk loss.
 
         NOTE:
@@ -628,32 +665,32 @@ class PhiFSModel(FreeModel):
         # return g_fs + \del\bar\del\phi
         return tf.math.add(fs_cont, dd_phi)
 
-    def compute_volk_loss(self, input_tensor, weights, pred=None):
-        r"""Computes volk loss.
-
-        .. math::
-
-            \mathcal{L}_{\text{vol}_k} = \int_X \phi
-
-        The last term is constant over the whole batch. Thus, the volk loss
-        is *batch dependent*. This loss contribution should be satisfied by
-        construction but is included for tracing purposes.
-
-        Args:
-            input_tensor (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
-            weights (tf.tensor([bSize], tf.float32)): Weights.
-            pred (tf.tensor([bSize, nfold, nfold], tf.complex64), optional):
-                Prediction from `self(input_tensor)`. Ignored for Phi model.
-
-        Returns:
-            tf.tensor([bSize], tf.float32): Volk loss.
-        """
-        # sample_contribution = super().compute_volk_loss(input_tensor, weights=weights, pred=pred)
-        phi_pred = tf.reshape(self.model(input_tensor), [-1])
-        phi_pred = tf.einsum('i,j->ij', phi_pred, tf.ones_like(phi_pred))
-        phi_pred = tf.einsum('ij,i->ji', phi_pred, weights)
-        phi_pred = tf.math.reduce_mean(phi_pred, axis=-1)
-        phi_pred = tf.math.abs(phi_pred)
+#     def compute_volk_loss(self, input_tensor, weights, pred=None):
+#         r"""Computes volk loss.
+# 
+#         .. math::
+# 
+#             \mathcal{L}_{\text{vol}_k} = \int_X \phi
+# 
+#         The last term is constant over the whole batch. Thus, the volk loss
+#         is *batch dependent*. This loss contribution should be satisfied by
+#         construction but is included for tracing purposes.
+# 
+#         Args:
+#             input_tensor (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
+#             weights (tf.tensor([bSize], tf.float32)): Weights.
+#             pred (tf.tensor([bSize, nfold, nfold], tf.complex64), optional):
+#                 Prediction from `self(input_tensor)`. Ignored for Phi model.
+# 
+#         Returns:
+#             tf.tensor([bSize], tf.float32): Volk loss.
+#         """
+#         # sample_contribution = super().compute_volk_loss(input_tensor, weights=weights, pred=pred)
+#         phi_pred = tf.reshape(self.model(input_tensor), [-1])
+#         phi_pred = tf.einsum('i,j->ij', phi_pred, tf.ones_like(phi_pred))
+#         phi_pred = tf.einsum('ij,i->ji', phi_pred, weights)
+#         phi_pred = tf.math.reduce_mean(phi_pred, axis=-1)
+#         phi_pred = tf.math.abs(phi_pred)
 
         return 1. / tf.math.reduce_mean(weights, axis=-1) * phi_pred
 
@@ -1204,34 +1241,34 @@ class PhiFSModelToric(ToricModel):
 
 
 
-    def compute_volk_loss(self, input_tensor, weights, pred=None):
-        r"""Computes volk loss.
-
-        .. math::
-
-            \mathcal{L}_{\text{vol}_k} = \int_X \phi
-
-        The last term is constant over the whole batch. Thus, the volk loss
-        is *batch dependent*. This loss contribution should be satisfied by
-        construction but is included for tracing purposes.
-
-        Args:
-            input_tensor (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
-            weights (tf.tensor([bSize], tf.float32)): Weights.
-            pred (tf.tensor([bSize, nfold, nfold], tf.complex64), optional):
-                Prediction from `self(input_tensor)`. Ignored for Phi model.
-
-        Returns:
-            tf.tensor([bSize], tf.float32): Volk loss.
-        """
-        # sample_contribution = super().compute_volk_loss(input_tensor, weights=weights, pred=pred)
-        phi_pred = tf.reshape(self.model(input_tensor), [-1])
-        phi_pred = tf.einsum('i,j->ij', phi_pred, tf.ones_like(phi_pred))
-        phi_pred = tf.einsum('ij,i->ji', phi_pred, weights)
-        phi_pred = tf.math.reduce_mean(phi_pred, axis=-1)
-        phi_pred = tf.math.abs(phi_pred)
-
-        return 1. / tf.math.reduce_mean(weights, axis=-1) * phi_pred
+#     def compute_volk_loss(self, input_tensor, weights, pred=None):
+#         r"""Computes volk loss.
+# 
+#         .. math::
+# 
+#             \mathcal{L}_{\text{vol}_k} = \int_X \phi
+# 
+#         The last term is constant over the whole batch. Thus, the volk loss
+#         is *batch dependent*. This loss contribution should be satisfied by
+#         construction but is included for tracing purposes.
+# 
+#         Args:
+#             input_tensor (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
+#             weights (tf.tensor([bSize], tf.float32)): Weights.
+#             pred (tf.tensor([bSize, nfold, nfold], tf.complex64), optional):
+#                 Prediction from `self(input_tensor)`. Ignored for Phi model.
+# 
+#         Returns:
+#             tf.tensor([bSize], tf.float32): Volk loss.
+#         """
+#         # sample_contribution = super().compute_volk_loss(input_tensor, weights=weights, pred=pred)
+#         phi_pred = tf.reshape(self.model(input_tensor), [-1])
+#         phi_pred = tf.einsum('i,j->ij', phi_pred, tf.ones_like(phi_pred))
+#         phi_pred = tf.einsum('ij,i->ji', phi_pred, weights)
+#         phi_pred = tf.math.reduce_mean(phi_pred, axis=-1)
+#         phi_pred = tf.math.abs(phi_pred)
+# 
+#         return 1. / tf.math.reduce_mean(weights, axis=-1) * phi_pred
 
 
 class MatrixFSModelToric(ToricModel):
