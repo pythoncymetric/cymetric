@@ -849,7 +849,7 @@ GeneratePointsToric[PathToToricInfo_, OptionsPattern[]] :=
   ]; 
 
 
-Options[TrainNN] = {"Epochs" -> 20, "EvaluateModel" -> False, Verbose -> GetGlobalOptions["Verbose"]}; 
+Options[TrainNN] = {"Epochs" -> 20, "EvaluateModel" -> False, "Verbose" -> GetGlobalOptions["Verbose"]}; 
 TrainNN[OptionsPattern[]] :=
   Module[{python, model, callbacks, nHiddens, acts, nEpochs, batchSize, alphas, outDir, verbose, session, res, loggerLevel, args, validSession, toricDataPath, printLosses, printMeasures, functionArgs},
     (
