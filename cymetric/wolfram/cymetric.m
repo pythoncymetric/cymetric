@@ -10,7 +10,7 @@ GlobalOptions::usage =
 "Global Options for the package. These are default values that hopefully work for you and need not be changed too often. You can see all with GetGlobalOptions[], and change them easily with ChangeSetting[<option>, <value>]
   - ActivationFunctions (list of strings): Tensorflow activation function to use (defaults to 'gelu')
   - Alphas (list of floats): Relative weight of losses (Sigma, Kahler, Transition, Ricci, volK); at the moment, the value for Ricci is ignored since we do not train against the Ricci loss (defaults to all 1)
-  - BatchSize (int): Batch size for training (defaults to 64)
+  - BatchSizes ({int, int}): The first integer (defaults to 64) gives the batch size for training against Sigma, Kahler, Transition, Ricci. The first integer (defaults to 50000 or the min size of the points generated) gives the batch size for training against volK
   - Dir (string): Directory where points will be saved (defaults to 'results' within the current $WORKDIR)
   - DisableGPU (bool): If True, no Hardware acceleration (GPU, M1) will be used even if it is available. If no supported GPU is available, this is ignored and CPU is used. Defaults to False.
   - HiddenLayers (list of ints): Number of hidden nodes in each hidden layer 
@@ -191,7 +191,6 @@ GeneratePoints::usage =
 * Options (run Options[GeneratePoints] to see default values):
   - KahlerModuli (list of floats): Kahler moduli \!\(\*SubscriptBox[\(t\), \(i\)]\) of the i'th ambient space factor (defaults to all 1)
   - Points (int): Number of points to generate (defaults to 200,000)
-  - VolJNorm (float): Normalization for the volume, input int_X J^n at t1=t2=...=1 (defaults to 1)
 * Return:
   - res (object): Null if no error occured, otherwise a string with the error
 * Example:
@@ -381,7 +380,7 @@ GetSetting[k_] :=
 GlobalOptions = Association[{
   "ActivationFunctions"->{"gelu", "gelu", "gelu"},
   "Alphas"->{1.,1.,1.,1.,1.},
-  "BatchSize"->64,
+  "BatchSizes"->{64, 50000},
   "Dir" -> FileNameJoin[{$WORKDIR, "results"}],
   "DisableGPU" -> False, 
   "HiddenLayers"->{64, 64, 64},
@@ -684,7 +683,7 @@ GetSession[exec_:Null, mysession_:Null] := Module[{validSession, session, python
   ]; 
 
 
-Options[GeneratePoints] = {"KahlerModuli" -> {}, "Points" -> 200000, "VolJNorm" -> 1}; 
+Options[GeneratePoints] = {"KahlerModuli" -> {}, "Points" -> 200000}; 
 GeneratePoints[poly_, dimPs_, variables_List:{}, OptionsPattern[]] :=
   Module[{python, points, numPts, pointsFile, verbose, session, outDir, res, startPos, monomials, coeffs, kahlerModuli, precision, loggerLevel, functionArgs, args, vars, randomPoint, i, prev, curr, isSymmetric, pointsBatched, volJNorm, numParamsInPn},
     (
@@ -696,7 +695,6 @@ GeneratePoints[poly_, dimPs_, variables_List:{}, OptionsPattern[]] :=
       verbose = GlobalOptions["Verbose"];
       precision = GlobalOptions["Precision"];
       outDir = GlobalOptions["Dir"];
-      volJNorm = OptionValue["VolJNorm"];
       
       If[session === Null,
         Return["Could not start a Python Kernel with all dependencies installed."]
@@ -770,7 +768,6 @@ GeneratePoints[poly_, dimPs_, variables_List:{}, OptionsPattern[]] :=
       args["monomials"] = NumericArray[monomials, "Integer32"];
       args["coeffs"] = NumericArray[coeffs, "Real32"];
       args["ambient_dims"] = dimPs;
-      args["VolJNorm"] = volJNorm;
       
       res = ExternalEvaluate[session, "mcy.generate_points" -> args];
         

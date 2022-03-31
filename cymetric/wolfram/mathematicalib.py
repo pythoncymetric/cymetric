@@ -60,7 +60,7 @@ def generate_points(my_args):
     if args['monomials'] == [] or args['coeffs'] == []:
         raise ValueError("You need to specify both the monomials and their coefficients")
 
-    point_gen = PointGeneratorMathematica([np.array(x) for x in args['monomials']], [np.array(x) for x in args['coeffs']], args['KahlerModuli'], args['ambient_dims'], precision=args['Precision'], vol_j_norm=args['VolJNorm'], point_file_path=args['point_file_path'], selected_t=args['selected_t'])
+    point_gen = PointGeneratorMathematica([np.array(x) for x in args['monomials']], [np.array(x) for x in args['coeffs']], args['KahlerModuli'], args['ambient_dims'], precision=args['Precision'], point_file_path=args['point_file_path'], selected_t=args['selected_t'])
 
     # save point generator to pickle
     mcy_logger.info("Saving point generator to {:}".format(os.path.join(os.path.abspath(args['Dir']), "point_gen.pickle")))
@@ -217,12 +217,41 @@ def train_NN(my_args):
     model.summary(print_fn=mcy_logger.debug)
 
     # train model
-    history = fsmodel.fit(data['X_train'], data['y_train'], epochs=args['Epochs'], batch_size=args['BatchSize'], verbose=2, callbacks=cb_list)
-        
+    training_history, alpha0_orig = {}, fmodel.alpha[0]
+    for epoch in range(nEpochs):
+        batch_size = args['BatchSizes'][0]
+        fmodel.learn_kaehler = tf.cast(True, dtype=tf.bool)
+        fmodel.learn_transition = tf.cast(True, dtype=tf.bool)
+        fmodel.learn_volk = tf.cast(False, dtype=tf.bool)
+        fmodel.alpha[0] = alpha0_orig
+        fmodel.compile(custom_metrics=cmetrics, optimizer=opt)
+        history = fsmodel.fit(data['X_train'], data['y_train'], epochs=args['Epochs'], batch_size=batch_size, verbose=2, callbacks=cb_list)
+        for k in history.history.keys():
+            if "volk" in k:
+                continue
+            if k not in training_history.keys():
+                training_history[k] = history.history[k]
+            else:
+                training_history[k] += history.history[k]
+        batch_size = min(args['BatchSizes'][1], len(data['X_train']))
+        fmodel.learn_kaehler = tf.cast(False, dtype=tf.bool)
+        fmodel.learn_transition = tf.cast(False, dtype=tf.bool)
+        fmodel.learn_volk = tf.cast(True, dtype=tf.bool)
+        fmodel.alpha[0] = tf.Variable(0., dtype=tf.float32)
+        fmodel.compile(custom_metrics=cmetrics, optimizer=opt)
+        history = fsmodel.fit(data['X_train'], data['y_train'], epochs=args['Epochs'], batch_size=batch_size, verbose=2, callbacks=cb_list)
+        for k in history.history.keys():
+            if "volk" not in k:
+                continue
+            if k not in training_history.keys():
+                training_history[k] = history.history[k]
+            else:
+                training_history[k] += history.history[k]
+
     # save trained model
     fsmodel.model.save(os.path.join(args['Dir'], 'model'))
     
-    return history.history
+    return training_history
 
 
 def get_g(my_args):
