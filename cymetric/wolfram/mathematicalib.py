@@ -151,7 +151,7 @@ def train_NN(my_args):
         cb_list1 = [x for x, y in zip(cb_list1, args['PrintMeasures']) if y]
         cb_list2 = [] if not args['PrintMeasures'][-1] else [volkck]
     else:
-        cb_list = []
+        cb_list1, cb_list2 = [], []
     
     # metrics
     args['PrintLosses'][4] = False  # Ricci loss not computed at the moment
