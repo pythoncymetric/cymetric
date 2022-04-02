@@ -388,11 +388,15 @@ class FreeModel(FSModel):
         aux_weights = tf.repeat(tf.expand_dims(aux_weights, axis=0), repeats=[len(self.BASIS['KMODULI'])], axis=0)
         pred = tf.repeat(tf.expand_dims(pred, axis=0), repeats=[len(self.BASIS['KMODULI'])], axis=0)
         input_tensor = tf.repeat(tf.expand_dims(input_tensor, axis = 0), repeats=[len(self.BASIS['KMODULI'])], axis=0)
-        ks = tf.expand_dims(tf.eye(len(self.BASIS['KMODULI']), dtype=tf.complex64), axis=0)
+        ks = tf.eye(len(self.BASIS['KMODULI']), dtype=tf.complex64)
+        # print(input_tensor.shape, pred.shape, ks.shape)
         
-        actual_slopes = tf.map_fn(self._calculate_slope, [input_tensor, pred, ks])
+        actual_slopes = tf.vectorized_map(self._calculate_slope, [input_tensor, pred, ks])
+        # print("as", actual_slopes)
         actual_slopes = tf.reduce_mean(aux_weights * actual_slopes, axis=-1)
+        # print("ts", self.slopes)
         loss = tf.reduce_mean(tf.math.abs(actual_slopes - self.slopes)**self.n[4])
+        # print("loss", loss)
 
         return tf.repeat(tf.expand_dims(loss, axis = 0), repeats=[len(input_tensor)], axis=0)
 
