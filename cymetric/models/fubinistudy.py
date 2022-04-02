@@ -232,7 +232,7 @@ class FSModel(tfk.Model):
                 cpoints = tf.complex(points[:, s:e],
                                      points[:, self.ncoords+s:self.ncoords+e])
                 fs_tmp = self._fubini_study_n_metrics(
-                    cpoints, n=self.degrees[i], t=self.ts[i])
+                    cpoints, n=self.degrees[i], t=ts[i])
                 fs_tmp = tf.einsum('xij,ia,bj->xab',
                                    fs_tmp, self.proj_matrix[str(i)],
                                    tf.transpose(self.proj_matrix[str(i)]))
