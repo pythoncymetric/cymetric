@@ -222,7 +222,6 @@ def train_NN(my_args):
     training_history, alpha0_orig = {}, fsmodel.alpha[0]
     for epoch in range(args['Epochs']):
         batch_size = args['BatchSizes'][0]
-        fsmodel.learn_kaehler = tf.cast(True, dtype=tf.bool)
         fsmodel.learn_transition = tf.cast(True, dtype=tf.bool)
         fsmodel.learn_volk = tf.cast(False, dtype=tf.bool)
         fsmodel.alpha[0] = alpha0_orig
@@ -237,7 +236,6 @@ def train_NN(my_args):
             else:
                 training_history[k] += history.history[k]
         batch_size = min(args['BatchSizes'][1], len(data['X_train']))
-        fsmodel.learn_kaehler = tf.cast(False, dtype=tf.bool)
         fsmodel.learn_transition = tf.cast(False, dtype=tf.bool)
         fsmodel.learn_volk = tf.cast(True, dtype=tf.bool)
         fsmodel.alpha[0] = tf.Variable(0., dtype=tf.float32)
