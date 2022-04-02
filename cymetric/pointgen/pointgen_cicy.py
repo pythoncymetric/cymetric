@@ -106,7 +106,7 @@ class CICYPointGenerator(PointGenerator):
                 e = np.sum(ambient[:i + 1]) + i + 1
                 deg += [np.sum(m[0, s:e])]
             self.conf += [deg]
-        self.p_conf = [[a] + c for a, c in zip(self.ambient, self.conf)]
+        self.p_conf = [[a] + c for a, c in zip(self.ambient, np.array(self.conf).transpose().tolist())]
         self.nfold = np.sum(self.ambient) - self.nhyper
 
         # sympy variables
