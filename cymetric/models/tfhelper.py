@@ -55,5 +55,5 @@ def train_model(fsmodel, data, custom_metrics=[], optimizer=None, epochs=50, bat
                 training_history[k] = history.history[k]
             else:
                 training_history[k] += history.history[k]
-    return fsmodel, history
+    return fsmodel, training_history
     
