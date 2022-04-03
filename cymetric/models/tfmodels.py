@@ -5,7 +5,7 @@ Calabi-Yau metrics using neural networks.
 import tensorflow as tf
 from cymetric.models.losses import sigma_loss
 from cymetric.models.fubinistudy import FSModel
-from cymetric.pointgen.nphelper import get_all_patch_degrees, compute_all_w_of_x
+from cymetric.pointgen.nphelper import get_all_patch_degrees, compute_all_w_of_x, get_levicivita_tensor
 import numpy as np
 tfk = tf.keras
 
@@ -213,26 +213,20 @@ class FreeModel(FSModel):
                 cijk_loss = self.compute_kaehler_loss(x)
             else:
                 cijk_loss = tf.zeros_like(x[:, 0])
-            # cijk_loss = tf.cond(0 < self.alpha[1],
-            #                    lambda: self.compute_kaehler_loss(x),
-            #                    lambda: tf.zeros_like(x[:, 0]))
+
             if self.learn_transition:
                 t_loss = self.compute_transition_loss(x)
             else:
                 t_loss = tf.zeros_like(cijk_loss)
-            # t_loss = tf.cond(0 < self.alpha[2],
-            #                 lambda: self.compute_transition_loss(x),
-            #                 lambda: tf.zeros_like(x[:, 0]))
+
             if self.learn_ricci:
                 r_loss = self.compute_ricci_loss(x)
             else:
                 r_loss = tf.zeros_like(cijk_loss)
-            # r_loss = tf.cond(0 < self.alpha[3],
-            #                 lambda: self.compute_ricci_loss(x),
-            #                 lambda: tf.zeros_like(x[:, 0]))
+                
             if self.learn_volk:
                 # is scalar and not batch vector
-                volk_loss = self.compute_volk_loss(x, y, y_pred) # self.compute_volk_loss(x, y[:, -2], pred=y_pred)
+                volk_loss = self.compute_volk_loss(x, y, y_pred)
             else:
                 volk_loss = tf.zeros_like(cijk_loss)
 
@@ -309,7 +303,7 @@ class FreeModel(FSModel):
         else:
             r_loss = tf.zeros_like(cijk_loss)
         if self.learn_volk:
-            volk_loss = self.compute_volk_loss(x, y, y_pred)  # self.compute_volk_loss(x, weights=y[:, -2], pred=y_pred)
+            volk_loss = self.compute_volk_loss(x, y, y_pred)
         else:
             volk_loss = tf.zeros_like(cijk_loss)
         
@@ -408,46 +402,6 @@ class FreeModel(FSModel):
         loss = tf.reduce_mean(tf.math.abs(actual_slopes - self.slopes)**self.n[4])
         
         return tf.repeat(tf.expand_dims(loss, axis=0), repeats=[len(aux_weights)], axis=0)
-
-    @tf.function
-    def compute_volk_loss2(self, input_tensor, weights, pred=None):
-        r"""Computes volk loss.
-
-        NOTE:
-            This is an integral over the batch. Thus batch dependent.
-
-        .. math:: 
-        
-            \mathcal{L}_{\text{vol}_k} = |\int_B g_{\text{FS}} - 
-                \int_B g_{\text{out}}|_n
-
-        Args:
-            input_tensor (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
-            weights (tf.tensor([bSize], tf.float32)): Integration weights.
-            pred (tf.tensor([bSize, nfold, nfold], tf.complex64), optional): 
-                Prediction from `self(input_tensor)`.
-                If None will be calculated. Defaults to None.
-            
-        Returns:
-            tf.tensor([bSize], tf.float32): Volk loss.
-        """
-        if pred is None:
-            pred = self(input_tensor)
-        weight_norm = tf.einsum('i,j->ij', weights, tf.ones_like(weights))
-        weight_norm = tf.math.reduce_mean(weight_norm, axis=-1)
-        # hack to make tracing work even though we reduce over batch dimension
-        det_pred = tf.math.real(tf.linalg.det(pred))
-        det_pred = tf.einsum('i,j->ij', det_pred, tf.ones_like(det_pred))
-        det_pred = tf.einsum('ij,i->ji', det_pred, weights)
-        det_pred = tf.math.reduce_mean(det_pred, axis=-1)
-        det_pred /= weight_norm
-        g_fs = self.fubini_study_pb(input_tensor)
-        det_fs = tf.math.real(tf.linalg.det(g_fs))
-        det_fs = tf.einsum('i,j->ij', det_fs, tf.ones_like(det_fs))
-        det_fs = tf.einsum('ij,i->ji', det_fs, weights)
-        det_fs = tf.math.reduce_mean(det_fs*weights)
-        det_fs /= weight_norm
-        return tf.math.abs(det_fs-det_pred)**self.n[4]
 
     def save(self, filepath, **kwargs):
         r"""Saves the underlying neural network to filepath.
@@ -671,71 +625,6 @@ class PhiFSModel(FreeModel):
         fs_cont = self.fubini_study_pb(input_tensor, pb=pbs, j_elim=j_elim)
         # return g_fs + \del\bar\del\phi
         return tf.math.add(fs_cont, dd_phi)
-
-    # def compute_volk_loss(self, input_tensor, weights, pred=None):
-    #     r"""Computes volk loss.
-    #
-    #     .. math::
-    #
-    #         \mathcal{L}_{\text{vol}_k} = \int_X \phi
-    #
-    #     The last term is constant over the whole batch. Thus, the volk loss
-    #     is *batch dependent*. This loss contribution should be satisfied by
-    #     construction but is included for tracing purposes.
-    #
-    #     Args:
-    #         input_tensor (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
-    #         weights (tf.tensor([bSize], tf.float32)): Weights.
-    #         pred (tf.tensor([bSize, nfold, nfold], tf.complex64), optional):
-    #             Prediction from `self(input_tensor)`. Ignored for Phi model.
-    #
-    #     Returns:
-    #         tf.tensor([bSize], tf.float32): Volk loss.
-    #     """
-    #     # sample_contribution = super().compute_volk_loss(input_tensor, weights=weights, pred=pred)
-    #     phi_pred = tf.reshape(self.model(input_tensor), [-1])
-    #     phi_pred = tf.einsum('i,j->ij', phi_pred, tf.ones_like(phi_pred))
-    #     phi_pred = tf.einsum('ij,i->ji', phi_pred, weights)
-    #     phi_pred = tf.math.reduce_mean(phi_pred, axis=-1)
-    #     phi_pred = tf.math.abs(phi_pred)
-    #
-    #     return 1. / tf.math.reduce_mean(weights, axis=-1) * phi_pred
-
-    # def compute_transition_loss(self, points, num_random_scalings=10):
-    #     r"""Computes transition loss at each point. In the case of the Phi model, we demand that \phi(\lambda^q_i z_i)=\phi(z_i)
-    #
-    #     Args:
-    #         points (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
-    #         num_random_scalings (int): If None, uses scalings for each patch to set one coordinate to one.
-    #                                    If a number, uses this many random scalings for \lambda
-    #
-    #     Returns:
-    #         tf.tensor([bSize], tf.float32): Transition loss at each point.
-    #     """
-    #     if num_random_scalings is None:
-    #         return compute_transition_loss2(points)
-    #
-    #     cpoints = tf.complex(points[:, :self.ncoords], points[:, self.ncoords:])
-    #
-    #     num_pns = len(self.degrees)
-    #     # real and imaginary part of random lambdas (we draw a different one for each ambient P^n)
-    #     lambdas_rand = tf.random.uniform(minval=-1, maxval=1, shape=(num_random_scalings, num_pns, 2), dtype=tf.float32)
-    #     # we scale the lambdas_rand to have abs value in [0.1, 0.9]
-    #     scale_factor_rand = tf.cast(tf.random.uniform(minval=0.1, maxval=0.9, shape=(num_random_scalings, num_pns), dtype=tf.float32), dtype=tf.complex64)
-    #     scale_factor_rand = tf.repeat(scale_factor_rand, repeats=self.degrees, axis=-1)
-    #     lambdas_rand = tf.complex(lambdas_rand[:,:,0], lambdas_rand[:,:,1])
-    #     lambdas_rand = tf.repeat(lambdas_rand, repeats=self.degrees, axis=-1)  # user same lambda_i on all P^n coordinates
-    #     lambdas_rand = scale_factor_rand * lambdas_rand/(lambdas_rand * tf.math.conj(lambdas_rand))**(.5)  # rescale \lambdas
-    #     scaled_points = tf.einsum('xi,ai->xai', cpoints, lambdas_rand)
-    #     scaled_points = tf.reshape(scaled_points, (-1, self.ncoords)) # scaled_points now has shape (batch_size * num_random_scalings, self.ncoords)
-    #
-    #     real_patch_points = tf.concat((tf.math.real(scaled_points), tf.math.imag(scaled_points)), axis=-1)
-    #     gj = self.model(real_patch_points, training=True)
-    #     gi = tf.repeat(self.model(points), num_random_scalings, axis=0)
-    #     all_t_loss = tf.math.abs(gi-gj)
-    #     all_t_loss = tf.reshape(all_t_loss, (-1, num_random_scalings))
-    #     all_t_loss = tf.math.reduce_sum(all_t_loss**self.n[2], axis=-1)
-    #     return all_t_loss / num_random_scalings
         
     def compute_transition_loss(self, points):
         r"""Computes transition loss at each point. In the case of the Phi model, we demand that \phi(\lambda^q_i z_i)=\phi(z_i)
@@ -842,6 +731,8 @@ class ToricModel(FreeModel):
         self.nProjective = len(self.toric_data["glsm_charges"])
         super(ToricModel, self).__init__(*args, **kwargs)
         self.kmoduli = self.BASIS['KMODULI']
+        self.lc = tf.convert_to_tensor(get_levicivita_tensor(self.nfold), dtype=tf.complex64)
+        self.slopes = self._target_slopes()
 
     def call(self, input_tensor, training=True, j_elim=None):
         r"""Computes the equivalent of the pullbacked 
@@ -863,28 +754,38 @@ class ToricModel(FreeModel):
         # FS prediction
         return self.fubini_study_pb(input_tensor, j_elim=j_elim)
 
-    def fubini_study_pb(self, points, pb=None, j_elim=None):
-        r"""Returns toric FS equivalent for each point.
+    def _target_slopes(self):
+        ks = tf.eye(len(self.BASIS['KMODULI']), dtype=tf.complex64)
+        return tf.einsum('abc, a, b, xc->x', self.BASIS['INTNUMS'], self.BASIS['KMODULI'], self.BASIS['KMODULI'], ks)
+
+    def fubini_study_pb(self, points, pb=None, j_elim=None, ts=None):
+        r"""Computes the pullbacked Fubini-Study metric.
+
+        NOTE:
+            The pb argument overwrites j_elim.
 
         .. math::
 
-            J = t^\alpha J_\alpha \quad \text{ with: }
-                J_\alpha = \frac{i}{2\pi} \partial \bar\partial \ln \rho_\alpha
+            g_{ij} = \frac{1}{\pi} J_i^a \bar{J}_j^b \partial_a 
+                \bar{\partial}_b \ln |\vec{z}|^2
 
-        :math:`\rho_\alpha` is a basis of sections.
 
         Args:
             points (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
             pb (tf.tensor([bSize, nfold, ncoords], tf.float32)):
                 Pullback at each point. Overwrite j_elim. Defaults to None.
-            j_elim (tf.tensor([bSize, nHyper], tf.int64), optional):
+            j_elim (tf.tensor([bSize], tf.int64)): index to be eliminated. 
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
+            ts (tf.tensor([len(kmoduli)], tf.complex64)):
+                Kahler parameters. Defaults to the ones specified at time of point generation
 
         Returns:
             tf.tensor([bSize, nfold, nfold], tf.complex64):
-                Kaehler metric at each point.
+                FS-metric at each point.
         """
+        if ts is None:
+            ts = self.BASIS['KMODULI']
         # NOTE: Cannot use super since for toric models we have only one toric space, but more than one Kahler modulus
         pullbacks = self.pullbacks(points, j_elim=j_elim) if pb is None else pb
         cpoints = tf.complex(points[:, :self.ncoords], points[:, self.ncoords:])
@@ -1245,36 +1146,6 @@ class PhiFSModelToric(ToricModel):
 
         k_fs += tf.reshape(self.model(points), [-1])
         return k_fs
-
-
-    # def compute_volk_loss(self, input_tensor, weights, pred=None):
-    #     r"""Computes volk loss.
-    #
-    #     .. math::
-    #
-    #         \mathcal{L}_{\text{vol}_k} = \int_X \phi
-    #
-    #     The last term is constant over the whole batch. Thus, the volk loss
-    #     is *batch dependent*. This loss contribution should be satisfied by
-    #     construction but is included for tracing purposes.
-    #
-    #     Args:
-    #         input_tensor (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
-    #         weights (tf.tensor([bSize], tf.float32)): Weights.
-    #         pred (tf.tensor([bSize, nfold, nfold], tf.complex64), optional):
-    #             Prediction from `self(input_tensor)`. Ignored for Phi model.
-    #
-    #     Returns:
-    #         tf.tensor([bSize], tf.float32): Volk loss.
-    #     """
-    #     # sample_contribution = super().compute_volk_loss(input_tensor, weights=weights, pred=pred)
-    #     phi_pred = tf.reshape(self.model(input_tensor), [-1])
-    #     phi_pred = tf.einsum('i,j->ij', phi_pred, tf.ones_like(phi_pred))
-    #     phi_pred = tf.einsum('ij,i->ji', phi_pred, weights)
-    #     phi_pred = tf.math.reduce_mean(phi_pred, axis=-1)
-    #     phi_pred = tf.math.abs(phi_pred)
-    #
-    #     return 1. / tf.math.reduce_mean(weights, axis=-1) * phi_pred
 
 
 class MatrixFSModelToric(ToricModel):
