@@ -402,7 +402,8 @@ class FreeModel(FSModel):
             return len(actual_slopes) < len(self.BASIS['KMODULI'])
         f_a = self.fubini_study_pb(input_tensor, ts=ks[0])
         actual_slopes = tf.expand_dims(self._calculate_slope([pred, f_a]), axis=0)
-        _, _, _, actual_slopes = tf.while_loop(condition, body, [input_tensor, pred, ks, actual_slopes], shape_invariants=[input_tensor.get_shape(), pred.get_shape(), ks.get_shape(), tf.TensorShape([None, actual_slopes.shape[-1]])])
+        if len(self.BASIS['KMODULI']) > 1:
+            _, _, _, actual_slopes = tf.while_loop(condition, body, [input_tensor, pred, ks, actual_slopes], shape_invariants=[input_tensor.get_shape(), pred.get_shape(), ks.get_shape(), tf.TensorShape([None, actual_slopes.shape[-1]])])
         actual_slopes = tf.reduce_mean(aux_weights * actual_slopes, axis=-1)
         loss = tf.reduce_mean(tf.math.abs(actual_slopes - self.slopes)**self.n[4])
         
