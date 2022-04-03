@@ -138,6 +138,8 @@ def train_NN(my_args):
     n_hiddens, acts = args["HiddenLayers"], args["ActivationFunctions"]
     n_out = nfold**2
     if args['Model'] == 'PhiFS' or args['Model'] == 'PhiFSToric':
+        args['PrintLosses'][1] = False  # Kahler loss is automatically 0
+        args['PrintMeasures'][1] = False  # Kahler loss is automatically 0
         n_out = 1
     
     # callbacks
@@ -154,7 +156,7 @@ def train_NN(my_args):
         cb_list1, cb_list2 = [], []
     
     # metrics
-    args['PrintLosses'][4] = False  # Ricci loss not computed at the moment
+    args['PrintLosses'][3] = False  # Ricci loss not computed at the moment
     cmetrics1 = [SigmaLoss(), KaehlerLoss(), TransitionLoss(), RicciLoss()]
     cmetrics1 = [x for x, y in zip(cmetrics1, args['PrintLosses']) if y]
     cmetrics2 = [] if not args['PrintLosses'][-1] else [VolkLoss()]
