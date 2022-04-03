@@ -115,7 +115,14 @@ pointsOnSphere=ParallelTable[SamplePointsOnSphere[dimPs[[i]]+1,numPoints (numPar
     
 (*Create system of equations and solve it to find points on CY*)
 If[frontEnd,
-    pointsOnCY=ResourceFunction["MonitorProgress"][ParallelTable[getPointsOnCY[varsUnflat,numParamsInPn,dimPs,params,Table[pointsOnSphere[[i,p+(b-1) numPoints]],{i,Length[pointsOnSphere]},{b,1+numParamsInPn[[i]]}],eqns],{p,numPoints},DistributedContexts->Automatic]];
+    (*pointsOnCY=ResourceFunction["MonitorProgress"][ParallelTable[getPointsOnCY[varsUnflat,numParamsInPn,dimPs,params,Table[pointsOnSphere[[i,p+(b-1) numPoints]],{i,Length[pointsOnSphere]},{b,1+numParamsInPn[[i]]}],eqns],{p,numPoints},DistributedContexts->Automatic]];*)
+    pointsOnCY={};
+    Monitor[
+    For[i=1,i<=20,i++,
+    pointsOnCY=Join[pointsOnCY,ParallelTable[getPointsOnCY[varsUnflat,numParamsInPn,dimPs,params,Table[pointsOnSphere[[i,p+(b-1) numPoints]],{i,Length[pointsOnSphere]},{b,1+numParamsInPn[[i]]}],eqns],{p,Ceiling[numPoints/20]},DistributedContexts->Automatic]];
+    ];
+    ,Row[{ProgressIndicator[5(i-1),{1,100}],ToString[5 (i-1)]<>"/100"},"   "]
+   ];
     ,
     If[verbose==0,
     pointsOnCY=ParallelTable[getPointsOnCY[varsUnflat,numParamsInPn,dimPs,params,Table[pointsOnSphere[[i,p+(b-1) numPoints]],{i,Length[pointsOnSphere]},{b,1+numParamsInPn[[i]]}],eqns],{p,numPoints},DistributedContexts->Automatic];
