@@ -386,19 +386,27 @@ class FreeModel(FSModel):
         
         aux_weights = tf.cast(wo[:, 0] / wo[:, 1], dtype=tf.complex64)
         aux_weights = tf.repeat(tf.expand_dims(aux_weights, axis=0), repeats=[len(self.BASIS['KMODULI'])], axis=0)
-        pred = tf.repeat(tf.expand_dims(pred, axis=0), repeats=[len(self.BASIS['KMODULI'])], axis=0)
-        input_tensor = tf.repeat(tf.expand_dims(input_tensor, axis = 0), repeats=[len(self.BASIS['KMODULI'])], axis=0)
+        # pred = tf.repeat(tf.expand_dims(pred, axis=0), repeats=[len(self.BASIS['KMODULI'])], axis=0)
+#         ks = tf.eye(len(self.BASIS['KMODULI']), dtype=tf.complex64)
+#         ks = tf.repeat(tf.expand_dims(self.fubini_study_pb(input_tensor), axis=0), repeats=[len(self.BASIS['KMODULI'])], axis=0)
+#         input_tensor = tf.repeat(tf.expand_dims(input_tensor, axis=0), repeats=[len(self.BASIS['KMODULI'])], axis=0)
+#         print(input_tensor.shape, pred.shape, ks.shape)
+#         actual_slopes = tf.vectorized_map(self._calculate_slope, [input_tensor, pred, ks])
         ks = tf.eye(len(self.BASIS['KMODULI']), dtype=tf.complex64)
-        # print(input_tensor.shape, pred.shape, ks.shape)
-        
-        actual_slopes = tf.vectorized_map(self._calculate_slope, [input_tensor, pred, ks])
-        # print("as", actual_slopes)
+        def body(input_tensor, pred, ks, actual_slopes):
+            f_a = self.fubini_study_pb(input_tensor, ts=ks[len(actual_slopes)])
+            res = tf.expand_dims(self._calculate_slope([pred, f_a]), axis=0)
+            actual_slopes = tf.concat([actual_slopes, res], axis=0)
+            return input_tensor, pred, ks, actual_slopes
+        def condition(input_tensor, pred, ks, actual_slopes):
+            return len(actual_slopes) < len(self.BASIS['KMODULI'])
+        f_a = self.fubini_study_pb(input_tensor, ts=ks[0])
+        actual_slopes = tf.expand_dims(self._calculate_slope([pred, f_a]), axis=0)
+        _, _, _, actual_slopes = tf.while_loop(condition, body, [input_tensor, pred, ks, actual_slopes], shape_invariants=[input_tensor.get_shape(), pred.get_shape(), ks.get_shape(), tf.TensorShape([None, actual_slopes.shape[-1]])])
         actual_slopes = tf.reduce_mean(aux_weights * actual_slopes, axis=-1)
-        # print("ts", self.slopes)
         loss = tf.reduce_mean(tf.math.abs(actual_slopes - self.slopes)**self.n[4])
-        # print("loss", loss)
-
-        return tf.repeat(tf.expand_dims(loss, axis = 0), repeats=[len(input_tensor)], axis=0)
+        
+        return tf.repeat(tf.expand_dims(loss, axis=0), repeats=[input_tensor.shape[0]], axis=0)
 
     @tf.function
     def compute_volk_loss2(self, input_tensor, weights, pred=None):

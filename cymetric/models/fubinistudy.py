@@ -46,7 +46,7 @@ class FSModel(tfk.Model):
         
     def _generate_helpers(self):
         r"""Bunch of helper functions to run during initialization"""
-        self.lc = tf.cast(get_levicivita_tensor(self.nfold), dtype=tf.complex64)
+        self.lc = tf.convert_to_tensor(get_levicivita_tensor(self.nfold), dtype=tf.complex64)
         self.proj_matrix = self._generate_proj_matrix()
         self.nTransitions = self._patch_transitions()
         if self.nhyper == 1:
@@ -118,8 +118,7 @@ class FSModel(tfk.Model):
     def _calculate_slope(self, args):
         r"""Computes the slopes \mu(F_i) = \int J \wedge J \wegde F_i at the point in Kahler moduli space t_a = 1 for all a
         and for F_i = O_X(0, 0,... , 1, 0, ..., 0), i.e. the flux integers are k_i^a = \delta_{i,a}"""
-        input_tensor, pred, k = args[0], args[1], args[2]
-        f_a = self.fubini_study_pb(input_tensor, ts=k)
+        pred, f_a = args[0], args[1]
         if self.nfold == 1:
             slope = tf.einsum('xab->x',
                               f_a)
@@ -208,10 +207,10 @@ class FSModel(tfk.Model):
             points (tf.tensor([bSize, 2*ncoords], tf.float32)): Points.
             pb (tf.tensor([bSize, nfold, ncoords], tf.float32)):
                 Pullback at each point. Overwrite j_elim. Defaults to None.
-            j_elim (tf.array([bSize], tf.int64)): index to be eliminated. 
+            j_elim (tf.tensor([bSize], tf.int64)): index to be eliminated. 
                 Coordinates(s) to be eliminated in the pullbacks.
                 If None will take max(dQ/dz). Defaults to None.
-            ts (tf.array([len(kmoduli], tf.complex64)):
+            ts (tf.tensor([len(kmoduli)], tf.complex64)):
                 Kahler parameters. Defaults to the ones specified at time of point generation
 
         Returns:
