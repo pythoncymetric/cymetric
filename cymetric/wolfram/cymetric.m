@@ -649,6 +649,8 @@ GetSession[exec_:Null, mysession_:Null] := Module[{validSession, session, python
       session = mysession;
       validSession = Quiet[Check[ExternalEvaluate[session, "2+2==4"], False]];
       If[session === Null || !validSession,
+        Quiet[Catch[DeleteObject[session]]];
+        Quiet[Catch[DeleteObject[mysession]]];
         If[python === Null,
           python = Check[GetSetting["Python"], Null]
         ];
@@ -677,6 +679,7 @@ GetSession[exec_:Null, mysession_:Null] := Module[{validSession, session, python
         Print[res];
         Return[Null];
       ];
+      Quiet[Catch[DeleteObject[GlobalPythonSession]]];
       GlobalPythonSession = session;
       Return[GlobalPythonSession];
     )
