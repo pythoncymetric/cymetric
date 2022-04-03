@@ -407,7 +407,7 @@ class FreeModel(FSModel):
         actual_slopes = tf.reduce_mean(aux_weights * actual_slopes, axis=-1)
         loss = tf.reduce_mean(tf.math.abs(actual_slopes - self.slopes)**self.n[4])
         
-        return tf.repeat(tf.expand_dims(loss, axis=0), repeats=[input_tensor.shape[0]], axis=0)
+        return tf.repeat(tf.expand_dims(loss, axis=0), repeats=[len(aux_weights)], axis=0)
 
     @tf.function
     def compute_volk_loss2(self, input_tensor, weights, pred=None):
