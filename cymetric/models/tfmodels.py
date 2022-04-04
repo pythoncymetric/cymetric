@@ -212,7 +212,7 @@ class FreeModel(FSModel):
             if self.learn_kaehler:
                 cijk_loss = self.compute_kaehler_loss(x)
             else:
-                cijk_loss = tf.zeros_like(x[:, 0])
+                cijk_loss = tf.zeros(y.shape[-1], dtype=tf.float32)
 
             if self.learn_transition:
                 t_loss = self.compute_transition_loss(x)
@@ -401,7 +401,7 @@ class FreeModel(FSModel):
         actual_slopes = tf.reduce_mean(aux_weights * actual_slopes, axis=-1)
         loss = tf.reduce_mean(tf.math.abs(actual_slopes - self.slopes)**self.n[4])
         
-        return tf.repeat(tf.expand_dims(loss, axis=0), repeats=[len(aux_weights)], axis=0)
+        return tf.repeat(tf.expand_dims(loss, axis=0), repeats=[len(wo)], axis=0)
 
     def save(self, filepath, **kwargs):
         r"""Saves the underlying neural network to filepath.
