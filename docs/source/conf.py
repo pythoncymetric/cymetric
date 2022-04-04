@@ -14,7 +14,8 @@ import os
 import sys
 import sphinx_rtd_theme
 #sys.path.insert(0, os.path.abspath(os.path.join('.', 'source', 'cymetric')))
-sys.path.insert(0, os.path.abspath(os.path.join('.', '..')))
+sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath(os.path.join('..', '..')))
 
 
 # -- Project information -----------------------------------------------------
@@ -66,12 +67,12 @@ add_function_parentheses = True
 
 autoclass_content = "both"
 
-#html_theme_options = {
-#    'navigation_depth': 4,
-#}
+html_theme_options = {
+   'navigation_depth': 4,
+}
 
 #https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-html_sidebars
 html_sidebars = {
-   '**': ['globaltoc.html', 'sourcelink.html', 'searchbox.html'],
+   '**': ['localtoc.html', 'relations.html', 'sourcelink.html', 'searchbox.html'],
    'using/windows': ['windowssidebar.html', 'searchbox.html'],
 }

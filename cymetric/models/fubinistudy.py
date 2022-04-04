@@ -789,7 +789,7 @@ class FSModel(tfk.Model):
     @tf.function
     def compute_ricci_loss(self, points, pb=None):
         r"""Computes the absolute value of the Ricci scalar for each point. Since negative
-        Ricci scalars are bad, we take a loss of |1-e^-ricci|^p. This will exponentially
+        Ricci scalars are bad, we take a loss of \|1-e^-ricci\|^p. This will exponentially
         punish negative Ricci scalars, and it vanishes for Ricci scalar 0
 
         .. seealso:: method :py:meth:`.compute_ricci_scalar`.
@@ -800,7 +800,7 @@ class FSModel(tfk.Model):
                 Pullback tensor at each point. Defaults to None.
 
         Returns:
-            tf.tensor([bSize], tf.float): |R|_n.
+            tf.tensor([bSize], tf.float): \|R\|_n.
         """
         ricci_scalar = self.compute_ricci_scalar(points, pb)
         

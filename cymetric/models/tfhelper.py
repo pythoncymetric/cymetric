@@ -11,16 +11,16 @@ def prepare_tf_basis(basis, dtype=tf.complex64):
     return new_basis
 
 
-def train_model(fsmodel, data, custom_metrics=[], optimizer=None, epochs=50, batch_sizes=[64, 50000], verbose=1, callbacks=[]):
+def train_model(fsmodel, data, optimizer=None, epochs=50, batch_sizes=[64, 50000], verbose=1, custom_metrics=[], callbacks=[]):
     training_history = {}
     alpha0 = fsmodel.alpha[0]
-	learn_kaehler = fsmodel.learn_kaehler
-	learn_transition = fsmodel.learn_transition
-	learn_ricci = fsmodel.learn_ricci
-	learn_ricci_val = fsmodel.learn_ricci_val
-	if optimizer is None:
-	    optimizer = tfk.optimizers.Adam()
-	for epoch in range(epochs):
+    learn_kaehler = fsmodel.learn_kaehler
+    learn_transition = fsmodel.learn_transition
+    learn_ricci = fsmodel.learn_ricci
+    learn_ricci_val = fsmodel.learn_ricci_val
+    if optimizer is None:
+        optimizer = tf.keras.optimizers.Adam()
+    for epoch in range(epochs):
         batch_size = batch_sizes[0]
         fsmodel.learn_kaehler = learn_kaehler
         fsmodel.learn_transition = learn_transition

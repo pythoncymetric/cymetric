@@ -9,6 +9,37 @@ Models based on Neural Networks
 The various TensorFlow models are:
 
 .. automodule:: cymetric.models.tfmodels
+FreeModel
+=========
+.. autoclass:: cymetric.models.tfmodels.FreeModel
+    :members:
+MultFSModel
+===========
+.. autoclass:: cymetric.models.tfmodels.MultFSModel
+    :members:
+MatrixFSModel
+=============
+.. autoclass:: cymetric.models.tfmodels.MatrixFSModel
+    :members:
+AddFSModel
+==========
+.. autoclass:: cymetric.models.tfmodels.AddFSModel
+    :members:
+PhiFSModel
+==========
+.. autoclass:: cymetric.models.tfmodels.PhiFSModel
+    :members:
+ToricModel
+==========
+.. autoclass:: cymetric.models.tfmodels.ToricModel
+    :members:
+PhiFSModelToric
+===============
+.. autoclass:: cymetric.models.tfmodels.PhiFSModelToric
+    :members:
+MatrixFSModelToric
+==================
+.. autoclass:: cymetric.models.tfmodels.MatrixFSModelToric
     :members:
 
 Custom metrics
@@ -37,10 +68,10 @@ The callbacks are tracking various error measures, such as
 .. automodule:: cymetric.models.measures
     :members:
 
-Fubini~Study
+Fubini Study
 ~~~~~~~~~~~~
 
-The Fubini~Study metric is the base class from which all other 
+The Fubini Study metric is the base class from which all other 
 tensorflow models inherit.
 
 .. automodule:: cymetric.models.fubinistudy

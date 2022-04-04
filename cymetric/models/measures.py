@@ -11,14 +11,12 @@ def sigma_measure(model, points, y_true):
 
     .. math::
 
-        \sigma = 1 / (\text{Vol}_\text{cy} n_p)  \sum_i | 1-
-             (\det(g) \text{Vol}_\text{cy})/(|\Omega|^2 \text{Vol}_\text{K})|
+        \sigma = 1 / (\text{Vol}_\text{cy} n_p) \sum_i |1 - (\det(g) \text{Vol}_\text{cy})/(|\Omega|^2 \text{Vol}_\text{K})|
 
     Args:
         model (tfk.model): Any (sub-)class of FSModel.
         points (tensor[(n_p,2*ncoord), tf.float32]): NN input
-        y_true (tensor[(n_p,2), tf.float32]): (weights, 
-            Omega \wedge \bar(\Omega)|_p)
+        y_true (tensor[(n_p,2), tf.float32]): (weights,  Omega \wedge \bar(\Omega)|_p)
 
     Returns:
         tf.float: sigma measure
@@ -32,8 +30,7 @@ def sigma_measure(model, points, y_true):
     volume_cy = tf.math.reduce_mean(weights, axis=-1)
     vol_k = tf.math.reduce_mean(det_over_omega * weights, axis=-1)
     ratio = volume_cy / vol_k
-    sigma_integrand = tf.abs(
-        tf.ones(tf.shape(det_over_omega), dtype=tf.float32) - det_over_omega * ratio) * weights
+    sigma_integrand = tf.abs(tf.ones(tf.shape(det_over_omega), dtype=tf.float32) - det_over_omega * ratio) * weights
     sigma = tf.math.reduce_mean(sigma_integrand) / volume_cy
     return sigma
 
@@ -161,12 +158,12 @@ def ricci_scalar_fn(model, points, pullbacks=None, verbose=0, rdet=True):
 
 
 def sigma_measure_loss(model, points, omegas):
-    r"""Computes the Monge-Ampere loss measure.
+    r"""
 
     Args:
         model (tfk.model): Any (sub-)class of FSModel.
         points (tensor[(n_p,2*ncoord), tf.float32]): NN input
-        omegas (tensor[(n_p), tf.float32]): |Omega|^2 for the points provided
+        omegas (tensor[(n_p), tf.float32]): \|Omega\|^2 for the points provided
 
     Returns:
         tf.float: sigma measure

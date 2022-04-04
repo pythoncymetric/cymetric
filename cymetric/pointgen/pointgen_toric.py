@@ -60,7 +60,7 @@ class ToricPointGenerator(PointGenerator):
     def __init__(self, toric_data, kmoduli, **kwargs):
         r"""Initializer.
 
-        **kwargs may contain the usual key-arguments from `PointGenerator`.
+        ``**kwargs`` may contain the usual key-arguments from `PointGenerator`.
 
         Args:
             toric_data (dict): generated from 

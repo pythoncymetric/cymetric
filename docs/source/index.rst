@@ -6,15 +6,15 @@ Learning moduli-dependent Calabi-Yau metrics using neural networks implemented i
 Authors
 -------
 
-| Fabian Ruehle <fabian.ruehle@cern.ch>
+| Fabian Ruehle <f.ruehle@northeastern.edu>
 | Robin Schneider <robin.schneider@physics.uu.se>
 
 Table of Content
 ----------------
 
 .. toctree::
-   :maxdepth: 3
-   :titlesonly:
+   :maxdepth: 10
+   :glob:
 
    installation.rst
    models.rst
