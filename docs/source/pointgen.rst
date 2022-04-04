@@ -22,9 +22,29 @@ is used for any CICY.
 Point Generator Toric
 ~~~~~~~~~~~~~~~~~~~~~
 
-is used for toric Calabi~Yaus.
+is used for toric Calabi Yaus.
 
 .. automodule:: cymetric.pointgen.pointgen_toric
+    :members:
+
+Point Generator Mathematica
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+is used for both projective CICY and toric Calabi Yaus. It calls Mathematica and its powerful solvers as a backend to generate points.
+
+PointGeneratorMathematica
+=========================
+.. autoclass:: cymetric.pointgen.pointgen_mathematica.PointGeneratorMathematica
+    :members:
+
+ToricPointGeneratorMathematica
+==============================
+.. autoclass:: cymetric.pointgen.pointgen_mathematica.ToricPointGeneratorMathematica
+    :members:
+
+ComplexFunctionConsumer
+=========================
+.. autoclass:: cymetric.pointgen.pointgen_mathematica.ComplexFunctionConsumer
     :members:
 
 Numpy Helper

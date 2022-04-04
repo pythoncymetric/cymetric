@@ -9,37 +9,45 @@ Models based on Neural Networks
 The various TensorFlow models are:
 
 .. automodule:: cymetric.models.tfmodels
-FreeModel
-=========
-.. autoclass:: cymetric.models.tfmodels.FreeModel
-    :members:
-MultFSModel
-===========
-.. autoclass:: cymetric.models.tfmodels.MultFSModel
-    :members:
-MatrixFSModel
-=============
-.. autoclass:: cymetric.models.tfmodels.MatrixFSModel
-    :members:
+
 AddFSModel
 ==========
 .. autoclass:: cymetric.models.tfmodels.AddFSModel
     :members:
+    
+FreeModel
+=========
+.. autoclass:: cymetric.models.tfmodels.FreeModel
+    :members:
+    
+MatrixFSModel
+=============
+.. autoclass:: cymetric.models.tfmodels.MatrixFSModel
+    :members:
+    
+MultFSModel
+===========
+.. autoclass:: cymetric.models.tfmodels.MultFSModel
+    :members:
+    
 PhiFSModel
 ==========
 .. autoclass:: cymetric.models.tfmodels.PhiFSModel
     :members:
+    
 ToricModel
 ==========
 .. autoclass:: cymetric.models.tfmodels.ToricModel
     :members:
-PhiFSModelToric
-===============
-.. autoclass:: cymetric.models.tfmodels.PhiFSModelToric
-    :members:
+    
 MatrixFSModelToric
 ==================
 .. autoclass:: cymetric.models.tfmodels.MatrixFSModelToric
+    :members:
+    
+PhiFSModelToric
+===============
+.. autoclass:: cymetric.models.tfmodels.PhiFSModelToric
     :members:
 
 Custom metrics
@@ -48,7 +56,37 @@ Custom metrics
 There are several custom metrics tracking the training process.
 
 .. automodule:: cymetric.models.metrics
+
+KaehlerLoss
+===========
+.. autoclass:: cymetric.models.metrics.KaehlerLoss
     :members:
+    
+RicciLoss
+=========
+.. autoclass:: cymetric.models.metrics.RicciLoss
+    :members:
+    
+TotalLoss
+=========
+.. autoclass:: cymetric.models.metrics.TotalLoss
+    :members:
+    
+TransitionLoss
+==============
+.. autoclass:: cymetric.models.metrics.TransitionLoss
+    :members:
+    
+SigmaLoss
+=========
+.. autoclass:: cymetric.models.metrics.SigmaLoss
+    :members:
+    
+VolkLoss
+========
+.. autoclass:: cymetric.models.metrics.VolkLoss
+    :members:
+
 
 Callbacks
 ~~~~~~~~~
@@ -58,6 +96,35 @@ There are also callbacks for controlling the alpha parameters and other
 hyperparameters.
 
 .. automodule:: cymetric.models.callbacks
+
+AlphaCallback
+=============
+.. autoclass:: cymetric.models.callbacks.AlphaCallback
+    :members:
+    
+KaehlerCallback
+===============
+.. autoclass:: cymetric.models.callbacks.KaehlerCallback
+    :members:
+    
+RicciCallback
+=============
+.. autoclass:: cymetric.models.callbacks.RicciCallback
+    :members:
+    
+SigmaCallback
+=============
+.. autoclass:: cymetric.models.callbacks.SigmaCallback
+    :members:
+    
+TransitionCallback
+==================
+.. autoclass:: cymetric.models.callbacks.TransitionCallback
+    :members:
+    
+VolkCallback
+============
+.. autoclass:: cymetric.models.callbacks.VolkCallback
     :members:
 
 Measures
