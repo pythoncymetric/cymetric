@@ -30,7 +30,7 @@ def train_model(fsmodel, data, optimizer=None, epochs=50, batch_sizes=[64, 50000
         fsmodel.alpha[0] = alpha0
         fsmodel.compile(custom_metrics=custom_metrics, optimizer=optimizer)
         if verbose > 0:
-            print("Epoch {:2d}/{:d}".format(epoch + 1, epochs))
+            print("\nEpoch {:2d}/{:d}".format(epoch + 1, epochs))
         history = fsmodel.fit(data['X_train'], data['y_train'], epochs=1, batch_size=batch_size, verbose=verbose, callbacks=callbacks)
         for k in history.history.keys():
             if "volk" in k:
