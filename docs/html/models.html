@@ -1,0 +1,1928 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TensorFlow models &mdash; cymetric v0.2-alpha documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Point Generators" href="pointgen.html" />
+    <link rel="prev" title="Installation" href="installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> cymetric
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">TensorFlow models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#models-based-on-neural-networks">Models based on Neural Networks</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#addfsmodel">AddFSModel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#freemodel">FreeModel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#matrixfsmodel">MatrixFSModel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#multfsmodel">MultFSModel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#phifsmodel">PhiFSModel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#toricmodel">ToricModel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#matrixfsmodeltoric">MatrixFSModelToric</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#phifsmodeltoric">PhiFSModelToric</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#custom-metrics">Custom metrics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#kaehlerloss">KaehlerLoss</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ricciloss">RicciLoss</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#totalloss">TotalLoss</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#transitionloss">TransitionLoss</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sigmaloss">SigmaLoss</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#volkloss">VolkLoss</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#callbacks">Callbacks</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#alphacallback">AlphaCallback</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#kaehlercallback">KaehlerCallback</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#riccicallback">RicciCallback</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sigmacallback">SigmaCallback</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#transitioncallback">TransitionCallback</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#volkcallback">VolkCallback</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#measures">Measures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fubini-study">Fubini Study</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#hermitian-yang-mills-equation">Hermitian Yang-Mills equation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tensorflow-helpers">TensorFlow helpers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#loss-functions">Loss functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pointgen.html">Point Generators</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">cymetric</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>TensorFlow models</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/models.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tensorflow-models">
+<h1>TensorFlow models<a class="headerlink" href="#tensorflow-models" title="Permalink to this headline"></a></h1>
+<p>Metrics are approximated with neural networks in TensorFlow.</p>
+<section id="models-based-on-neural-networks">
+<h2>Models based on Neural Networks<a class="headerlink" href="#models-based-on-neural-networks" title="Permalink to this headline"></a></h2>
+<p>The various TensorFlow models are:</p>
+<span class="target" id="module-cymetric.models.tfmodels"></span><p>A selection of custom tensorflow models for learning
+Calabi-Yau metrics using neural networks.</p>
+<section id="addfsmodel">
+<h3>AddFSModel<a class="headerlink" href="#addfsmodel" title="Permalink to this headline"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.AddFSModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AddFSModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.AddFSModel" title="Permalink to this definition"></a></dt>
+<dd><p>AddFSModel inherits from <a class="reference internal" href="#cymetric.models.tfmodels.FreeModel" title="cymetric.models.tfmodels.FreeModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">FreeModel</span></code></a>.</p>
+<p class="rubric">Example</p>
+<p>Is identical to <a class="reference internal" href="#cymetric.models.tfmodels.FreeModel" title="cymetric.models.tfmodels.FreeModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">FreeModel</span></code></a>. Replace the model accordingly.</p>
+<p>AddFSModel is a tensorflow model predicting CY metrics.</p>
+<p>The output of this model has the following Ansatz</p>
+<div class="math notranslate nohighlight">
+\[g_{\text{out}} = g_{\text{FS}} + g_{\text{NN}}\]</div>
+<p>and returns a hermitian (nfold, nfold)tensor.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.AddFSModel.call">
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j_elim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.AddFSModel.call" title="Permalink to this definition"></a></dt>
+<dd><p>Prediction of the model.</p>
+<div class="math notranslate nohighlight">
+\[g_{\text{out}; ij} = g_{\text{FS}; ij}  + g_{\text{NN}; ij}\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_tensor</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>2*ncoords</em><em>]</em><em>, </em><em>tf.float32</em><em>)</em>) – Points.</p></li>
+<li><p><strong>training</strong> (<em>bool</em><em>, </em><em>optional</em>) – Not used. Defaults to True.</p></li>
+<li><p><strong>j_elim</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>nHyper</em><em>]</em><em>, </em><em>tf.int64</em><em>)</em><em>, </em><em>optional</em>) – Coordinates(s) to be eliminated in the pullbacks.
+If None will take max(dQ/dz). Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Prediction at each point.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.tensor([bSize, nfold, nfold], tf.complex64)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="freemodel">
+<h3>FreeModel<a class="headerlink" href="#freemodel" title="Permalink to this headline"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.FreeModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FreeModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.FreeModel" title="Permalink to this definition"></a></dt>
+<dd><p>FreeModel from which all other models inherit.</p>
+<p>The training and validation steps are implemented in this class. All
+other computational routines are inherited from:
+cymetric.models.fubinistudy.FSModel</p>
+<p class="rubric">Example</p>
+<p>Assume that <cite>BASIS</cite> and <cite>data</cite> have been generated with a point
+generator.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">cymetric.models.tfmodels</span> <span class="kn">import</span> <span class="n">FreeModel</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">cymetric.models.tfhelper</span> <span class="kn">import</span> <span class="n">prepare_tf_basis</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tfk</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;dataset.npz&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">BASIS</span> <span class="o">=</span> <span class="n">prepare_tf_basis</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;basis.pickle&#39;</span><span class="p">,</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>set up the nn and FreeModel</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nfold</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ncoords</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;X_train&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">nn</span> <span class="o">=</span> <span class="n">tfk</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="p">[</span>
+<span class="gp">... </span>        <span class="n">tfk</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Input</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">ncoords</span><span class="p">)),</span>
+<span class="gp">... </span>        <span class="n">tfk</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s2">&quot;gelu&quot;</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="n">tfk</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="n">nfold</span><span class="o">**</span><span class="mi">2</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="p">]</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">FreeModel</span><span class="p">(</span><span class="n">nn</span><span class="p">,</span> <span class="n">BASIS</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>next we can compile and train</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">cymetric.models.metrics</span> <span class="kn">import</span> <span class="n">TotalLoss</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">metrics</span> <span class="o">=</span> <span class="p">[</span><span class="n">TotalLoss</span><span class="p">()]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">opt</span> <span class="o">=</span> <span class="n">tfk</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Adam</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">custom_metrics</span> <span class="o">=</span> <span class="n">metrics</span><span class="p">,</span> <span class="n">optimizer</span> <span class="o">=</span> <span class="n">opt</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;X_train&#39;</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;y_train&#39;</span><span class="p">],</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For other custom metrics and callbacks to be tracked, check
+<a class="reference internal" href="#module-cymetric.models.metrics" title="cymetric.models.metrics"><code class="xref py py-mod docutils literal notranslate"><span class="pre">cymetric.models.metrics</span></code></a> and
+<a class="reference internal" href="#module-cymetric.models.callbacks" title="cymetric.models.callbacks"><code class="xref py py-mod docutils literal notranslate"><span class="pre">cymetric.models.callbacks</span></code></a>.</p>
+<p>FreeModel is a tensorflow model predicting CY metrics.</p>
+<p>The output is</p>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[g_{\text{out}} = g_{\text{NN}}\]</div>
+</div></blockquote>
+<p>a hermitian (nfold, nfold) tensor with each float directly predicted
+from the neural network.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<ul>
+<li><p>The model by default does not train against the ricci loss.</p>
+<blockquote>
+<div><p>To enable ricci training, set <cite>self.learn_ricci = True</cite>,
+<strong>before</strong> the tracing process. For validation data
+<cite>self.learn_ricci_val = True</cite>,
+can be modified separately.</p>
+</div></blockquote>
+</li>
+<li><p>The models loss contributions are</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>sigma_loss</p></li>
+<li><p>kaehler loss</p></li>
+<li><p>transition loss</p></li>
+<li><p>ricci loss (disabled)</p></li>
+<li><p>volk loss</p></li>
+</ol>
+</div></blockquote>
+</li>
+<li><p>The different losses are weighted with alpha.</p></li>
+<li><p>The (FB-) norms for each loss are specified with the keyword-arg</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">FreeModel</span><span class="p">(</span><span class="n">nn</span><span class="p">,</span> <span class="n">BASIS</span><span class="p">,</span> <span class="n">norm</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">)])</span>
+</pre></div>
+</div>
+</li>
+<li><p>Set kappa to the kappa value of your training data.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">kappa</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;y_train&#39;</span><span class="p">][:,</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tfmodel</strong> (<em>tfk.model</em>) – the underlying neural network.</p></li>
+<li><p><strong>BASIS</strong> (<em>dict</em>) – a dictionary containing all monomials and other
+relevant information from cymetric.pointgen.pointgen.</p></li>
+<li><p><strong>alpha</strong> (<em>[</em><em>5//NLOSS</em><em>]</em><em>, </em><em>float</em>) – Weighting of each loss contribution.
+Defaults to None, which corresponds to equal weights.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.FreeModel.call">
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j_elim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.FreeModel.call" title="Permalink to this definition"></a></dt>
+<dd><p>Prediction of the NN.</p>
+<div class="math notranslate nohighlight">
+\[g_{\text{out}} = g_{\text{NN}}\]</div>
+<p>The additional arguments are included for inheritance reasons.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_tensor</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>2*ncoords</em><em>]</em><em>, </em><em>tf.float32</em><em>)</em>) – Points.</p></li>
+<li><p><strong>training</strong> (<em>bool</em><em>, </em><em>optional</em>) – Defaults to True.</p></li>
+<li><p><strong>j_elim</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>nHyper</em><em>]</em><em>, </em><em>tf.int64</em><em>)</em><em>, </em><em>optional</em>) – Coordinates(s) to be eliminated in the pullbacks.
+Not used in this model. Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Prediction at each point.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.tensor([bSize, nfold, nfold], tf.complex)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.FreeModel.compile">
+<span class="sig-name descname"><span class="pre">compile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">custom_metrics</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.FreeModel.compile" title="Permalink to this definition"></a></dt>
+<dd><p>Compiles the model.</p>
+<p>kwargs takes any argument of regular <cite>tf.model.compile()</cite></p>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">FreeModel</span><span class="p">(</span><span class="n">nn</span><span class="p">,</span> <span class="n">BASIS</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">cymetric.models.metrics</span> <span class="kn">import</span> <span class="n">TotalLoss</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">metrics</span> <span class="o">=</span> <span class="p">[</span><span class="n">TotalLoss</span><span class="p">()]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">opt</span> <span class="o">=</span> <span class="n">tfk</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Adam</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">custom_metrics</span> <span class="o">=</span> <span class="n">metrics</span><span class="p">,</span> <span class="n">optimizer</span> <span class="o">=</span> <span class="n">opt</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>custom_metrics</strong> (<em>list</em><em>, </em><em>optional</em>) – List of custom metrics.
+See also <a class="reference internal" href="#module-cymetric.models.metrics" title="cymetric.models.metrics"><code class="xref py py-mod docutils literal notranslate"><span class="pre">cymetric.models.metrics</span></code></a>. If None, no metrics
+are tracked during training. Defaults to None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.FreeModel.compute_volk_loss">
+<span class="sig-name descname"><span class="pre">compute_volk_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pred</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.FreeModel.compute_volk_loss" title="Permalink to this definition"></a></dt>
+<dd><p>Computes volk loss.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is an integral over the batch. Thus batch dependent.</p>
+</div>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}_{\text{vol}_k} = |\int_B g_{\text{FS}} -
+    \int_B g_{\text{out}}|_n\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_tensor</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>2*ncoords</em><em>]</em><em>, </em><em>tf.float32</em><em>)</em>) – Points.</p></li>
+<li><p><strong>weights</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>]</em><em>, </em><em>tf.float32</em><em>)</em>) – Integration weights.</p></li>
+<li><p><strong>pred</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>nfold</em><em>, </em><em>nfold</em><em>]</em><em>, </em><em>tf.complex64</em><em>)</em><em>, </em><em>optional</em>) – Prediction from <cite>self(input_tensor)</cite>.
+If None will be calculated. Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Volk loss.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.tensor([bSize], tf.float32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.FreeModel.metrics">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">metrics</span></span><a class="headerlink" href="#cymetric.models.tfmodels.FreeModel.metrics" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the models metrics including custom metrics.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>metrics</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.FreeModel.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filepath</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.FreeModel.save" title="Permalink to this definition"></a></dt>
+<dd><p>Saves the underlying neural network to filepath.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Currently does not save the whole custom model.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>filepath</strong> (<em>str</em>) – filepath</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.FreeModel.test_step">
+<span class="sig-name descname"><span class="pre">test_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.FreeModel.test_step" title="Permalink to this definition"></a></dt>
+<dd><p>Same as train_step without the outer gradient tape.
+Does <em>not</em> update the NN weights.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<ol class="arabic">
+<li><p>Computes the exaxt same losses as train_step</p></li>
+<li><p>Ricci loss val can be separately enabled with</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">learn_ricci_val</span> <span class="o">=</span> <span class="kc">True</span>
+</pre></div>
+</div>
+</li>
+<li><p>Requires additional tracing.</p></li>
+</ol>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>tuple</em>) – test_data (x,y, sample_weight)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>metrics</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.FreeModel.to_hermitian">
+<span class="sig-name descname"><span class="pre">to_hermitian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.FreeModel.to_hermitian" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a hermitian tensor.</p>
+<p>Takes a tensor of length (-1,nfold**2) and transforms it
+into a (-1,nfold,nfold) hermitian matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>tensor</em><em>[</em><em>(</em><em>-1</em><em>,</em><em>nfold**2</em><em>)</em><em>, </em><em>tf.float</em><em>]</em>) – input tensor</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>hermitian matrix</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tensor[(-1,nfold,nfold), tf.float]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.FreeModel.train_step">
+<span class="sig-name descname"><span class="pre">train_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.FreeModel.train_step" title="Permalink to this definition"></a></dt>
+<dd><p>Train step of a single batch in model.fit().</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<ol class="arabic">
+<li><p>The first epoch will take additional time, due to tracing.</p></li>
+<li><p>Warnings are plentiful. Disable on your own risk with</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">tf</span><span class="o">.</span><span class="n">get_logger</span><span class="p">()</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="s1">&#39;ERROR&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p>The conditionals need to be set before tracing.</p></li>
+<li><p>We employ under the hood gradient clipping.</p></li>
+</ol>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data</strong> (<em>tuple</em>) – test_data (x,y, sample_weight)</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>metrics</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="matrixfsmodel">
+<h3>MatrixFSModel<a class="headerlink" href="#matrixfsmodel" title="Permalink to this headline"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.MatrixFSModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MatrixFSModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.MatrixFSModel" title="Permalink to this definition"></a></dt>
+<dd><p>MatrixFSModel inherits from <a class="reference internal" href="#cymetric.models.tfmodels.FreeModel" title="cymetric.models.tfmodels.FreeModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">FreeModel</span></code></a>.</p>
+<p class="rubric">Example</p>
+<p>Is identical to <a class="reference internal" href="#cymetric.models.tfmodels.FreeModel" title="cymetric.models.tfmodels.FreeModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">FreeModel</span></code></a>. Replace the model accordingly.</p>
+<p>MatrixFSModel is a tensorflow model predicting CY metrics.</p>
+<p>The output of this model has the following Ansatz</p>
+<div class="math notranslate nohighlight">
+\[g_{\text{out}} = g_{\text{FS}} (1 + g_{\text{NN}})\]</div>
+<p>with matrix multiplication and returns a hermitian (nfold, nfold)
+tensor.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.MatrixFSModel.call">
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j_elim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.MatrixFSModel.call" title="Permalink to this definition"></a></dt>
+<dd><p>Prediction of the model.</p>
+<div class="math notranslate nohighlight">
+\[g_{\text{out}; ik} = g_{\text{FS}; ij} (1_{jk} + g_{\text{NN}; jk})\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_tensor</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>2*ncoords</em><em>]</em><em>, </em><em>tf.float32</em><em>)</em>) – Points.</p></li>
+<li><p><strong>training</strong> (<em>bool</em><em>, </em><em>optional</em>) – Not used. Defaults to True.</p></li>
+<li><p><strong>j_elim</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>nHyper</em><em>]</em><em>, </em><em>tf.int64</em><em>)</em><em>, </em><em>optional</em>) – Coordinates(s) to be eliminated in the pullbacks.
+If None will take max(dQ/dz). Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Prediction at each point.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.tensor([bSize, nfold, nfold], tf.complex)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="multfsmodel">
+<h3>MultFSModel<a class="headerlink" href="#multfsmodel" title="Permalink to this headline"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.MultFSModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MultFSModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.MultFSModel" title="Permalink to this definition"></a></dt>
+<dd><p>MultFSModel inherits from <a class="reference internal" href="#cymetric.models.tfmodels.FreeModel" title="cymetric.models.tfmodels.FreeModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">FreeModel</span></code></a>.</p>
+<p class="rubric">Example</p>
+<p>Is identical to <a class="reference internal" href="#cymetric.models.tfmodels.FreeModel" title="cymetric.models.tfmodels.FreeModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">FreeModel</span></code></a>. Replace the model accordingly.</p>
+<p>MultFSModel is a tensorflow model predicting CY metrics.</p>
+<p>The output of this model has the following Ansatz</p>
+<div class="math notranslate nohighlight">
+\[g_{\text{out}} = g_{\text{FS}} (1 + g_{\text{NN}})\]</div>
+<p>with elementwise multiplication and returns a hermitian (nfold, nfold)
+tensor.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.MultFSModel.call">
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j_elim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.MultFSModel.call" title="Permalink to this definition"></a></dt>
+<dd><p>Prediction of the model.</p>
+<div class="math notranslate nohighlight">
+\[g_{\text{out}; ij} = g_{\text{FS}; ij} (1_{ij} + g_{\text{NN}; ij})\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_tensor</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>2*ncoords</em><em>]</em><em>, </em><em>tf.float32</em><em>)</em>) – Points.</p></li>
+<li><p><strong>training</strong> (<em>bool</em><em>, </em><em>optional</em>) – Not used. Defaults to True.</p></li>
+<li><p><strong>j_elim</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>nHyper</em><em>]</em><em>, </em><em>tf.int64</em><em>)</em><em>, </em><em>optional</em>) – Coordinates(s) to be eliminated in the pullbacks.
+If None will take max(dQ/dz). Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Prediction at each point.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.tensor([bSize, nfold, nfold], tf.complex)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="phifsmodel">
+<h3>PhiFSModel<a class="headerlink" href="#phifsmodel" title="Permalink to this headline"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.PhiFSModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PhiFSModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.PhiFSModel" title="Permalink to this definition"></a></dt>
+<dd><p>PhiFSModel inherits from <a class="reference internal" href="#cymetric.models.tfmodels.FreeModel" title="cymetric.models.tfmodels.FreeModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">FreeModel</span></code></a>.</p>
+<p>The PhiModel learns the scalar potential correction to some Kaehler metric
+to make it the Ricci-flat metric. The Kaehler metric is taken to be the
+Fubini-Study metric.</p>
+<p class="rubric">Example</p>
+<p>Is similar to <a class="reference internal" href="#cymetric.models.tfmodels.FreeModel" title="cymetric.models.tfmodels.FreeModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">FreeModel</span></code></a>. Replace the nn accordingly.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nn</span> <span class="o">=</span> <span class="n">tfk</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="p">[</span>
+<span class="gp">... </span>        <span class="n">tfk</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Input</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">ncoords</span><span class="p">)),</span>
+<span class="gp">... </span>        <span class="n">tfk</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s2">&quot;gelu&quot;</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="n">tfk</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="p">]</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">PhiFSModel</span><span class="p">(</span><span class="n">nn</span><span class="p">,</span> <span class="n">BASIS</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You have to use this model if you want to remain in the same Kaehler class
+specified by the Kaehler moduli.</p>
+<p>PhiFSModel is a tensorflow model predicting CY metrics.</p>
+<p>The output of this model has the following Ansatz</p>
+<div class="math notranslate nohighlight">
+\[g_{\text{out}} = g_{\text{FS}} +
+    \partial \bar{\partial} \phi_{\text{NN}}\]</div>
+<p>and returns a hermitian (nfold, nfold) tensor. The model is by
+defintion Kaehler and thus this loss contribution is by default
+disabled. For similar reasons the Volk loss is also disabled if
+the last layer does not contain a bias. Otherwise it is required
+for successful tracing.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.PhiFSModel.call">
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j_elim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.PhiFSModel.call" title="Permalink to this definition"></a></dt>
+<dd><p>Prediction of the model.</p>
+<div class="math notranslate nohighlight">
+\[g_{\text{out}; ij} = g_{\text{FS}; ij} + \
+    partial_i \bar{\partial}_j \phi_{\text{NN}}\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_tensor</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>2*ncoords</em><em>]</em><em>, </em><em>tf.float32</em><em>)</em>) – Points.</p></li>
+<li><p><strong>training</strong> (<em>bool</em><em>, </em><em>optional</em>) – Not used. Defaults to True.</p></li>
+<li><p><strong>j_elim</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>nHyper</em><em>]</em><em>, </em><em>tf.int64</em><em>)</em><em>, </em><em>optional</em>) – Coordinates(s) to be eliminated in the pullbacks.
+If None will take max(dQ/dz). Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Prediction at each point.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.tensor([bSize, nfold, nfold], tf.complex64)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.PhiFSModel.compute_transition_loss">
+<span class="sig-name descname"><span class="pre">compute_transition_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.PhiFSModel.compute_transition_loss" title="Permalink to this definition"></a></dt>
+<dd><p>Computes transition loss at each point. In the case of the Phi model, we demand that phi(lambda^q_i z_i)=phi(z_i)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>points</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>2*ncoords</em><em>]</em><em>, </em><em>tf.float32</em><em>)</em>) – Points.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Transition loss at each point.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.tensor([bSize], tf.float32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.PhiFSModel.get_kahler_potential">
+<span class="sig-name descname"><span class="pre">get_kahler_potential</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.PhiFSModel.get_kahler_potential" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the Kahler potential.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>points</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>2*ncoords</em><em>]</em><em>, </em><em>tf.float32</em><em>)</em>) – Points.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Kahler potential.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.tensor([bSize], tf.float32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="toricmodel">
+<h3>ToricModel<a class="headerlink" href="#toricmodel" title="Permalink to this headline"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.ToricModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ToricModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.ToricModel" title="Permalink to this definition"></a></dt>
+<dd><p>ToricModel is the base class of toric CYs and inherits from
+<a class="reference internal" href="#cymetric.models.tfmodels.FreeModel" title="cymetric.models.tfmodels.FreeModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">FreeModel</span></code></a>.</p>
+<p class="rubric">Example</p>
+<p>Is similar to <a class="reference internal" href="#cymetric.models.tfmodels.FreeModel" title="cymetric.models.tfmodels.FreeModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">FreeModel</span></code></a> but requires additional toric_data.
+This one can be generated with <code class="xref py py-mod docutils literal notranslate"><span class="pre">cymetric.sage.sagelib</span></code>.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1">#generate toric_data with sage_lib</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pickle</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">toric_data</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">&#39;toric_data.pickle&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">ToricModel</span><span class="p">(</span><span class="n">nn</span><span class="p">,</span> <span class="n">BASIS</span><span class="p">,</span> <span class="n">toric_data</span><span class="o">=</span><span class="n">toric_data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>ToricModel does <strong>not</strong> train the underlying neural network. Instead, it
+always predicts a generalization of the kaehler metric for toric CYs.</p>
+<p>ToricModel is the equivalent to
+:py:class:~`cymetric.models.fubinistudy.FSModel`.</p>
+<p>It will not learn the Ricci-flat metric, but can be used as a baseline
+to compare the neural network against.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<ol class="arabic simple">
+<li><p>Requires nevertheless a nn in its (kw)args.</p></li>
+<li><p>Requires <cite>toric_data = toric_data</cite> in its kwargs.</p></li>
+</ol>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.ToricModel.call">
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j_elim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.ToricModel.call" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the equivalent of the pullbacked
+Fubini-Study metric at each point in input_tensor.</p>
+<div class="math notranslate nohighlight">
+\[J = t^\alpha J_\alpha\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_tensor</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>2*ncoords</em><em>]</em><em>, </em><em>tf.float32</em><em>)</em>) – Points.</p></li>
+<li><p><strong>training</strong> (<em>bool</em><em>, </em><em>optional</em>) – Defaults to True.</p></li>
+<li><p><strong>j_elim</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>nHyper</em><em>]</em><em>, </em><em>tf.int64</em><em>)</em><em>, </em><em>optional</em>) – Coordinates(s) to be eliminated in the pullbacks.
+If None will take max(dQ/dz). Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Prediction at each point.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.tensor([bSize, nfold, nfold], tf.complex)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.ToricModel.compute_transition_loss">
+<span class="sig-name descname"><span class="pre">compute_transition_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.ToricModel.compute_transition_loss" title="Permalink to this definition"></a></dt>
+<dd><p>Computes transition loss at each point.</p>
+<p>This function is essentially the same as for <cite>FSModel</cite>. It only differs
+in the patch selection. TODO: Unify this approach?</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>points</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>2*ncoords</em><em>]</em><em>, </em><em>tf.float</em><em>)</em>) – Points.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>transition loss at each point.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.tensor([bSize], tf.complex)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.ToricModel.fubini_study_pb">
+<span class="sig-name descname"><span class="pre">fubini_study_pb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pb</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j_elim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.ToricModel.fubini_study_pb" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the pullbacked Fubini-Study metric.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The pb argument overwrites j_elim.</p>
+</div>
+<div class="math notranslate nohighlight">
+\[g_{ij} = \frac{1}{\pi} J_i^a \bar{J}_j^b \partial_a
+    \bar{\partial}_b \ln |\vec{z}|^2\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>points</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>2*ncoords</em><em>]</em><em>, </em><em>tf.float32</em><em>)</em>) – Points.</p></li>
+<li><p><strong>pb</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>nfold</em><em>, </em><em>ncoords</em><em>]</em><em>, </em><em>tf.float32</em><em>)</em>) – Pullback at each point. Overwrite j_elim. Defaults to None.</p></li>
+<li><p><strong>j_elim</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>]</em><em>, </em><em>tf.int64</em><em>)</em>) – index to be eliminated.
+Coordinates(s) to be eliminated in the pullbacks.
+If None will take max(dQ/dz). Defaults to None.</p></li>
+<li><p><strong>ts</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>len</em><em>(</em><em>kmoduli</em><em>)</em><em>]</em><em>, </em><em>tf.complex64</em><em>)</em>) – Kahler parameters. Defaults to the ones specified at time of point generation</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>FS-metric at each point.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.tensor([bSize, nfold, nfold], tf.complex64)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.ToricModel.get_transition_matrix">
+<span class="sig-name descname"><span class="pre">get_transition_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i_mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j_mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fixed</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.ToricModel.get_transition_matrix" title="Permalink to this definition"></a></dt>
+<dd><p>Computes transition matrix between patch i and j
+for each point in points where fixed is the coordinate,
+which is being eliminated.</p>
+<p>See also: <code class="xref py py-meth docutils literal notranslate"><span class="pre">cymetric.models.FSModel.get_transition_matrix()</span></code>.</p>
+<p>This function is more simplified than the original one as we
+compute a basis for all <span class="math notranslate nohighlight">\(\partial w_i / \partial z_j\)</span> before hand.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>points</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>2*ncoords</em><em>]</em><em>, </em><em>tf.float32</em><em>)</em>) – Points.</p></li>
+<li><p><strong>i_mask</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>ncoords</em><em>]</em><em>, </em><em>tf.bool</em><em>)</em>) – Mask of pi-indices.</p></li>
+<li><p><strong>j_mask</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>ncoords</em><em>]</em><em>, </em><em>tf.bool</em><em>)</em>) – Mask of pi-indices.</p></li>
+<li><p><strong>fixed</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>1</em><em>]</em><em>, </em><em>tf.int64</em><em>)</em>) – Elimination indices.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>T_ij on the CY.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.tensor([bSize, nfold, nfold], tf.complex64)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="matrixfsmodeltoric">
+<h3>MatrixFSModelToric<a class="headerlink" href="#matrixfsmodeltoric" title="Permalink to this headline"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.MatrixFSModelToric">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MatrixFSModelToric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.MatrixFSModelToric" title="Permalink to this definition"></a></dt>
+<dd><p>MatrixFSModelToric inherits from <a class="reference internal" href="#cymetric.models.tfmodels.ToricModel" title="cymetric.models.tfmodels.ToricModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">ToricModel</span></code></a>.</p>
+<p>See also: <a class="reference internal" href="#cymetric.models.tfmodels.MatrixFSModel" title="cymetric.models.tfmodels.MatrixFSModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">MatrixFSModel</span></code></a> and <a class="reference internal" href="#cymetric.models.tfmodels.FreeModel" title="cymetric.models.tfmodels.FreeModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">FreeModel</span></code></a></p>
+<p>MatrixFSModelToric is a tensorflow model predicting CY metrics.</p>
+<p>The output of this model has the following Ansatz</p>
+<div class="math notranslate nohighlight">
+\[g_{\text{out}} = g_{\text{FS'}} (1 + g_{\text{NN}})\]</div>
+<p>with matrix multiplication and returns a hermitian (nfold, nfold)
+tensor.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.MatrixFSModelToric.call">
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j_elim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.MatrixFSModelToric.call" title="Permalink to this definition"></a></dt>
+<dd><p>Prediction of the model.</p>
+<div class="math notranslate nohighlight">
+\[g_{\text{out}; ik} = g_{\text{FS}; ij} (1_{jk} + g_{\text{NN}; jk})\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_tensor</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>2*ncoords</em><em>]</em><em>, </em><em>tf.float32</em><em>)</em>) – Points.</p></li>
+<li><p><strong>training</strong> (<em>bool</em><em>, </em><em>optional</em>) – Not used. Defaults to True.</p></li>
+<li><p><strong>j_elim</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>nHyper</em><em>]</em><em>, </em><em>tf.int64</em><em>)</em><em>, </em><em>optional</em>) – Coordinates(s) to be eliminated in the pullbacks.
+If None will take max(dQ/dz). Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Prediction at each point.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.tensor([bSize, nfold, nfold], tf.complex)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="phifsmodeltoric">
+<h3>PhiFSModelToric<a class="headerlink" href="#phifsmodeltoric" title="Permalink to this headline"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.PhiFSModelToric">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PhiFSModelToric</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.PhiFSModelToric" title="Permalink to this definition"></a></dt>
+<dd><p>PhiFSModelToric inherits from <a class="reference internal" href="#cymetric.models.tfmodels.ToricModel" title="cymetric.models.tfmodels.ToricModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">ToricModel</span></code></a>.</p>
+<p>The PhiModel learns the scalar potential correction to some Kaehler metric
+to make it the Ricci-flat metric. The Kaehler metric is taken to be a toric
+equivalent of the Fubini-Study metric. See also <a class="reference internal" href="#cymetric.models.tfmodels.PhiFSModel" title="cymetric.models.tfmodels.PhiFSModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">PhiFSModel</span></code></a>.</p>
+<p class="rubric">Example</p>
+<p>Is similar to <a class="reference internal" href="#cymetric.models.tfmodels.FreeModel" title="cymetric.models.tfmodels.FreeModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">FreeModel</span></code></a>. Replace the nn accordingly.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nn</span> <span class="o">=</span> <span class="n">tfk</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="p">[</span>
+<span class="gp">... </span>        <span class="n">tfk</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Input</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="n">ncoords</span><span class="p">)),</span>
+<span class="gp">... </span>        <span class="n">tfk</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s2">&quot;gelu&quot;</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="n">tfk</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">use_bias</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="p">]</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">PhiFSModelToric</span><span class="p">(</span><span class="n">nn</span><span class="p">,</span> <span class="n">BASIS</span><span class="p">,</span> <span class="n">toric_data</span> <span class="o">=</span> <span class="n">toric_data</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You have to use this model if you want to remain in the same Kaehler class
+specified by the Kaehler moduli.</p>
+<p>PhiFSModelToric is a tensorflow model predicting CY metrics.</p>
+<p>The output of this model has the following Ansatz</p>
+<div class="math notranslate nohighlight">
+\[g_{\text{out}} = g_{\text{FS'}} +
+    \partial \bar{\partial} \phi_{\text{NN}}\]</div>
+<p>and returns a hermitian (nfold, nfold) tensor. The model is by
+defintion Kaehler and thus this loss contribution is by default
+disabled.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.PhiFSModelToric.call">
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j_elim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.PhiFSModelToric.call" title="Permalink to this definition"></a></dt>
+<dd><p>Prediction of the model.</p>
+<div class="math notranslate nohighlight">
+\[g_{\text{out}; ij} = g_{\text{FS'}; ij} +
+    \partial_i \bar{\partial}_j \phi_{\text{NN}}\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_tensor</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>2*ncoords</em><em>]</em><em>, </em><em>tf.float32</em><em>)</em>) – Points.</p></li>
+<li><p><strong>training</strong> (<em>bool</em><em>, </em><em>optional</em>) – Not used. Defaults to True.</p></li>
+<li><p><strong>j_elim</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>nHyper</em><em>]</em><em>, </em><em>tf.int64</em><em>)</em><em>, </em><em>optional</em>) – Coordinates(s) to be eliminated in the pullbacks.
+If None will take max(dQ/dz). Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Prediction at each point.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.tensor([bSize, nfold, nfold], tf.complex64)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.PhiFSModelToric.compute_transition_loss">
+<span class="sig-name descname"><span class="pre">compute_transition_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_random_scalings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.PhiFSModelToric.compute_transition_loss" title="Permalink to this definition"></a></dt>
+<dd><p>Computes transition loss at each point. In the case of the Phi model, we demand that phi(lambda^q_i z_i)=phi(z_i)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>points</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>2*ncoords</em><em>]</em><em>, </em><em>tf.float32</em><em>)</em>) – Points.</p></li>
+<li><p><strong>num_random_scalings</strong> (<em>int</em>) – If None, uses scalings for each patch to set one coordinate to one.
+If a number, uses this many random scalings for lambda</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Transition loss at each point.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.tensor([bSize], tf.float32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.tfmodels.PhiFSModelToric.get_kahler_potential">
+<span class="sig-name descname"><span class="pre">get_kahler_potential</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.tfmodels.PhiFSModelToric.get_kahler_potential" title="Permalink to this definition"></a></dt>
+<dd><p>Returns toric equivalent of the FS Kahler potential for each point.</p>
+<div class="math notranslate nohighlight">
+\[J = t^\alpha J_\alpha \quad \text{ with: }
+    J_\alpha = \frac{i}{2\pi} \partial \bar\partial \ln \rho_\alpha\]</div>
+<p><span class="math notranslate nohighlight">\(\rho_\alpha\)</span> is a basis of sections.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>points</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>2*ncoords</em><em>]</em><em>, </em><em>tf.float32</em><em>)</em>) – Points.</p></li>
+<li><p><strong>pb</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>nfold</em><em>, </em><em>ncoords</em><em>]</em><em>, </em><em>tf.float32</em><em>)</em>) – Pullback at each point. Overwrite j_elim. Defaults to None.</p></li>
+<li><p><strong>j_elim</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>nHyper</em><em>]</em><em>, </em><em>tf.int64</em><em>)</em><em>, </em><em>optional</em>) – Coordinates(s) to be eliminated in the pullbacks.
+If None will take max(dQ/dz). Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Kaehler metric at each point.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.tensor([bSize, nfold, nfold], tf.complex64)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+<section id="custom-metrics">
+<h2>Custom metrics<a class="headerlink" href="#custom-metrics" title="Permalink to this headline"></a></h2>
+<p>There are several custom metrics tracking the training process.</p>
+<span class="target" id="module-cymetric.models.metrics"></span><p>A bunch of custom metrics for the custom model.
+Need to be declared separately otherwise .fit
+throws an error, since they only take the loss values
+and not y_pred, y_true as arguments.</p>
+<section id="kaehlerloss">
+<h3>KaehlerLoss<a class="headerlink" href="#kaehlerloss" title="Permalink to this headline"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="cymetric.models.metrics.KaehlerLoss">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">KaehlerLoss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.metrics.KaehlerLoss" title="Permalink to this definition"></a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.metrics.KaehlerLoss.reset_state">
+<span class="sig-name descname"><span class="pre">reset_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.metrics.KaehlerLoss.reset_state" title="Permalink to this definition"></a></dt>
+<dd><p>Resets all of the metric state variables.</p>
+<p>This function is called between epochs/steps,
+when a metric is evaluated during training.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.metrics.KaehlerLoss.result">
+<span class="sig-name descname"><span class="pre">result</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.metrics.KaehlerLoss.result" title="Permalink to this definition"></a></dt>
+<dd><p>Computes and returns the metric value tensor.</p>
+<p>Result computation is an idempotent operation that simply calculates the
+metric value using the state variables.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.metrics.KaehlerLoss.update_state">
+<span class="sig-name descname"><span class="pre">update_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.metrics.KaehlerLoss.update_state" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>values</strong> – tupe (data[‘X_val’], data[‘y_val’])</p></li>
+<li><p><strong>sample_weight</strong> – sample weights for the validation set (Default: None)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns:</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="ricciloss">
+<h3>RicciLoss<a class="headerlink" href="#ricciloss" title="Permalink to this headline"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="cymetric.models.metrics.RicciLoss">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RicciLoss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.metrics.RicciLoss" title="Permalink to this definition"></a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.metrics.RicciLoss.reset_state">
+<span class="sig-name descname"><span class="pre">reset_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.metrics.RicciLoss.reset_state" title="Permalink to this definition"></a></dt>
+<dd><p>Resets all of the metric state variables.</p>
+<p>This function is called between epochs/steps,
+when a metric is evaluated during training.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.metrics.RicciLoss.result">
+<span class="sig-name descname"><span class="pre">result</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.metrics.RicciLoss.result" title="Permalink to this definition"></a></dt>
+<dd><p>Computes and returns the metric value tensor.</p>
+<p>Result computation is an idempotent operation that simply calculates the
+metric value using the state variables.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.metrics.RicciLoss.update_state">
+<span class="sig-name descname"><span class="pre">update_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.metrics.RicciLoss.update_state" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>values</strong> – tupe (data[‘X_val’], data[‘y_val’])</p></li>
+<li><p><strong>sample_weight</strong> – sample weights for the validation set (Default: None)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns:</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="totalloss">
+<h3>TotalLoss<a class="headerlink" href="#totalloss" title="Permalink to this headline"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="cymetric.models.metrics.TotalLoss">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TotalLoss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.metrics.TotalLoss" title="Permalink to this definition"></a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.metrics.TotalLoss.reset_state">
+<span class="sig-name descname"><span class="pre">reset_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.metrics.TotalLoss.reset_state" title="Permalink to this definition"></a></dt>
+<dd><p>Resets all of the metric state variables.</p>
+<p>This function is called between epochs/steps,
+when a metric is evaluated during training.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.metrics.TotalLoss.result">
+<span class="sig-name descname"><span class="pre">result</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.metrics.TotalLoss.result" title="Permalink to this definition"></a></dt>
+<dd><p>Computes and returns the metric value tensor.</p>
+<p>Result computation is an idempotent operation that simply calculates the
+metric value using the state variables.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.metrics.TotalLoss.update_state">
+<span class="sig-name descname"><span class="pre">update_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.metrics.TotalLoss.update_state" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>values</strong> – tupe (data[‘X_val’], data[‘y_val’])</p></li>
+<li><p><strong>sample_weight</strong> – sample weights for the validation set (Default: None)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns:</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="transitionloss">
+<h3>TransitionLoss<a class="headerlink" href="#transitionloss" title="Permalink to this headline"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="cymetric.models.metrics.TransitionLoss">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TransitionLoss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.metrics.TransitionLoss" title="Permalink to this definition"></a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.metrics.TransitionLoss.reset_state">
+<span class="sig-name descname"><span class="pre">reset_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.metrics.TransitionLoss.reset_state" title="Permalink to this definition"></a></dt>
+<dd><p>Resets all of the metric state variables.</p>
+<p>This function is called between epochs/steps,
+when a metric is evaluated during training.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.metrics.TransitionLoss.result">
+<span class="sig-name descname"><span class="pre">result</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.metrics.TransitionLoss.result" title="Permalink to this definition"></a></dt>
+<dd><p>Computes and returns the metric value tensor.</p>
+<p>Result computation is an idempotent operation that simply calculates the
+metric value using the state variables.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.metrics.TransitionLoss.update_state">
+<span class="sig-name descname"><span class="pre">update_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.metrics.TransitionLoss.update_state" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>values</strong> – tupe (data[‘X_val’], data[‘y_val’])</p></li>
+<li><p><strong>sample_weight</strong> – sample weights for the validation set (Default: None)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns:</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="sigmaloss">
+<h3>SigmaLoss<a class="headerlink" href="#sigmaloss" title="Permalink to this headline"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="cymetric.models.metrics.SigmaLoss">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SigmaLoss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.metrics.SigmaLoss" title="Permalink to this definition"></a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.metrics.SigmaLoss.reset_state">
+<span class="sig-name descname"><span class="pre">reset_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.metrics.SigmaLoss.reset_state" title="Permalink to this definition"></a></dt>
+<dd><p>Resets all of the metric state variables.</p>
+<p>This function is called between epochs/steps,
+when a metric is evaluated during training.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.metrics.SigmaLoss.result">
+<span class="sig-name descname"><span class="pre">result</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.metrics.SigmaLoss.result" title="Permalink to this definition"></a></dt>
+<dd><p>Computes and returns the metric value tensor.</p>
+<p>Result computation is an idempotent operation that simply calculates the
+metric value using the state variables.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.metrics.SigmaLoss.update_state">
+<span class="sig-name descname"><span class="pre">update_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.metrics.SigmaLoss.update_state" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>values</strong> – tupe (data[‘X_val’], data[‘y_val’])</p></li>
+<li><p><strong>sample_weight</strong> – sample weights for the validation set (Default: None)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns:</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="volkloss">
+<h3>VolkLoss<a class="headerlink" href="#volkloss" title="Permalink to this headline"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="cymetric.models.metrics.VolkLoss">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">VolkLoss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.metrics.VolkLoss" title="Permalink to this definition"></a></dt>
+<dd><dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.metrics.VolkLoss.reset_state">
+<span class="sig-name descname"><span class="pre">reset_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.metrics.VolkLoss.reset_state" title="Permalink to this definition"></a></dt>
+<dd><p>Resets all of the metric state variables.</p>
+<p>This function is called between epochs/steps,
+when a metric is evaluated during training.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.metrics.VolkLoss.result">
+<span class="sig-name descname"><span class="pre">result</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.metrics.VolkLoss.result" title="Permalink to this definition"></a></dt>
+<dd><p>Computes and returns the metric value tensor.</p>
+<p>Result computation is an idempotent operation that simply calculates the
+metric value using the state variables.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.metrics.VolkLoss.update_state">
+<span class="sig-name descname"><span class="pre">update_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.metrics.VolkLoss.update_state" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>values</strong> – tupe (data[‘X_val’], data[‘y_val’])</p></li>
+<li><p><strong>sample_weight</strong> – sample weights for the validation set (Default: None)</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns:</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+<section id="callbacks">
+<h2>Callbacks<a class="headerlink" href="#callbacks" title="Permalink to this headline"></a></h2>
+<p>Error measures, such as Ricci- and Sigma-measures are implemented as Callbacks.
+There are also callbacks for controlling the alpha parameters and other
+hyperparameters.</p>
+<span class="target" id="module-cymetric.models.callbacks"></span><p>A collection of tensorflow callbacks.</p>
+<section id="alphacallback">
+<h3>AlphaCallback<a class="headerlink" href="#alphacallback" title="Permalink to this headline"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="cymetric.models.callbacks.AlphaCallback">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AlphaCallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scheduler</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.callbacks.AlphaCallback" title="Permalink to this definition"></a></dt>
+<dd><p>Callback that allows to manipulate the alpha factors.</p>
+<p>A callback that manipulates the alpha factors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>scheduler</strong> (<em>function</em>) – A function that returns a list of five
+tf.Variables and takes (int, dict, self.model.alpha) as args.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.callbacks.AlphaCallback.on_epoch_end">
+<span class="sig-name descname"><span class="pre">on_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epoch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.callbacks.AlphaCallback.on_epoch_end" title="Permalink to this definition"></a></dt>
+<dd><p>Manipulates alpha values according to function <cite>scheduler</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>epoch</strong> (<em>int</em>) – epoch</p></li>
+<li><p><strong>logs</strong> (<em>dict</em><em>, </em><em>optional</em>) – history.history. Defaults to None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="kaehlercallback">
+<h3>KaehlerCallback<a class="headerlink" href="#kaehlercallback" title="Permalink to this headline"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="cymetric.models.callbacks.KaehlerCallback">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">KaehlerCallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">validation_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.callbacks.KaehlerCallback" title="Permalink to this definition"></a></dt>
+<dd><p>Callback that tracks the weighted Kaehler measure.</p>
+<p>A callback which computes the kaehler measure for
+the validation data after every epoch end.</p>
+<p>See also: <a class="reference internal" href="#cymetric.models.measures.kaehler_measure_loss" title="cymetric.models.measures.kaehler_measure_loss"><code class="xref py py-func docutils literal notranslate"><span class="pre">cymetric.models.measures.kaehler_measure_loss()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>validation_data</strong> (<em>tuple</em><em>(</em><em>X_val</em><em>, </em><em>y_val</em><em>)</em>) – Validation data.</p></li>
+<li><p><strong>nth</strong> (<em>int</em><em>, </em><em>optional</em>) – Run every n-th epoch. Defaults to 1.</p></li>
+<li><p><strong>bSize</strong> (<em>int</em><em>, </em><em>optional</em>) – Batch size. Defaults to 1000.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.callbacks.KaehlerCallback.on_epoch_end">
+<span class="sig-name descname"><span class="pre">on_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epoch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.callbacks.KaehlerCallback.on_epoch_end" title="Permalink to this definition"></a></dt>
+<dd><p>Computes kaehler measure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>epoch</strong> (<em>int</em>) – epoch</p></li>
+<li><p><strong>logs</strong> (<em>dict</em><em>, </em><em>optional</em>) – history.history. Defaults to None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.callbacks.KaehlerCallback.on_train_begin">
+<span class="sig-name descname"><span class="pre">on_train_begin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.callbacks.KaehlerCallback.on_train_begin" title="Permalink to this definition"></a></dt>
+<dd><p>Compute Kaehler measure before training as baseline.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>logs</strong> (<em>dict</em><em>, </em><em>optional</em>) – History. Defaults to None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="riccicallback">
+<h3>RicciCallback<a class="headerlink" href="#riccicallback" title="Permalink to this headline"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="cymetric.models.callbacks.RicciCallback">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RicciCallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">validation_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pullbacks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hlevel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.callbacks.RicciCallback" title="Permalink to this definition"></a></dt>
+<dd><p>Callback that tracks the Ricci measure.</p>
+<p>A callback which computes the ricci measure for
+the validation data after every epoch end.</p>
+<dl class="simple">
+<dt>See also: <a class="reference internal" href="#cymetric.models.measures.ricci_measure" title="cymetric.models.measures.ricci_measure"><code class="xref py py-func docutils literal notranslate"><span class="pre">cymetric.models.measures.ricci_measure()</span></code></a>,</dt><dd><p><a class="reference internal" href="#cymetric.models.measures.ricci_scalar_fn" title="cymetric.models.measures.ricci_scalar_fn"><code class="xref py py-func docutils literal notranslate"><span class="pre">cymetric.models.measures.ricci_scalar_fn()</span></code></a>.</p>
+</dd>
+</dl>
+<div class="math notranslate nohighlight">
+\[||R|| \equiv \frac{\text{Vol}_K^{\frac{1}{\text{nfold}}}}{\text{Vol}_{\text{CY}}}
+    \int_X d\text{Vol}_K |R|\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>validation_data</strong> (<em>tuple</em><em>(</em><em>X_val</em><em>, </em><em>y_val</em><em>)</em>) – validation data</p></li>
+<li><p><strong>pullbacks</strong> (<em>tensor</em><em>[</em><em>(</em><em>n_p</em><em>, </em><em>nfold</em><em>, </em><em>n_coord</em><em>)</em><em>]</em>) – pullback tensors</p></li>
+<li><p><strong>verbose</strong> (<em>int</em><em>, </em><em>optional</em>) – verbosity if &gt;0 prints some info.
+Defaults to 0.</p></li>
+<li><p><strong>bSize</strong> (<em>int</em><em>, </em><em>optional</em>) – Batch size. Defaults to 1000.</p></li>
+<li><p><strong>nth</strong> (<em>int</em><em>, </em><em>optional</em>) – Run every n-th epoch. Defaults to 1.</p></li>
+<li><p><strong>hlevel</strong> (<em>int</em><em>, </em><em>optional</em>) – if &gt; 0 adds increasingly more statistics.
+Defaults to 0.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.callbacks.RicciCallback.on_epoch_end">
+<span class="sig-name descname"><span class="pre">on_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epoch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.callbacks.RicciCallback.on_epoch_end" title="Permalink to this definition"></a></dt>
+<dd><p>Computes ricci measure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>epoch</strong> (<em>int</em>) – epoch</p></li>
+<li><p><strong>logs</strong> (<em>dict</em><em>, </em><em>optional</em>) – history.history. Defaults to None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.callbacks.RicciCallback.on_train_begin">
+<span class="sig-name descname"><span class="pre">on_train_begin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.callbacks.RicciCallback.on_train_begin" title="Permalink to this definition"></a></dt>
+<dd><p>Compute Ricci measure before training as baseline.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>logs</strong> (<em>dict</em><em>, </em><em>optional</em>) – History. Defaults to None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="sigmacallback">
+<h3>SigmaCallback<a class="headerlink" href="#sigmacallback" title="Permalink to this headline"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="cymetric.models.callbacks.SigmaCallback">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SigmaCallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">validation_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.callbacks.SigmaCallback" title="Permalink to this definition"></a></dt>
+<dd><p>Callback that tracks the sigma measure.</p>
+<p>A callback which computes the sigma measure for
+the validation data after every epoch end.</p>
+<p>See also: <a class="reference internal" href="#cymetric.models.measures.sigma_measure" title="cymetric.models.measures.sigma_measure"><code class="xref py py-func docutils literal notranslate"><span class="pre">cymetric.models.measures.sigma_measure()</span></code></a>.</p>
+<div class="math notranslate nohighlight">
+\[\sigma_k \equiv \frac{1}{\text{Vol}_{\text{CY}}}
+    \int_X d\text{Vol}_{\text{CY}} |1 -
+    \frac{\det(g)/\text{Vol}_K}{\Omega \wedge \bar\Omega / \text{CY}}|\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>validation_data</strong> (<em>tuple</em><em>(</em><em>X_val</em><em>, </em><em>y_val</em><em>)</em>) – validation data</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.callbacks.SigmaCallback.on_epoch_end">
+<span class="sig-name descname"><span class="pre">on_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epoch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.callbacks.SigmaCallback.on_epoch_end" title="Permalink to this definition"></a></dt>
+<dd><p>Computes sigma measure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>epoch</strong> (<em>int</em>) – epoch</p></li>
+<li><p><strong>logs</strong> (<em>dict</em><em>, </em><em>optional</em>) – history.history. Defaults to None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.callbacks.SigmaCallback.on_train_begin">
+<span class="sig-name descname"><span class="pre">on_train_begin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.callbacks.SigmaCallback.on_train_begin" title="Permalink to this definition"></a></dt>
+<dd><p>Compute sigma measure before training as baseline.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>logs</strong> (<em>dict</em><em>, </em><em>optional</em>) – History. Defaults to None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="transitioncallback">
+<h3>TransitionCallback<a class="headerlink" href="#transitioncallback" title="Permalink to this headline"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="cymetric.models.callbacks.TransitionCallback">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TransitionCallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">validation_data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.callbacks.TransitionCallback" title="Permalink to this definition"></a></dt>
+<dd><p>Callback that tracks the transition loss weighted over the CY.</p>
+<p>A callback which computes the transition measure for
+the validation data after every epoch end.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>validation_data</strong> (<em>tuple</em><em>(</em><em>X_val</em><em>, </em><em>y_val</em><em>)</em>) – validation data</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.callbacks.TransitionCallback.on_epoch_end">
+<span class="sig-name descname"><span class="pre">on_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epoch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.callbacks.TransitionCallback.on_epoch_end" title="Permalink to this definition"></a></dt>
+<dd><p>Computes transition measure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>epoch</strong> (<em>int</em>) – epoch</p></li>
+<li><p><strong>logs</strong> (<em>dict</em><em>, </em><em>optional</em>) – history.history. Defaults to None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.callbacks.TransitionCallback.on_train_begin">
+<span class="sig-name descname"><span class="pre">on_train_begin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.callbacks.TransitionCallback.on_train_begin" title="Permalink to this definition"></a></dt>
+<dd><p>Compute transition measure before training as baseline.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>logs</strong> (<em>dict</em><em>, </em><em>optional</em>) – History. Defaults to None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="volkcallback">
+<h3>VolkCallback<a class="headerlink" href="#volkcallback" title="Permalink to this headline"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="cymetric.models.callbacks.VolkCallback">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">VolkCallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">validation_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nfold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.callbacks.VolkCallback" title="Permalink to this definition"></a></dt>
+<dd><p>Callback that computes the volume from the metric.
+Has to be equal to 1 in order to stay at the same point in Kaehler moduli
+space.</p>
+<p>A callback which computes Volk of the validation data
+after every epoch end.</p>
+<div class="math notranslate nohighlight">
+\[\text{Vol}_K = \int_X \omega^3\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>validation_data</strong> (<em>tuple</em><em>(</em><em>X_val</em><em>, </em><em>y_val</em><em>)</em>) – validation data</p></li>
+<li><p><strong>nfold</strong> (<em>int</em><em>, </em><em>optional</em>) – degree of CY. Defaults to 3.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.callbacks.VolkCallback.compute_volk">
+<span class="sig-name descname"><span class="pre">compute_volk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pred</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omega</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.callbacks.VolkCallback.compute_volk" title="Permalink to this definition"></a></dt>
+<dd><p>Vol k integrated over all points.</p>
+<div class="math notranslate nohighlight">
+\[\text{Vol}_K = \int_X \omega^3
+    = \frac{1}{N} \sum_p \frac{\det(g)}{\Omega \wedge \bar\Omega} w\]</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is different than the Volk-loss. It should integrate to 1.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pred</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>n_p</em><em>, </em><em>nfold</em><em>, </em><em>nfold</em><em>]</em><em>, </em><em>tf.complex</em><em>)</em>) – Metric prediction.</p></li>
+<li><p><strong>weights</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>n_p</em><em>]</em><em>, </em><em>tf.float</em><em>)</em>) – Integration weights.</p></li>
+<li><p><strong>omega</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>n_p</em><em>]</em><em>, </em><em>tf.float</em><em>)</em>) – <span class="math notranslate nohighlight">\(\Omega \wedge \bar\Omega\)</span>.</p></li>
+<li><p><strong>factor</strong> (<em>tf.float</em>) – Additional prefactors due to conventions.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Vol k.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.tensor([n_p], tf.float)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.callbacks.VolkCallback.on_epoch_end">
+<span class="sig-name descname"><span class="pre">on_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epoch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">logs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.callbacks.VolkCallback.on_epoch_end" title="Permalink to this definition"></a></dt>
+<dd><p>Tracks Volk during the training process.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>epoch</strong> (<em>int</em>) – epoch</p></li>
+<li><p><strong>logs</strong> (<em>dict</em><em>, </em><em>optional</em>) – history.history. Defaults to None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.callbacks.VolkCallback.on_train_begin">
+<span class="sig-name descname"><span class="pre">on_train_begin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">logs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.callbacks.VolkCallback.on_train_begin" title="Permalink to this definition"></a></dt>
+<dd><p>Compute Volk loss before training as baseline.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>logs</strong> (<em>dict</em><em>, </em><em>optional</em>) – History. Defaults to None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+<section id="measures">
+<h2>Measures<a class="headerlink" href="#measures" title="Permalink to this headline"></a></h2>
+<p>The callbacks are tracking various error measures, such as</p>
+<span class="target" id="module-cymetric.models.measures"></span><p>Various error measures for neural nets
+representing (ricci flat) kaehler metrics.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="cymetric.models.measures.kaehler_measure_loss">
+<span class="sig-name descname"><span class="pre">kaehler_measure_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">points</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.measures.kaehler_measure_loss" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the Kahler loss measure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<em>tfk.model</em>) – Any (sub-)class of FSModel.</p></li>
+<li><p><strong>points</strong> (<em>tensor</em><em>[</em><em>(</em><em>n_p</em><em>,</em><em>2*ncoord</em><em>)</em><em>, </em><em>tf.float32</em><em>]</em>) – NN input</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Kahler loss measure</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.float32</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cymetric.models.measures.ricci_measure">
+<span class="sig-name descname"><span class="pre">ricci_measure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_true</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pullbacks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.measures.ricci_measure" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the Ricci measure for a kaehler metric.</p>
+<div class="math notranslate nohighlight">
+\[||R|| \equiv \frac{\text{Vol}_K^{\frac{1}{\text{nfold}}}}{\text{Vol}_{\text{CY}}}
+    \int_X d\text{Vol}_K |R|\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<em>tfk.model</em>) – Any (sub-)class of FSModel.</p></li>
+<li><p><strong>points</strong> (<em>tensor</em><em>[</em><em>(</em><em>n_p</em><em>,</em><em>2*ncoord</em><em>)</em><em>, </em><em>tf.float32</em><em>]</em>) – NN input</p></li>
+<li><p><strong>y_true</strong> (<em>tensor</em><em>[</em><em>(</em><em>n_p</em><em>,</em><em>2</em><em>)</em><em>, </em><em>tf.float32</em><em>]</em>) – (weights,
+Omega wedge bar(Omega)|_p)</p></li>
+<li><p><strong>pullbacks</strong> (<em>tensor</em><em>[</em><em>(</em><em>n_p</em><em>,</em><em>nfold</em><em>,</em><em>ncoord</em><em>)</em><em>, </em><em>tf.complex64</em><em>]</em>) – Pullback tensor
+Defaults to None. Then gets computed.</p></li>
+<li><p><strong>verbose</strong> (<em>int</em><em>, </em><em>optional</em>) – if &gt; 0 prints some intermediate
+infos. Defaults to 0.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Ricci measure</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.float32</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cymetric.models.measures.ricci_scalar_fn">
+<span class="sig-name descname"><span class="pre">ricci_scalar_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pullbacks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rdet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.measures.ricci_scalar_fn" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the Ricci scalar for a kaehler metric.</p>
+<div class="math notranslate nohighlight">
+\[R = g^{ij} \partial_i \bar{\partial}_j \log \det g\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<em>tfk.model</em>) – Any (sub-)class of FSModel.</p></li>
+<li><p><strong>points</strong> (<em>tensor</em><em>[</em><em>(</em><em>n_p</em><em>,</em><em>2*ncoord</em><em>)</em><em>, </em><em>tf.float32</em><em>]</em>) – NN input</p></li>
+<li><p><strong>pullbacks</strong> (<em>tensor</em><em>[</em><em>(</em><em>n_p</em><em>,</em><em>nfold</em><em>,</em><em>ncoord</em><em>)</em><em>, </em><em>tf.complex64</em><em>]</em>) – Pullback tensor. Defaults to None. Then gets computed.</p></li>
+<li><p><strong>verbose</strong> (<em>int</em><em>, </em><em>optional</em>) – if &gt; 0 prints some intermediate infos. Defaults to 0.</p></li>
+<li><p><strong>rdet</strong> (<em>bool</em><em>, </em><em>optional</em>) – if True also returns det. Defaults to True.
+This is a bit hacky, because the output signature changes
+but avoids recomputing the determinant after batching.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Ricci scalar</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.float32(tensor[(n_p,), tf.float32])</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cymetric.models.measures.sigma_measure">
+<span class="sig-name descname"><span class="pre">sigma_measure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_true</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.measures.sigma_measure" title="Permalink to this definition"></a></dt>
+<dd><p>We compute the Monge Ampere equation</p>
+<div class="math notranslate nohighlight">
+\[\sigma = 1 / (\text{Vol}_\text{cy} n_p) \sum_i |1 - (\det(g) \text{Vol}_\text{cy})/(|\Omega|^2 \text{Vol}_\text{K})|\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<em>tfk.model</em>) – Any (sub-)class of FSModel.</p></li>
+<li><p><strong>points</strong> (<em>tensor</em><em>[</em><em>(</em><em>n_p</em><em>,</em><em>2*ncoord</em><em>)</em><em>, </em><em>tf.float32</em><em>]</em>) – NN input</p></li>
+<li><p><strong>y_true</strong> (<em>tensor</em><em>[</em><em>(</em><em>n_p</em><em>,</em><em>2</em><em>)</em><em>, </em><em>tf.float32</em><em>]</em>) – (weights,  Omega wedge bar(Omega)|_p)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>sigma measure</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cymetric.models.measures.sigma_measure_loss">
+<span class="sig-name descname"><span class="pre">sigma_measure_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omegas</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.measures.sigma_measure_loss" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<em>tfk.model</em>) – Any (sub-)class of FSModel.</p></li>
+<li><p><strong>points</strong> (<em>tensor</em><em>[</em><em>(</em><em>n_p</em><em>,</em><em>2*ncoord</em><em>)</em><em>, </em><em>tf.float32</em><em>]</em>) – NN input</p></li>
+<li><p><strong>omegas</strong> (<em>tensor</em><em>[</em><em>(</em><em>n_p</em><em>)</em><em>, </em><em>tf.float32</em><em>]</em>) – |Omega|^2 for the points provided</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>sigma measure</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cymetric.models.measures.transition_measure_loss">
+<span class="sig-name descname"><span class="pre">transition_measure_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">points</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.measures.transition_measure_loss" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the Transition loss measure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<em>tfk.model</em>) – Any (sub-)class of FSModel.</p></li>
+<li><p><strong>points</strong> (<em>tensor</em><em>[</em><em>(</em><em>n_p</em><em>,</em><em>2*ncoord</em><em>)</em><em>, </em><em>tf.float32</em><em>]</em>) – NN input</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Transition loss measure</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.float32</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="fubini-study">
+<h2>Fubini Study<a class="headerlink" href="#fubini-study" title="Permalink to this headline"></a></h2>
+<p>The Fubini Study metric is the base class from which all other
+tensorflow models inherit.</p>
+<span class="target" id="module-cymetric.models.fubinistudy"></span><p>Pullbacked fubini study metric implemented as a tfk.model.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="cymetric.models.fubinistudy.FSModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FSModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.fubinistudy.FSModel" title="Permalink to this definition"></a></dt>
+<dd><p>FSModel implements all underlying tensorflow routines for pullbacks
+and computing various loss contributions.</p>
+<p>It is <em>not</em> intended for actual training and does not have an explicit
+training step included. It should be used to write your own custom models
+for training of CICYs. Toric hypersurfaces require some extra routines,
+which are implemented here: <cite>cymetric.models.tfmodels.ToricModel</cite></p>
+<p>A tensorflow implementation of the pulled back Fubini-Study metric.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>BASIS</strong> (<em>dict</em>) – a dictionary containing all monomials and other
+relevant information from e.g.
+<cite>cymetric.pointgen.pointgen.PointGenerator</cite></p></li>
+<li><p><strong>norm</strong> (<em>[</em><em>5//NLOSS</em><em>]</em><em>, </em><em>optional</em>) – degree of norm for various losses.
+Defaults to 1 for all but Kaehler norm (2).</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.fubinistudy.FSModel.call">
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j_elim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.fubinistudy.FSModel.call" title="Permalink to this definition"></a></dt>
+<dd><p>Call method. Computes the pullbacked
+Fubini-Study metric at each point in input_tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>input_tensor</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>2*ncoords</em><em>]</em><em>, </em><em>tf.float</em><em>)</em>) – Points.</p></li>
+<li><p><strong>training</strong> (<em>bool</em><em>, </em><em>optional</em>) – Switch between training and eval mode. Not used at the moment</p></li>
+<li><p><strong>j_elim</strong> (<em>tf.array</em><em>(</em><em>[</em><em>bSize</em><em>]</em><em>, </em><em>tf.int64</em><em>)</em>) – index to be eliminated.
+Coordinates(s) to be eliminated in the pullbacks.
+If None will take max(dQ/dz). Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Pullbacked FS-metric at each point.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.tensor([bSize, nfold, nfold], tf.complex)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.fubinistudy.FSModel.compute_kaehler_loss">
+<span class="sig-name descname"><span class="pre">compute_kaehler_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.fubinistudy.FSModel.compute_kaehler_loss" title="Permalink to this definition"></a></dt>
+<dd><p>Computes Kähler loss.</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\cal{L}_{\text{dJ}} = \sum_{ijk} ||Re(c_{ijk})||_n +
+        ||Im(c_{ijk})||_n \\
+    \text{with: } c_{ijk} = g_{i\bar{j},k} - g_{k\bar{j},i}\end{split}\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>2*ncoords</em><em>]</em><em>, </em><em>tf.float</em><em>)</em>) – Points.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>sum_ijk abs(cijk)**n</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.tensor([bSize, 1], tf.float)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.fubinistudy.FSModel.compute_ricci_loss">
+<span class="sig-name descname"><span class="pre">compute_ricci_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pb</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.fubinistudy.FSModel.compute_ricci_loss" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the absolute value of the Ricci scalar for each point. Since negative
+Ricci scalars are bad, we take a loss of |1-e^-ricci|^p. This will exponentially
+punish negative Ricci scalars, and it vanishes for Ricci scalar 0</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>method <a class="reference internal" href="#cymetric.models.fubinistudy.FSModel.compute_ricci_scalar" title="cymetric.models.fubinistudy.FSModel.compute_ricci_scalar"><code class="xref py py-meth docutils literal notranslate"><span class="pre">compute_ricci_scalar()</span></code></a>.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>points</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>2*ncoords</em><em>]</em><em>, </em><em>tf.float</em><em>)</em>) – Points.</p></li>
+<li><p><strong>pb</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>nfold</em><em>, </em><em>ncoords</em><em>]</em><em>, </em><em>tf.float</em><em>)</em><em>, </em><em>optional</em>) – Pullback tensor at each point. Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>|R|_n.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.tensor([bSize], tf.float)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.fubinistudy.FSModel.compute_ricci_scalar">
+<span class="sig-name descname"><span class="pre">compute_ricci_scalar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pb</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.fubinistudy.FSModel.compute_ricci_scalar" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the Ricci scalar for each point.</p>
+<div class="math notranslate nohighlight">
+\[R = g^{ij} J_i^a \bar{J}_j^b \partial_a \bar{\partial}_b
+    \log \det g\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>points</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>2*ncoords</em><em>]</em><em>, </em><em>tf.float</em><em>)</em>) – Points.</p></li>
+<li><p><strong>pb</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>nfold</em><em>, </em><em>ncoords</em><em>]</em><em>, </em><em>tf.float</em><em>)</em><em>, </em><em>optional</em>) – Pullback tensor at each point. Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>R|_p.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.tensor([bSize], tf.float)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.fubinistudy.FSModel.compute_transition_loss">
+<span class="sig-name descname"><span class="pre">compute_transition_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.fubinistudy.FSModel.compute_transition_loss" title="Permalink to this definition"></a></dt>
+<dd><p>Computes transition loss at each point.</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L} = \frac{1}{d} \sum_{k,j}
+    ||g^k - T_{jk} \cdot g^j T^\dagger_{jk}||_n\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>points</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>2*ncoords</em><em>]</em><em>, </em><em>tf.float32</em><em>)</em>) – Points.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Transition loss at each point.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.tensor([bSize], tf.float32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.fubinistudy.FSModel.fubini_study_pb">
+<span class="sig-name descname"><span class="pre">fubini_study_pb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pb</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j_elim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.fubinistudy.FSModel.fubini_study_pb" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the pullbacked Fubini-Study metric.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The pb argument overwrites j_elim.</p>
+</div>
+<div class="math notranslate nohighlight">
+\[g_{ij} = \frac{1}{\pi} J_i^a \bar{J}_j^b \partial_a
+    \bar{\partial}_b \ln |\vec{z}|^2\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>points</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>2*ncoords</em><em>]</em><em>, </em><em>tf.float32</em><em>)</em>) – Points.</p></li>
+<li><p><strong>pb</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>nfold</em><em>, </em><em>ncoords</em><em>]</em><em>, </em><em>tf.float32</em><em>)</em>) – Pullback at each point. Overwrite j_elim. Defaults to None.</p></li>
+<li><p><strong>j_elim</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>]</em><em>, </em><em>tf.int64</em><em>)</em>) – index to be eliminated.
+Coordinates(s) to be eliminated in the pullbacks.
+If None will take max(dQ/dz). Defaults to None.</p></li>
+<li><p><strong>ts</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>len</em><em>(</em><em>kmoduli</em><em>)</em><em>]</em><em>, </em><em>tf.complex64</em><em>)</em>) – Kahler parameters. Defaults to the ones specified at time of point generation</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>FS-metric at each point.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.tensor([bSize, nfold, nfold], tf.complex64)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.fubinistudy.FSModel.get_transition_matrix">
+<span class="sig-name descname"><span class="pre">get_transition_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i_mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j_mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fixed</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.fubinistudy.FSModel.get_transition_matrix" title="Permalink to this definition"></a></dt>
+<dd><p>Computes transition matrix between patch i and j
+for each point in points where fixed is the coordinate,
+which is being eliminated.</p>
+<dl>
+<dt>Example (by hand):</dt><dd><p>Consider the bicubic with:</p>
+<div class="math notranslate nohighlight">
+\[P_1^2 [a_0 : a_1 : a_2] \text{ and } P_2^2 [b_0 : b_1 : b_2].\]</div>
+<p>Assume we eliminate <span class="math notranslate nohighlight">\(b_2\)</span> and keep it fixed. Then we
+consider two patches.
+Patch 1 where <span class="math notranslate nohighlight">\(a_0 = b_0 = 1\)</span> with new coordinates
+<span class="math notranslate nohighlight">\((x_1, x_2, x_3) = (a_1/a_0, a_2/a_0, b_1/b_0)\)</span>
+Patch 2 where <span class="math notranslate nohighlight">\(a_1=b_1=1\)</span> with new coordinates
+<span class="math notranslate nohighlight">\((w_1, w_2, w_3) = (a_0/a_1, a_2/a_1, b_0/b_1)\)</span>
+such that we can reexpress w in terms of x:
+<span class="math notranslate nohighlight">\(w_1(x)=1/x_1,\; w_2(x)=x_2/x_1,\; w_3(x)=1/x_3\)</span>
+from which follows:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}T_{11} &amp;= \frac{\partial w_1}{\partial x_1} =
+    -1/x_1^2 = -a_0^2/a_1^2 \\
+T_{12} &amp;= \frac{\partial w_2}{\partial x_1} =
+    -x_2/x_1^2 = -a_2 a_0/a_1^2 \\
+T_{13} &amp;= \frac{\partial w_3}{\partial x_1} = 0 \\
+T_{21} &amp;= \frac{\partial w_1}{\partial x_2} = 0 \\
+       &amp; \dots\end{split}\]</div>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>points</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>2*ncoords</em><em>]</em><em>, </em><em>tf.float32</em><em>)</em>) – Points.</p></li>
+<li><p><strong>i_mask</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>ncoords</em><em>]</em><em>, </em><em>tf.bool</em><em>)</em>) – Mask of pi-indices.</p></li>
+<li><p><strong>j_mask</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>ncoords</em><em>]</em><em>, </em><em>tf.bool</em><em>)</em>) – Mask of pi-indices.</p></li>
+<li><p><strong>fixed</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>1</em><em>]</em><em>, </em><em>tf.int64</em><em>)</em>) – Elimination indices.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>T_ij on the CY.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.tensor([bSize, nfold, nfold], tf.complex64)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.fubinistudy.FSModel.pullbacks">
+<span class="sig-name descname"><span class="pre">pullbacks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j_elim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.fubinistudy.FSModel.pullbacks" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the pullback tensor at each point.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Scatter-nd uses a while loop when creating the graph.</p>
+</div>
+<div class="math notranslate nohighlight">
+\[J^i_a = \frac{dz_i}{dx_a}\]</div>
+<p>where x_a are the nfold good coordinates after eliminating j_elim.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>points</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>2*ncoords</em><em>]</em><em>, </em><em>tf.float32</em><em>)</em>) – Points.</p></li>
+<li><p><strong>j_elim</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>nHyper</em><em>]</em><em>, </em><em>tf.int64</em><em>)</em><em>, </em><em>optional</em>) – Coordinates(s) to be eliminated in the pullbacks.
+If None will take max(dQ/dz). Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Pullback at each</dt><dd><p>point.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.tensor([bSize, nfold, ncoords], tf.complex64)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.models.fubinistudy.FSModel.transition_loss_matrices">
+<span class="sig-name descname"><span class="pre">transition_loss_matrices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Tij</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.fubinistudy.FSModel.transition_loss_matrices" title="Permalink to this definition"></a></dt>
+<dd><p>Computes transition loss matrix between metric
+in patches i and j with transition matrix Tij.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>gj</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>nfold</em><em>, </em><em>nfold</em><em>]</em><em>, </em><em>tf.complex64</em><em>)</em>) – Metric in patch j.</p></li>
+<li><p><strong>gi</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>nfold</em><em>, </em><em>nfold</em><em>]</em><em>, </em><em>tf.complex64</em><em>)</em>) – Metric in patch i.</p></li>
+<li><p><strong>Tij</strong> (<em>tf.tensor</em><em>(</em><em>[</em><em>bSize</em><em>, </em><em>nfold</em><em>, </em><em>nfold</em><em>]</em><em>, </em><em>tf.complex64</em><em>)</em>) – Transition matrix from patch i to patch j.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tf.tensor([bSize, nfold, nfold], tf.complex64)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="hermitian-yang-mills-equation">
+<h2>Hermitian Yang-Mills equation<a class="headerlink" href="#hermitian-yang-mills-equation" title="Permalink to this headline"></a></h2>
+<p>can be computed</p>
+<span class="target" id="module-cymetric.bundle.hym_helper"></span></section>
+<section id="tensorflow-helpers">
+<h2>TensorFlow helpers<a class="headerlink" href="#tensorflow-helpers" title="Permalink to this headline"></a></h2>
+<p>are often needed, cause they make our life easier.</p>
+<span class="target" id="module-cymetric.models.tfhelper"></span><p>A collection of various helper functions.</p>
+</section>
+<section id="loss-functions">
+<h2>Loss functions<a class="headerlink" href="#loss-functions" title="Permalink to this headline"></a></h2>
+<p>are implemented</p>
+<span class="target" id="module-cymetric.models.losses"></span><p>Sigma loss function in tensorflow.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="cymetric.models.losses.sigma_loss">
+<span class="sig-name descname"><span class="pre">sigma_loss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kappa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nfold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.models.losses.sigma_loss" title="Permalink to this definition"></a></dt>
+<dd><p>MA loss.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>kappa</strong> (<em>float</em>) – inverse volume of the CY given by weights. Defaults to 1.</p></li>
+<li><p><strong>nfold</strong> (<em>float</em>) – dimension of the CY. Defaults to 3.</p></li>
+<li><p><strong>flat</strong> (<em>bool</em>) – True if metric is a flat tensor and has to be put into
+hermitian matrix first. Defaults to False</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>MA loss function.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>function</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pointgen.html" class="btn btn-neutral float-right" title="Point Generators" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Fabian Ruehle and Robin Schneider.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

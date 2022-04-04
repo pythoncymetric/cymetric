@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Point Generators &mdash; cymetric v0.2-alpha documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="TensorFlow models" href="models.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> cymetric
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">TensorFlow models</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Point Generators</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#point-generator">Point Generator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#point-generator-cicy">Point Generator CICY</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#point-generator-toric">Point Generator Toric</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#point-generator-mathematica">Point Generator Mathematica</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pointgeneratormathematica">PointGeneratorMathematica</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#toricpointgeneratormathematica">ToricPointGeneratorMathematica</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#complexfunctionconsumer">ComplexFunctionConsumer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#numpy-helper">Numpy Helper</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">cymetric</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Point Generators</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/pointgen.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="point-generators">
+<h1>Point Generators<a class="headerlink" href="#point-generators" title="Permalink to this headline"></a></h1>
+<p>There are three Point Generators</p>
+<section id="point-generator">
+<h2>Point Generator<a class="headerlink" href="#point-generator" title="Permalink to this headline"></a></h2>
+<p>is used for co dimension one CICYs.</p>
+<span class="target" id="module-cymetric.pointgen.pointgen"></span><p>Main PointGenerator module.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Authors</dt>
+<dd class="field-odd"><p>Fabian Ruehle &lt;<a class="reference external" href="mailto:fabian&#46;ruehle&#37;&#52;&#48;cern&#46;ch">fabian<span>&#46;</span>ruehle<span>&#64;</span>cern<span>&#46;</span>ch</a>&gt; and
+Robin Schneider &lt;<a class="reference external" href="mailto:robin&#46;schneider&#37;&#52;&#48;physics&#46;uu&#46;se">robin<span>&#46;</span>schneider<span>&#64;</span>physics<span>&#46;</span>uu<span>&#46;</span>se</a>&gt;</p>
+</dd>
+</dl>
+<dl class="py class">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen.PointGenerator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PointGenerator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">monomials</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coefficients</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kmoduli</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ambient</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vol_j_norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'multiprocessing'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen.PointGenerator" title="Permalink to this definition"></a></dt>
+<dd><p>The PointGenerator class.</p>
+<p>The numerics are entirely done in numpy; sympy is used for taking
+(implicit) derivatives.</p>
+<p>Use this one if you want to generate points and data on a CY given by
+one hypersurface.</p>
+<p>All other PointGenerators inherit from this class.</p>
+<p class="rubric">Example</p>
+<p>We consider the Fermat quintic given by</p>
+<div class="math notranslate nohighlight">
+\[Q(z) = z_1^5 + z_2^5 + z_3^5 + z_4^5 + z_5^5\]</div>
+<p>and set it up with:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">cymetric.pointgen.pointgen</span> <span class="kn">import</span> <span class="n">PointGenerator</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">monomials</span> <span class="o">=</span> <span class="mi">5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">coefficients</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">kmoduli</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ambient</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">4</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pg</span> <span class="o">=</span> <span class="n">PointGenerator</span><span class="p">(</span><span class="n">monomials</span><span class="p">,</span> <span class="n">coefficients</span><span class="p">,</span> <span class="n">kmoduli</span><span class="p">,</span> <span class="n">ambient</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Once the PointGenerator is initialized you can generate a training
+dataset with</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pg</span><span class="o">.</span><span class="n">prepare_dataset</span><span class="p">(</span><span class="n">number_of_points</span><span class="p">,</span> <span class="n">dir_name</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>and prepare the required tensorflow model data with</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pg</span><span class="o">.</span><span class="n">prepare_basis</span><span class="p">(</span><span class="n">dir_name</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The PointGenerator uses the <em>joblib</em> module to parallelize
+computations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>monomials</strong> (<em>ndarray</em><em>[</em><em>(</em><em>nMonomials</em><em>, </em><em>ncoords</em><em>)</em><em>, </em><em>np.int</em><em>]</em>) – monomials</p></li>
+<li><p><strong>coefficients</strong> (<em>ndarray</em><em>[</em><em>(</em><em>nMonomials</em><em>)</em><em>]</em>) – coefficients in front of each
+monomial.</p></li>
+<li><p><strong>kmoduli</strong> (<em>ndarray</em><em>[</em><em>(</em><em>nProj</em><em>)</em><em>]</em>) – the kaehler moduli.</p></li>
+<li><p><strong>ambient</strong> (<em>ndarray</em><em>[</em><em>(</em><em>nProj</em><em>)</em><em>, </em><em>np.int</em><em>]</em>) – the direct product of projective
+spaces making up the ambient space.</p></li>
+<li><p><strong>vol_j_norm</strong> (<em>float</em><em>, </em><em>optional</em>) – <p>Normalization of the volume of the
+Calabi-Yau X as computed from</p>
+<div class="math notranslate nohighlight">
+\[\int_X J^n \; \text{ at } \; t_1=t_2=...=t_n = 1.\]</div>
+<p>Defaults to None, in which case the normalization will be computed automatically from the intersection numbers.</p>
+</p></li>
+<li><p><strong>verbose</strong> (<em>int</em><em>, </em><em>optional</em>) – Controls logging. 1-Debug, 2-Info,
+else Warning. Defaults to 2.</p></li>
+<li><p><strong>backend</strong> (<em>str</em><em>, </em><em>optional</em>) – Backend for Parallel. Defaults to
+‘multiprocessing’. ‘loky’ makes issues with pickle5.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen.PointGenerator.compute_kappa">
+<span class="sig-name descname"><span class="pre">compute_kappa</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omegas</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen.PointGenerator.compute_kappa" title="Permalink to this definition"></a></dt>
+<dd><p>We compute kappa from the Monge-Ampère equation</p>
+<div class="math notranslate nohighlight">
+\[J^3 = \kappa |\Omega|^2\]</div>
+<p>such that after integrating we find</p>
+<div class="math notranslate nohighlight">
+\[\kappa = \frac{J^3}{|\Omega|^2} =
+    \frac{\text{Vol}_K}{\text{Vol}_{\text{CY}}}\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>points</strong> (<em>ndarray</em><em>[</em><em>(</em><em>n_p</em><em>, </em><em>ncoords</em><em>)</em><em>, </em><em>np.complex128</em><em>]</em>) – Points.</p></li>
+<li><p><strong>weights</strong> (<em>ndarray</em><em>[</em><em>n_p</em><em>, </em><em>np.float64</em><em>]</em>) – weights of the points.</p></li>
+<li><p><strong>omegas</strong> (<em>ndarray</em><em>[</em><em>n_p</em><em>, </em><em>np.complex128</em><em>]</em>) – Omega wedge Omega* of the points.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>kappa</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen.PointGenerator.cy_condition">
+<span class="sig-name descname"><span class="pre">cy_condition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen.PointGenerator.cy_condition" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the CY condition at each point.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>points</strong> (<em>ndarray</em><em>(</em><em>[</em><em>n_p</em><em>, </em><em>ncoords</em><em>]</em><em>, </em><em>np.complex128</em><em>)</em>) – Points (on the CY).</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>CY condition</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray(n_p, np.complex128)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen.PointGenerator.fubini_study_metrics">
+<span class="sig-name descname"><span class="pre">fubini_study_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vol_js</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen.PointGenerator.fubini_study_metrics" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the FS metric at each point.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>points</strong> (<em>ndarray</em><em>[</em><em>(</em><em>n_p</em><em>, </em><em>ncoords</em><em>)</em><em>, </em><em>np.complex128</em><em>]</em>) – Points.</p></li>
+<li><p><strong>vol_js</strong> (<em>ndarray</em><em>[</em><em>(</em><em>h^{</em><em>(</em><em>1</em><em>,</em><em>1</em><em>)</em><em>}</em><em>)</em><em>, </em><em>np.complex128</em><em>]</em>) – vol_j factor.
+Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>g^FS</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray[(n_p, ncoords, ncoords), np.complex128]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen.PointGenerator.generate_pn_points">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">generate_pn_points</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen.PointGenerator.generate_pn_points" title="Permalink to this definition"></a></dt>
+<dd><p>Generates points on the sphere <span class="math notranslate nohighlight">\(S^{2n+1}\)</span>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_p</strong> (<em>int</em>) – number of points.</p></li>
+<li><p><strong>n</strong> (<em>int</em>) – degree of projective space.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>complex points</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray[(np, n+1), np.complex128]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen.PointGenerator.generate_point_weights">
+<span class="sig-name descname"><span class="pre">generate_point_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_pw</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omega</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize_to_vol_j</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen.PointGenerator.generate_point_weights" title="Permalink to this definition"></a></dt>
+<dd><p>Generates a numpy dictionary of point weights.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_pw</strong> (<em>int</em>) – # of point weights.</p></li>
+<li><p><strong>omega</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True adds Omega to dict. Defaults to False.</p></li>
+<li><p><strong>normalize_to_vol_j</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether the weights should be normalized by the factor self.vol_j_norm.
+Defaults to False</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>point weights</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen.PointGenerator.generate_points">
+<span class="sig-name descname"><span class="pre">generate_points</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nproc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen.PointGenerator.generate_points" title="Permalink to this definition"></a></dt>
+<dd><p>Generates complex points on the CY.</p>
+<p>The points are automatically scaled, such that the largest
+coordinate in each projective space is 1+0.j.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_p</strong> (<em>int</em>) – # of points.</p></li>
+<li><p><strong>nproc</strong> (<em>int</em><em>, </em><em>optional</em>) – # of jobs used. Defaults to -1. Then
+uses all available resources.</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em><em>, </em><em>optional</em>) – batch_size of Parallel.
+Defaults to 5000.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>rescaled points</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray[(n_p, ncoords), np.complex128]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen.PointGenerator.holomorphic_volume_form">
+<span class="sig-name descname"><span class="pre">holomorphic_volume_form</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j_elim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen.PointGenerator.holomorphic_volume_form" title="Permalink to this definition"></a></dt>
+<dd><p>We compute the holomorphic volume form
+at all points by solving the residue theorem:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\Omega &amp;= \int_\rho \frac{1}{Q} \wedge^n dz_i \\
+       &amp;= \frac{1}{\frac{\partial Q}{\partial z_j}}\wedge^{n-1} dz_a\end{split}\]</div>
+<p>where the index a runs over the local n-fold good coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>points</strong> (<em>ndarray</em><em>[</em><em>(</em><em>n_p</em><em>, </em><em>ncoords</em><em>)</em><em>, </em><em>np.complex128</em><em>]</em>) – Points.</p></li>
+<li><p><strong>j_elim</strong> (<em>ndarray</em><em>(</em><em>[</em><em>n_p</em><em>]</em><em>, </em><em>np.int64</em><em>)</em>) – index to be eliminated.
+Defaults not None. If None eliminates max(dQdz).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Omega evaluated at each point.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray[(n_p), np.complex128]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen.PointGenerator.point_weight">
+<span class="sig-name descname"><span class="pre">point_weight</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize_to_vol_j</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j_elim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen.PointGenerator.point_weight" title="Permalink to this definition"></a></dt>
+<dd><p>We compute the weight/mass of each point:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}w &amp;= \frac{d\text{Vol}_\text{cy}}{dA}|_p \\
+  &amp;\sim \frac{|\Omega|^2}{\det(g^\text{FS}_{ab})}|_p\end{split}\]</div>
+<p>the weight depends on the distribution of free parameters during
+point sampling. We employ a theorem due to Shiffman and Zelditch.
+See also: [9803052].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>points</strong> (<em>ndarray</em><em>(</em><em>[</em><em>n_p</em><em>, </em><em>ncoords</em><em>]</em><em>, </em><em>np.complex128</em><em>)</em>) – Points.</p></li>
+<li><p><strong>normalize_to_vol_j</strong> (<em>bool</em><em>, </em><em>optional</em>) – <p>Normalize such that</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\int_X \det(g) &amp;= \sum_i \sqrt{\det(g)} \cdot w|_{x_i}\\
+            &amp;= d^{ijk} t_i t_j t_k.\end{split}\]</div>
+<p>Defaults to False.</p>
+</p></li>
+<li><p><strong>j_elim</strong> (<em>ndarray</em><em>(</em><em>[</em><em>n_p</em><em>, </em><em>nhyper</em><em>]</em><em>, </em><em>np.int64</em><em>)</em>) – Index to be eliminated.
+Defaults to None. If None eliminates max(dQdz).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>weight at each point.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray([n_p], np.float64)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen.PointGenerator.prepare_basis">
+<span class="sig-name descname"><span class="pre">prepare_basis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dirname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen.PointGenerator.prepare_basis" title="Permalink to this definition"></a></dt>
+<dd><p>Prepares pickled monomial basis for the tensorflow models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dirname</strong> (<em>str</em>) – dir name to save</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>0</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen.PointGenerator.prepare_dataset">
+<span class="sig-name descname"><span class="pre">prepare_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dirname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ltails</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rtails</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen.PointGenerator.prepare_dataset" title="Permalink to this definition"></a></dt>
+<dd><p>Prepares training and validation data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_p</strong> (<em>int</em>) – Number of points to generate.</p></li>
+<li><p><strong>dirname</strong> (<em>str</em>) – Directory name to save dataset in.</p></li>
+<li><p><strong>val_split</strong> (<em>float</em><em>, </em><em>optional</em>) – train-val split. Defaults to 0.1.</p></li>
+<li><p><strong>ltails</strong> (<em>float</em><em>, </em><em>optional</em>) – Percentage discarded on the left tail
+of weight distribution. Defaults to 0.</p></li>
+<li><p><strong>rtails</strong> (<em>float</em><em>, </em><em>optional</em>) – Percentage discarded on the right tail
+of weight distribution. Defaults to 0.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>kappa = vol_k / vol_cy</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen.PointGenerator.pullbacks">
+<span class="sig-name descname"><span class="pre">pullbacks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j_elim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen.PointGenerator.pullbacks" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the pullback from ambient space to local CY coordinates
+at each point.</p>
+<p>Denote the ambient space coordinates with z_i and the CY
+coordinates with x_a then</p>
+<div class="math notranslate nohighlight">
+\[J^i_a = \frac{dz_i}{dx_a}\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>points</strong> (<em>ndarray</em><em>(</em><em>[</em><em>n_p</em><em>, </em><em>ncoords</em><em>]</em><em>, </em><em>np.complex128</em><em>)</em>) – Points.</p></li>
+<li><p><strong>j_elim</strong> (<em>ndarray</em><em>(</em><em>[</em><em>n_p</em><em>, </em><em>nhyper</em><em>]</em><em>, </em><em>np.int64</em><em>)</em>) – Index to be eliminated.
+Defaults to None. If None eliminates max(dQdz).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Pullback tensor</dt><dd><p>at each point.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray([n_p, nfold, ncoords], np.complex128)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="point-generator-cicy">
+<h2>Point Generator CICY<a class="headerlink" href="#point-generator-cicy" title="Permalink to this headline"></a></h2>
+<p>is used for any CICY.</p>
+<span class="target" id="module-cymetric.pointgen.pointgen_cicy"></span><p>CICY PointGenerator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Authors</dt>
+<dd class="field-odd"><p>Fabian Ruehle &lt;<a class="reference external" href="mailto:fabian&#46;ruehle&#37;&#52;&#48;cern&#46;ch">fabian<span>&#46;</span>ruehle<span>&#64;</span>cern<span>&#46;</span>ch</a>&gt; and
+Robin Schneider &lt;<a class="reference external" href="mailto:robin&#46;schneider&#37;&#52;&#48;physics&#46;uu&#46;se">robin<span>&#46;</span>schneider<span>&#64;</span>physics<span>&#46;</span>uu<span>&#46;</span>se</a>&gt;</p>
+</dd>
+</dl>
+<dl class="py class">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen_cicy.CICYPointGenerator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CICYPointGenerator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">monomials</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coefficients</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kmoduli</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ambient</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vol_j_norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'multiprocessing'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen_cicy.CICYPointGenerator" title="Permalink to this definition"></a></dt>
+<dd><p>CICYPointGenerator class.</p>
+<p>The numerics are entirely done in numpy; sympy is used for
+computing the initial derivatives.</p>
+<p>Use this module if you want to generate points and data on a CY given by
+more than one hypersurface.</p>
+<p class="rubric">Example</p>
+<p>A simple example on a generic CY manifold of the family defined
+by the following configuration matrix:</p>
+<div class="math notranslate nohighlight">
+\[X \in [5|33]\]</div>
+<p>can be set up with</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">cymetric.pointgen.pointgen_cicy</span> <span class="kn">import</span> <span class="n">CICYPointGenerator</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">cymetric.pointgen.nphelper</span> <span class="kn">import</span> <span class="n">generate_monomials</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">monomials</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">generate_monomials</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">3</span><span class="p">)))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">monomials_per_hyper</span> <span class="o">=</span> <span class="p">[</span><span class="n">monomials</span><span class="p">,</span> <span class="n">monomials</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">coeff</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">m</span><span class="p">))</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">monomials_per_hyper</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">kmoduli</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ambient</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">5</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pg</span> <span class="o">=</span> <span class="n">CICYPointGenerator</span><span class="p">(</span><span class="n">monomials_per_hyper</span><span class="p">,</span> <span class="n">coeff</span><span class="p">,</span>
+<span class="gp">... </span>                        <span class="n">kmoduli</span><span class="p">,</span> <span class="n">ambient</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Once the CICYPointGenerator is initialized you can generate a training
+dataset with</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pg</span><span class="o">.</span><span class="n">prepare_dataset</span><span class="p">(</span><span class="n">number_of_points</span><span class="p">,</span> <span class="n">dir_name</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>and prepare the required tensorflow model data with</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pg</span><span class="o">.</span><span class="n">prepare_basis</span><span class="p">(</span><span class="n">dir_name</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The CICYPointGenerator uses the <em>joblib</em> module to parallelize
+computations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>monomials</strong> (<em>list</em><em>(</em><em>ndarray</em><em>[</em><em>(</em><em>nMonomials</em><em>, </em><em>ncoord</em><em>)</em><em>, </em><em>np.int</em><em>]</em><em>)</em>) – list of
+length nHyper with monomials for each defining equation.</p></li>
+<li><p><strong>coefficients</strong> (<em>list</em><em>(</em><em>ndarray</em><em>[</em><em>(</em><em>nMonomials</em><em>)</em><em>]</em><em>)</em>) – list of coefficients
+in front of each monomial.</p></li>
+<li><p><strong>kmoduli</strong> (<em>ndarray</em><em>[</em><em>(</em><em>nProj</em><em>)</em><em>]</em>) – The kaehler moduli.</p></li>
+<li><p><strong>ambient</strong> (<em>ndarray</em><em>[</em><em>(</em><em>nProj</em><em>)</em><em>, </em><em>np.int</em><em>]</em>) – the direct product of
+projective spaces making up the ambient space.</p></li>
+<li><p><strong>vol_j_norm</strong> (<em>float</em><em>, </em><em>optional</em>) – <p>Normalization of the volume of the
+Calabi-Yau X as computed from</p>
+<div class="math notranslate nohighlight">
+\[\int_X J^n \; \text{ at } \; t_1=t_2=...=t_n = 1.\]</div>
+<p>Defaults to 1.</p>
+</p></li>
+<li><p><strong>verbose</strong> (<em>int</em><em>, </em><em>optional</em>) – Controls logging. 1-Debug, 2-Info,
+else Warning. Defaults to 2.</p></li>
+<li><p><strong>backend</strong> (<em>str</em><em>, </em><em>optional</em>) – Backend for Parallel. Defaults to
+‘multiprocessing’. ‘loky’ makes issues with pickle5.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen_cicy.CICYPointGenerator.cy_condition">
+<span class="sig-name descname"><span class="pre">cy_condition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen_cicy.CICYPointGenerator.cy_condition" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the CY condition at each point.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>points</strong> (<em>ndarray</em><em>[</em><em>(</em><em>n_p</em><em>, </em><em>ncoords</em><em>)</em><em>, </em><em>np.complex128</em><em>]</em>) – Points.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>CY condition</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray([n_p, nhyper], np.complex128)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen_cicy.CICYPointGenerator.generate_points">
+<span class="sig-name descname"><span class="pre">generate_points</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nproc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nattempts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fprime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen_cicy.CICYPointGenerator.generate_points" title="Permalink to this definition"></a></dt>
+<dd><p>Generates n_p complex points from the t-selection in
+‘self.selected_t’ with accuracy ‘acc’.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_p</strong> (<em>int</em>) – # of points.</p></li>
+<li><p><strong>nproc</strong> (<em>int</em><em>, </em><em>optional</em>) – # of jobs used. Defaults to -1. Then
+uses all available resources.</p></li>
+<li><p><strong>nattempts</strong> (<em>int</em><em>, </em><em>optional</em>) – # of attempts for each selection of
+points generated on the spheres. Defaults to 1.</p></li>
+<li><p><strong>acc</strong> (<em>float</em><em>, </em><em>optional</em>) – Required CY accuracy. Defaults to 1e-8.</p></li>
+<li><p><strong>fprime</strong> (<em>function</em><em>, </em><em>optional</em>) – fprime of CY conditions with float
+returns. Defaults to None.</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em><em>, </em><em>optional</em>) – batch_size of Parallel.
+Defaults to 1000.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Points on the CICY.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray[(n_p, ncoord), np.complex128]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen_cicy.CICYPointGenerator.holomorphic_volume_form">
+<span class="sig-name descname"><span class="pre">holomorphic_volume_form</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">j_elim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen_cicy.CICYPointGenerator.holomorphic_volume_form" title="Permalink to this definition"></a></dt>
+<dd><p>We compute the holomorphic volume form
+at all points by solving the residue theorem:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\Omega &amp;= \int_\rho \frac{1}{Q} \wedge^n dz_i \\
+       &amp;= \frac{1}{\frac{\partial Q}{\partial z_j}}\wedge^{n-1} dz_a\end{split}\]</div>
+<p>where the index a runs over the local n-fold good coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>points</strong> (<em>ndarray</em><em>[</em><em>(</em><em>n_p</em><em>, </em><em>ncoords</em><em>)</em><em>, </em><em>np.complex128</em><em>]</em>) – Points.</p></li>
+<li><p><strong>j_elim</strong> (<em>ndarray</em><em>[</em><em>(</em><em>n_p</em><em>, </em><em>nhyper</em><em>)</em><em>, </em><em>np.int64</em><em>]</em>) – Index to be eliminated.
+Defaults to None. If None eliminates max(dQdz).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Omega evaluated at each point</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray[(n_p), np.complex128]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen_cicy.CICYPointGenerator.prepare_dataset">
+<span class="sig-name descname"><span class="pre">prepare_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dirname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ltails</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen_cicy.CICYPointGenerator.prepare_dataset" title="Permalink to this definition"></a></dt>
+<dd><p>Prepares training and validation data.</p>
+<p>keyword arguments can be any from
+<a class="reference internal" href="#cymetric.pointgen.nphelper.prepare_dataset" title="cymetric.pointgen.nphelper.prepare_dataset"><code class="xref py py-func docutils literal notranslate"><span class="pre">cymetric.pointgen.nphelper.prepare_dataset()</span></code></a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>By default we remove 0.05 of the points with vanishing
+weights. In our experience the numerics can become quite messy
+at these points. Furthermore, they don’t contribute much to the MC
+integration and can thus more or less safely be removed.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_p</strong> (<em>int</em>) – Number of points to generate.</p></li>
+<li><p><strong>dirname</strong> (<em>str</em>) – Directory name to save dataset in.</p></li>
+<li><p><strong>ltails</strong> (<em>float</em><em>, </em><em>optional</em>) – percentage discarded on the left tail
+of weight distribution. Defaults to 0.05.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>0</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="point-generator-toric">
+<h2>Point Generator Toric<a class="headerlink" href="#point-generator-toric" title="Permalink to this headline"></a></h2>
+<p>is used for toric Calabi Yaus.</p>
+<span class="target" id="module-cymetric.pointgen.pointgen_toric"></span><p>ToricPointGenerator module.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Authors</dt>
+<dd class="field-odd"><p>Fabian Ruehle &lt;<a class="reference external" href="mailto:fabian&#46;ruehle&#37;&#52;&#48;cern&#46;ch">fabian<span>&#46;</span>ruehle<span>&#64;</span>cern<span>&#46;</span>ch</a>&gt; and
+Robin Schneider &lt;<a class="reference external" href="mailto:robin&#46;schneider&#37;&#52;&#48;physics&#46;uu&#46;se">robin<span>&#46;</span>schneider<span>&#64;</span>physics<span>&#46;</span>uu<span>&#46;</span>se</a>&gt;</p>
+</dd>
+</dl>
+<dl class="py class">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen_toric.ToricPointGenerator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ToricPointGenerator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">toric_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kmoduli</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen_toric.ToricPointGenerator" title="Permalink to this definition"></a></dt>
+<dd><p>ToricPointGenerator class.</p>
+<p>The numerics are entirely done in numpy.</p>
+<p>Use this class if you want to generate points and data on a toric CY
+given by one hypersurface as in the Kreuzer-Skarke list.</p>
+<p class="rubric">Example</p>
+<p>We assume toric_data has been generated using the sage lib beforehand.
+Check <a class="reference external" href="https://doc.sagemath.org/html/en/reference/schemes/sage/schemes/toric/variety.html">https://doc.sagemath.org/html/en/reference/schemes/sage/schemes/toric/variety.html</a>
+for infos how to construct ToricVarieties/Fans in sage.</p>
+<p>Define in sage your favourite polytope.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">cymetric.sage.sagelib</span> <span class="kn">import</span> <span class="n">prepare_toric_cy_data</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># [...] generate fan from triangulations from vertices</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TV</span> <span class="o">=</span> <span class="n">ToricVariety</span><span class="p">(</span><span class="n">fan</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fname</span> <span class="o">=</span> <span class="s2">&quot;toric_data.pickle&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">toric_data</span> <span class="o">=</span> <span class="n">prepare_toric_cy_data</span><span class="p">(</span><span class="n">TV</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>then we can start another python kernel or continue in sage with</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">cymetric.pointgen.pointgen_toric</span> <span class="kn">import</span> <span class="n">ToricPointGenerator</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">kmoduli</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">toric_data</span><span class="p">[</span><span class="s1">&#39;exps_sections&#39;</span><span class="p">]))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># [...] load toric_data with pickle</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pg</span> <span class="o">=</span> <span class="n">ToricPointGenerator</span><span class="p">(</span><span class="n">toric_data</span><span class="p">,</span> <span class="n">kmoduli</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Once the ToricPointGenerator is initialized you can generate a training
+dataset with</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pg</span><span class="o">.</span><span class="n">prepare_dataset</span><span class="p">(</span><span class="n">number_of_points</span><span class="p">,</span> <span class="n">dir_name</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>and prepare the required tensorflow model data with</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pg</span><span class="o">.</span><span class="n">prepare_basis</span><span class="p">(</span><span class="n">dir_name</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Initializer.</p>
+<p><code class="docutils literal notranslate"><span class="pre">**kwargs</span></code> may contain the usual key-arguments from <cite>PointGenerator</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>toric_data</strong> (<em>dict</em>) – generated from
+&gt;&gt;&gt; sage_lib.prepare_toric_cy_data()</p></li>
+<li><p><strong>kmoduli</strong> (<em>ndarray</em><em>[</em><em>(</em><em>h^{</em><em>(</em><em>1</em><em>,</em><em>1</em><em>)</em><em>}</em><em>)</em><em>]</em>) – The kaehler moduli.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen_toric.ToricPointGenerator.fubini_study_metrics">
+<span class="sig-name descname"><span class="pre">fubini_study_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vol_js</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen_toric.ToricPointGenerator.fubini_study_metrics" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the toric equivalent to FS metric at points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>points</strong> (<em>ndarray</em><em>[</em><em>(</em><em>n_p</em><em>, </em><em>ncoords</em><em>)</em><em>, </em><em>np.complex128</em><em>]</em>) – Points.</p></li>
+<li><p><strong>vol_js</strong> (<em>ndarray</em><em>[</em><em>(</em><em>h^{</em><em>(</em><em>1</em><em>,</em><em>1</em><em>)</em><em>}</em><em>)</em><em>, </em><em>np.complex128</em><em>]</em>) – vol_j factor.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>g^FS</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray[(len(points), ncoords, ncoords), np.complex128]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen_toric.ToricPointGenerator.generate_points">
+<span class="sig-name descname"><span class="pre">generate_points</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nproc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nattempts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-08</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fprime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen_toric.ToricPointGenerator.generate_points" title="Permalink to this definition"></a></dt>
+<dd><p>Generates complex points using scipy’s optimizer fsolve.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_p</strong> (<em>int</em>) – # of points.</p></li>
+<li><p><strong>nproc</strong> (<em>int</em><em>, </em><em>optional</em>) – # of jobs used. Defaults to -1. Then
+uses all available resources.</p></li>
+<li><p><strong>nattempts</strong> (<em>int</em><em>, </em><em>optional</em>) – # of tries to find a solution given a
+set of points on the ambient spheres. Defaults to 1.</p></li>
+<li><p><strong>acc</strong> (<em>float</em><em>, </em><em>optional</em>) – Required CY accuracy. Defaults to 1e-8.</p></li>
+<li><p><strong>fprime</strong> (<em>function</em><em>, </em><em>optional</em>) – fprime of CY conditions with float
+returns.</p></li>
+<li><p><strong>batch_size</strong> (<em>int</em><em>, </em><em>optional</em>) – batch_size of Parallel.
+Defaults to 1000.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>points on CY</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>nd.array[(n_p, ncoord), np.complex128]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen_toric.ToricPointGenerator.prepare_dataset">
+<span class="sig-name descname"><span class="pre">prepare_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dirname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ltails</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rtails</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen_toric.ToricPointGenerator.prepare_dataset" title="Permalink to this definition"></a></dt>
+<dd><p>Prepares training and validation data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_p</strong> (<em>int</em>) – Number of points to generate.</p></li>
+<li><p><strong>dirname</strong> (<em>str</em>) – Directory name to save dataset in.</p></li>
+<li><p><strong>val_split</strong> (<em>float</em><em>, </em><em>optional</em>) – train-val split. Defaults to 0.1.</p></li>
+<li><p><strong>ltails</strong> (<em>float</em><em>, </em><em>optional</em>) – Percentage discarded on the left tail
+of weight distribution. Defaults to 0.</p></li>
+<li><p><strong>rtails</strong> (<em>float</em><em>, </em><em>optional</em>) – Percentage discarded on the right tail
+of weight distribution. Defaults to 0.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>kappa = vol_k / vol_cy</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="point-generator-mathematica">
+<h2>Point Generator Mathematica<a class="headerlink" href="#point-generator-mathematica" title="Permalink to this headline"></a></h2>
+<p>is used for both projective CICY and toric Calabi Yaus. It calls Mathematica and its powerful solvers as a backend to generate points.</p>
+<section id="pointgeneratormathematica">
+<h3>PointGeneratorMathematica<a class="headerlink" href="#pointgeneratormathematica" title="Permalink to this headline"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen_mathematica.PointGeneratorMathematica">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PointGeneratorMathematica</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen_mathematica.PointGeneratorMathematica" title="Permalink to this definition"></a></dt>
+<dd><p>PointGeneratorMathematica class.</p>
+<p>This uses mathematica as a backand to carry out the computations</p>
+<p class="rubric">Example</p>
+<p>A simple example on a generic CY manifold of the family defined by the following configuration matrix:</p>
+<div class="math notranslate nohighlight">
+\[X \in [5|33]\]</div>
+<p>can be set up with</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">cymetric.pointgen.pointgen_mathematica</span> <span class="kn">import</span> <span class="n">PointGeneratorMathematica</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">cymetric.pointgen.nphelper</span> <span class="kn">import</span> <span class="n">generate_monomials</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">monomials</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">generate_monomials</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">3</span><span class="p">)))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">monomials_per_hyper</span> <span class="o">=</span> <span class="p">[</span><span class="n">monomials</span><span class="p">,</span> <span class="n">monomials</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">coeff</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">m</span><span class="p">))</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">monomials_per_hyper</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">kmoduli</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ambient</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">5</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pg</span> <span class="o">=</span> <span class="n">PointGeneratorMathematica</span><span class="p">(</span><span class="n">monomials_per_hyper</span><span class="p">,</span> <span class="n">coeff</span><span class="p">,</span> <span class="n">kmoduli</span><span class="p">,</span> <span class="n">ambient</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Once PointGeneratorMathematica is initialized you can generate a training dataset with</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pg</span><span class="o">.</span><span class="n">prepare_dataset</span><span class="p">(</span><span class="n">number_of_points</span><span class="p">,</span> <span class="n">dir_name</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>and prepare the required tensorflow model data with</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pg</span><span class="o">.</span><span class="n">prepare_basis</span><span class="p">(</span><span class="n">dir_name</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>PointGeneratorMathematica uses Mathematica as a backend for computations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>monomials</strong> (<em>list</em><em>(</em><em>ndarray</em><em>[</em><em>(</em><em>nMonomials</em><em>, </em><em>ncoord</em><em>)</em><em>, </em><em>np.int</em><em>]</em><em>)</em>) – list of length nHyper with monomials for each
+defining equation.</p></li>
+<li><p><strong>coefficients</strong> (<em>list</em><em>(</em><em>ndarray</em><em>[</em><em>(</em><em>nMonomials</em><em>)</em><em>]</em><em>)</em>) – list of coefficients in front of each monomial.</p></li>
+<li><p><strong>kmoduli</strong> (<em>ndarray</em><em>[</em><em>(</em><em>nProj</em><em>)</em><em>]</em>) – The kaehler moduli.</p></li>
+<li><p><strong>ambient</strong> (<em>ndarray</em><em>[</em><em>(</em><em>nProj</em><em>)</em><em>, </em><em>np.int</em><em>]</em>) – the direct product of  projective spaces making up the ambient space.</p></li>
+<li><p><strong>vol_j_norm</strong> (<em>float</em><em>, </em><em>optional</em>) – Normalization of the volume of the Calabi-Yau X as computed from
+.. math:: int_X J^n ; text{ at } ; t_1=t_2=…=t_n = 1.
+Defaults to 1.</p></li>
+<li><p><strong>verbose</strong> (<em>int</em><em>, </em><em>optional</em>) – Controls logging. 1-Debug, 2-Info,  else Warning. Defaults to 2.</p></li>
+<li><p><strong>precision</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of valid digits. Defaults to 10</p></li>
+<li><p><strong>point_file_path</strong> (<em>str</em><em>, </em><em>optional</em>) – Path where points are stored. This is only important if Mathematica
+is also used as a frontend</p></li>
+<li><p><strong>selected_t</strong> (<em>ndarray</em><em>[</em><em>(</em><em>nProj</em><em>)</em><em>]</em>) – The ambient spaces from which the points were sampled.
+This is only important if Mathematica is also used as a frontend</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen_mathematica.PointGeneratorMathematica.generate_point_weights">
+<span class="sig-name descname"><span class="pre">generate_point_weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_pw</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">omega</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize_to_vol_j</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen_mathematica.PointGeneratorMathematica.generate_point_weights" title="Permalink to this definition"></a></dt>
+<dd><p>Generates a numpy dictionary of point weights. Uses computed data if Mathematica was used as a frontend.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_pw</strong> (<em>int</em>) – # of point weights.</p></li>
+<li><p><strong>omega</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True adds Omega to dict. Defaults to False.</p></li>
+<li><p><strong>normalize_to_vol_j</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether the weights should be normalized by the factor self.vol_j_norm.
+Defaults to False</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>point weights</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen_mathematica.PointGeneratorMathematica.generate_points">
+<span class="sig-name descname"><span class="pre">generate_points</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nproc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen_mathematica.PointGeneratorMathematica.generate_points" title="Permalink to this definition"></a></dt>
+<dd><p>Generates complex points by calling the mathematica point generator</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_p</strong> (<em>int</em>) – # of points</p></li>
+<li><p><strong>nproc</strong> (<em>int</em><em>, </em><em>optional</em>) – # of processes used. Defaults to -1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>[description]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>nd.array[(np, ncoord), np.complex128]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="toricpointgeneratormathematica">
+<h3>ToricPointGeneratorMathematica<a class="headerlink" href="#toricpointgeneratormathematica" title="Permalink to this headline"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen_mathematica.ToricPointGeneratorMathematica">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ToricPointGeneratorMathematica</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">toric_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kmoduli</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">point_file_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">selected_t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen_mathematica.ToricPointGeneratorMathematica" title="Permalink to this definition"></a></dt>
+<dd><p>ToricPointGeneratorMathematica class.</p>
+<p>The numerics are done in mathematica, the toric computations have been done in SageMath.</p>
+<p>Use this class if you want to generate points and data on a toric CY
+given by one hypersurface as in the Kreuzer-Skarke list.</p>
+<p class="rubric">Example</p>
+<p>We assume toric_data has been generated using the sage lib beforehand.
+Check <a class="reference external" href="https://doc.sagemath.org/html/en/reference/schemes/sage/schemes/toric/variety.html">https://doc.sagemath.org/html/en/reference/schemes/sage/schemes/toric/variety.html</a>
+for infos how to construct ToricVarieties/Fans in sage.</p>
+<p>Define in sage your favourite polytope.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">cymetric.sage.sagelib</span> <span class="kn">import</span> <span class="n">prepare_toric_cy_data</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># [...] generate fan from triangulations from vertices</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">TV</span> <span class="o">=</span> <span class="n">ToricVariety</span><span class="p">(</span><span class="n">fan</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">fname</span> <span class="o">=</span> <span class="s2">&quot;toric_data.pickle&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">toric_data</span> <span class="o">=</span> <span class="n">prepare_toric_cy_data</span><span class="p">(</span><span class="n">TV</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>then we can start another python kernel or continue in sage with</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">cymetric.pointgen.pointgen_mathematica</span> <span class="kn">import</span> <span class="n">PointGeneratorMathematica</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">kmoduli</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">toric_data</span><span class="p">[</span><span class="s1">&#39;exps_sections&#39;</span><span class="p">]))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># [...] load toric_data with pickle</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pg</span> <span class="o">=</span> <span class="n">PointGeneratorMathematica</span><span class="p">(</span><span class="n">toric_data</span><span class="p">,</span> <span class="n">kmoduli</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Once the ToricPointGenerator is initialized you can generate a training dataset with</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pg</span><span class="o">.</span><span class="n">prepare_dataset</span><span class="p">(</span><span class="n">number_of_points</span><span class="p">,</span> <span class="n">dir_name</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>and prepare the required tensorflow model data with</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pg</span><span class="o">.</span><span class="n">prepare_basis</span><span class="p">(</span><span class="n">dir_name</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>PointGeneratorMathematica uses Mathematica as a backend for computations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>toric_data</strong> (<em>np.ndarray</em>) – Toric data generated from sage by calling prepare_toric_cy_data(TV, fname)</p></li>
+<li><p><strong>kmoduli</strong> (<em>ndarray</em><em>[</em><em>(</em><em>nProj</em><em>)</em><em>]</em>) – The kaehler moduli.</p></li>
+<li><p><strong>verbose</strong> (<em>int</em><em>, </em><em>optional</em>) – Controls logging. 1-Debug, 2-Info,  else Warning. Defaults to 2.</p></li>
+<li><p><strong>precision</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of valid digits. Defaults to 10</p></li>
+<li><p><strong>point_file_path</strong> (<em>str</em><em>, </em><em>optional</em>) – Path where points are stored. This is only important if Mathematica
+is also used as a frontend</p></li>
+<li><p><strong>selected_t</strong> (<em>ndarray</em><em>[</em><em>(</em><em>nProj</em><em>)</em><em>]</em>) – The ambient spaces from which the points were sampled.
+This is only important if Mathematica is also used as a frontend</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen_mathematica.ToricPointGeneratorMathematica.fubini_study_metrics">
+<span class="sig-name descname"><span class="pre">fubini_study_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vol_js</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen_mathematica.ToricPointGeneratorMathematica.fubini_study_metrics" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the FS metric at each point.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>points</strong> (<em>ndarray</em><em>[</em><em>(</em><em>n_p</em><em>, </em><em>ncoords</em><em>)</em><em>, </em><em>np.complex128</em><em>]</em>) – Points.</p></li>
+<li><p><strong>vol_js</strong> (<em>ndarray</em><em>[</em><em>(</em><em>h^{</em><em>(</em><em>1</em><em>,</em><em>1</em><em>)</em><em>}</em><em>)</em><em>, </em><em>np.complex128</em><em>]</em>) – vol_j factor.
+Defaults to None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>g^FS</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray[(n_p, ncoords, ncoords), np.complex128]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen_mathematica.ToricPointGeneratorMathematica.generate_points">
+<span class="sig-name descname"><span class="pre">generate_points</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nproc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen_mathematica.ToricPointGeneratorMathematica.generate_points" title="Permalink to this definition"></a></dt>
+<dd><p>Generates complex points by calling the mathematica point generator</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_p</strong> (<em>int</em>) – # of points</p></li>
+<li><p><strong>nproc</strong> (<em>int</em><em>, </em><em>optional</em>) – # of processes used. Defaults to -1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>[description]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>nd.array[(np, ncoord), np.complex128]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen_mathematica.ToricPointGeneratorMathematica.prepare_dataset">
+<span class="sig-name descname"><span class="pre">prepare_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dirname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ltails</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rtails</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen_mathematica.ToricPointGeneratorMathematica.prepare_dataset" title="Permalink to this definition"></a></dt>
+<dd><p>Prepares training and validation data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_p</strong> (<em>int</em>) – Number of points to generate.</p></li>
+<li><p><strong>dirname</strong> (<em>str</em>) – Directory name to save dataset in.</p></li>
+<li><p><strong>val_split</strong> (<em>float</em><em>, </em><em>optional</em>) – train-val split. Defaults to 0.1.</p></li>
+<li><p><strong>ltails</strong> (<em>float</em><em>, </em><em>optional</em>) – Percentage discarded on the left tail
+of weight distribution. Defaults to 0.</p></li>
+<li><p><strong>rtails</strong> (<em>float</em><em>, </em><em>optional</em>) – Percentage discarded on the right tail
+of weight distribution. Defaults to 0.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>kappa = vol_k / vol_cy</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="complexfunctionconsumer">
+<h3>ComplexFunctionConsumer<a class="headerlink" href="#complexfunctionconsumer" title="Permalink to this headline"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen_mathematica.ComplexFunctionConsumer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ComplexFunctionConsumer</span></span><a class="headerlink" href="#cymetric.pointgen.pointgen_mathematica.ComplexFunctionConsumer" title="Permalink to this definition"></a></dt>
+<dd><p>Implement a consumer that maps Complex to python complex types.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen_mathematica.ComplexFunctionConsumer.build_function">
+<span class="sig-name descname"><span class="pre">build_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">head</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen_mathematica.ComplexFunctionConsumer.build_function" title="Permalink to this definition"></a></dt>
+<dd><p>Create a Python object from head and args.</p>
+<p>This function can be conveniently overloaded to create specific Python objects
+from various heads. e.g: DateObject, Complex, etc.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cymetric.pointgen.pointgen_mathematica.ComplexFunctionConsumer.consume_bigreal">
+<span class="sig-name descname"><span class="pre">consume_bigreal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current_token</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tokens</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.pointgen_mathematica.ComplexFunctionConsumer.consume_bigreal" title="Permalink to this definition"></a></dt>
+<dd><p>Parse a WXF big real as a WXF serializable big real.</p>
+<p>There is not such thing as a big real, in Wolfram Language notation, in Python. This
+wrapper ensures round tripping of big reals without the need of <cite>ToExpression</cite>.
+Introducing <cite>ToExpression</cite> would imply to marshall the big real data to avoid malicious
+code from being introduced in place of an actual real.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+<section id="numpy-helper">
+<h2>Numpy Helper<a class="headerlink" href="#numpy-helper" title="Permalink to this headline"></a></h2>
+<p>are important and can make our life easier.</p>
+<span class="target" id="module-cymetric.pointgen.nphelper"></span><p>A collection of various numpy helper functions.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="cymetric.pointgen.nphelper.compute_all_w_of_x">
+<span class="sig-name descname"><span class="pre">compute_all_w_of_x</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">patch_degrees</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patch_masks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim_cy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.nphelper.compute_all_w_of_x" title="Permalink to this definition"></a></dt>
+<dd><p>Computes monomials to reexpress the good coordinates in one patch in
+terms of the good coordinates in another patch with respect to the
+homogeneous ambient space coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>patch_degrees</strong> (<em>ndarray</em><em>(</em><em>[</em><em>npatches</em><em>, </em><em>ncoords</em><em>, </em><em>ncoords</em><em>]</em><em>, </em><em>np.int</em><em>)</em>) – See also
+<a class="reference internal" href="#cymetric.pointgen.nphelper.get_all_patch_degrees" title="cymetric.pointgen.nphelper.get_all_patch_degrees"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_all_patch_degrees()</span></code></a>.</p></li>
+<li><p><strong>patch_masks</strong> (<em>ndarray</em><em>(</em><em>[</em><em>npatches</em><em>, </em><em>ncoords</em><em>]</em><em>, </em><em>np.bool</em><em>)</em>) – Patch masks with
+True at each coordinates, which is not allowed to vanish.</p></li>
+<li><p><strong>dim_cy</strong> (<em>int</em><em>, </em><em>optional</em>) – Dimension of the Calabi-Yau. Defaults to 3.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>w_of_x, del_w_of_x, del_w_of_z</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cymetric.pointgen.nphelper.conf_to_monomials">
+<span class="sig-name descname"><span class="pre">conf_to_monomials</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">conf</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.nphelper.conf_to_monomials" title="Permalink to this definition"></a></dt>
+<dd><p>Creates monomials basis from configuration matrix.</p>
+<p class="rubric">Example</p>
+<p>Take CICY with ambient space P1xP3</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">conf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">monomials</span> <span class="o">=</span> <span class="n">conf_to_monomials</span><span class="p">(</span><span class="n">conf</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>conf</strong> (<em>ndarray</em><em>(</em><em>[</em><em>nProj</em><em>,</em><em>nHyper</em><em>]</em><em>, </em><em>np.int</em><em>)</em>) – Configuration matrix.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>Monomial basis for</dt><dd><p>each hypersurface.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list(nHyper,ndarray([nMonomials, nVars], np.int))</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cymetric.pointgen.nphelper.generate_monomials">
+<span class="sig-name descname"><span class="pre">generate_monomials</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deg</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.nphelper.generate_monomials" title="Permalink to this definition"></a></dt>
+<dd><p>Yields a generator of monomials with degree deg in n variables.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n</strong> (<em>int</em>) – number of variables</p></li>
+<li><p><strong>deg</strong> (<em>int</em>) – degree of monomials</p></li>
+</ul>
+</dd>
+<dt class="field-even">Yields</dt>
+<dd class="field-even"><p><em>generator</em> – monomial term</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cymetric.pointgen.nphelper.get_all_patch_degrees">
+<span class="sig-name descname"><span class="pre">get_all_patch_degrees</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">glsm_charges</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patch_masks</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.nphelper.get_all_patch_degrees" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the degrees of every coordinate for each patch to rescale such
+that the largest coordinates will be 1+0.j.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>glsm_charges</strong> (<em>ndarray</em><em>(</em><em>[</em><em>nscaling</em><em>, </em><em>ncoords</em><em>]</em><em>, </em><em>np.int</em><em>)</em>) – GLSM charges.</p></li>
+<li><p><strong>patch_masks</strong> (<em>ndarray</em><em>(</em><em>[</em><em>npatches</em><em>, </em><em>ncoords</em><em>]</em><em>, </em><em>np.bool</em><em>)</em>) – Patch masks with
+True at each coordinates, which is not allowed to vanish.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>degrees</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray([npatches, ncoords, ncoords], np.int)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cymetric.pointgen.nphelper.get_levicivita_tensor">
+<span class="sig-name descname"><span class="pre">get_levicivita_tensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.nphelper.get_levicivita_tensor" title="Permalink to this definition"></a></dt>
+<dd><p>Computes Levi-Civita tensor in dim dimensions.</p>
+<p>Conventions are zero for same indices, 1 for even permutations
+and -1 for odd permutations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dim</strong> (<em>int</em>) – dimension</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Levi-Civita tensor.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray([dim, …, dim], np.float32)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cymetric.pointgen.nphelper.prepare_basis">
+<span class="sig-name descname"><span class="pre">prepare_basis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">point_gen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dirname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.nphelper.prepare_basis" title="Permalink to this definition"></a></dt>
+<dd><p>Prepares monomial basis for NNs from point_gen as .npz dict.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>point_gen</strong> (<em>point_gen</em>) – point generator</p></li>
+<li><p><strong>dirname</strong> (<em>str</em>) – dir name to save</p></li>
+<li><p><strong>kappa</strong> (<em>float</em>) – kappa value (ratio of Kahler and CY volume)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>0</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cymetric.pointgen.nphelper.prepare_basis_pickle">
+<span class="sig-name descname"><span class="pre">prepare_basis_pickle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">point_gen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dirname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kappa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.nphelper.prepare_basis_pickle" title="Permalink to this definition"></a></dt>
+<dd><p>Prepares pickled monomial basis for NNs from PointGenerator.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>point_gen</strong> (<a class="reference internal" href="#cymetric.pointgen.pointgen.PointGenerator" title="cymetric.pointgen.pointgen.PointGenerator"><em>PointGenerator</em></a>) – Any point generator.</p></li>
+<li><p><strong>dirname</strong> (<em>str</em>) – dir name to save</p></li>
+<li><p><strong>kappa</strong> (<em>float</em>) – kappa value (ratio of Kahler and CY volume)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>0</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="cymetric.pointgen.nphelper.prepare_dataset">
+<span class="sig-name descname"><span class="pre">prepare_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">point_gen</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dirname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ltails</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rtails</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize_to_vol_j</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cymetric.pointgen.nphelper.prepare_dataset" title="Permalink to this definition"></a></dt>
+<dd><p>Prepares training and validation data from point_gen.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The dataset will be saved in <cite>dirname/dataset.npz</cite>.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>point_gen</strong> (<a class="reference internal" href="#cymetric.pointgen.pointgen.PointGenerator" title="cymetric.pointgen.pointgen.PointGenerator"><em>PointGenerator</em></a>) – Any point generator.</p></li>
+<li><p><strong>n_p</strong> (<em>int</em>) – # of points.</p></li>
+<li><p><strong>dirname</strong> (<em>str</em>) – dir name to save data.</p></li>
+<li><p><strong>val_split</strong> (<em>float</em><em>, </em><em>optional</em>) – train-val split. Defaults to 0.1.</p></li>
+<li><p><strong>ltails</strong> (<em>float</em><em>, </em><em>optional</em>) – Discarded % on the left tail of weight
+distribution.</p></li>
+<li><p><strong>rtails</strong> (<em>float</em><em>, </em><em>optional</em>) – Discarded % on the left tail of weight
+distribution.</p></li>
+<li><p><strong>normalize_to_vol_j</strong> (<em>bool</em><em>, </em><em>optional</em>) – <p>Normalize such that</p>
+<div class="math notranslate nohighlight">
+\[\int_X \det(g) = \sum_p \det(g) * w|_p  = d^{ijk} t_i t_j t_k\]</div>
+<p>Defaults to True.</p>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>kappa = vol_k / vol_cy</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.float</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="models.html" class="btn btn-neutral float-left" title="TensorFlow models" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, Fabian Ruehle and Robin Schneider.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
