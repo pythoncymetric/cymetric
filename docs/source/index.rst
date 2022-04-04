@@ -13,7 +13,7 @@ Table of Content
 ----------------
 
 .. toctree::
-   :maxdepth: 10
+   :maxdepth: 4
    :glob:
 
    installation.rst
