@@ -387,13 +387,16 @@ class FreeModel(FSModel):
         # print(input_tensor.shape, pred.shape, ks.shape)
         # actual_slopes = tf.vectorized_map(self._calculate_slope, [input_tensor, pred, ks])
         ks = tf.eye(len(self.BASIS['KMODULI']), dtype=tf.complex64)
+
         def body(input_tensor, pred, ks, actual_slopes):
             f_a = self.fubini_study_pb(input_tensor, ts=ks[len(actual_slopes)])
             res = tf.expand_dims(self._calculate_slope([pred, f_a]), axis=0)
             actual_slopes = tf.concat([actual_slopes, res], axis=0)
             return input_tensor, pred, ks, actual_slopes
+
         def condition(input_tensor, pred, ks, actual_slopes):
             return len(actual_slopes) < len(self.BASIS['KMODULI'])
+
         f_a = self.fubini_study_pb(input_tensor, ts=ks[0])
         actual_slopes = tf.expand_dims(self._calculate_slope([pred, f_a]), axis=0)
         if len(self.BASIS['KMODULI']) > 1:
