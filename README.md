@@ -3,7 +3,7 @@
 ![CYMetric plots](/assets/plots.jpg)
 
 cymetric is a Python package for learning of moduli-dependent Calabi-Yau metrics
-using neural networks implemented in TensorFlow. 
+using neural networks implemented in TensorFlow.
 
 ## Features
 
@@ -88,7 +88,7 @@ PathToVenv = FileNameJoin[{$HomeDirectory, "cymetric"}];
 ChangeSetting["Python", PathToVenv]
 python = Setup[PathToVenv];
 ```
-Note that this will create a .txt file (in the same folder and with the same name as the mathematica notebook) which stores the location of the virtual environment. If you delete this file, mathematica will install a new virtual environment the next time you call ```Setup[PathToVenv]```.
+Note that this will create a .m file (in the same folder and with the same name as the mathematica notebook) which stores the location of the virtual environment. If you delete this file, mathematica will install a new virtual environment the next time you call ```Setup[PathToVenv]```.
 
 ## Tutorials
 Once you have installed the package (either in python, or in sage, or in Mathematica), you are probably looking for some examples on how to use it. We provide some tutorials/examples for each case. Just download the example file somewhere on your computer and open it in jupyter. If you created a virtual environment as explained above, you can simply open a terminal and type
