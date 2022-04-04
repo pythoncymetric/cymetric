@@ -882,6 +882,12 @@ class PointGenerator:
         data_types = data_types + [('omega', np.complex128)] if omega else data_types
         dtype = np.dtype(data_types)
         points = self.generate_points(n_pw)
+
+        # Throw away points for which the patch is ambiguous, since too many coordiantes are too close to 1
+        inv_one_mask = np.isclose(points, np.complex(1, 0))
+        bad_indices = np.where(np.sum(inv_one_mask, -1) > len(self.kmoduli))
+        points = np.delete(points, bad_indices)
+
         n_p = len(points)
         n_p = n_p if n_p < n_pw else n_pw
         weights = self.point_weight(points, normalize_to_vol_j=normalize_to_vol_j)
@@ -1067,17 +1073,14 @@ class PointGenerator:
             j_elim = np.reshape(j_elim, (-1, 1))
         full_mask = np.copy(inv_one_mask)
         for i in range(self.nhyper):
-            full_mask[np.arange(len(points)), j_elim[:, i]] = \
-                np.zeros(len(points), dtype=np.bool)
+            full_mask[np.arange(len(points)), j_elim[:, i]] = np.zeros(len(points), dtype=np.bool)
+
         # fill the diagonal ones in pullback
         x_indices, z_indices = np.where(full_mask)
-        pullbacks = np.zeros(
-            (len(points), self.nfold, self.ncoords), dtype=np.complex128)
-        y_indices = np.repeat(np.expand_dims(
-            np.arange(self.nfold), 0), len(points), axis=0)
+        pullbacks = np.zeros((len(points), self.nfold, self.ncoords), dtype=np.complex128)
+        y_indices = np.repeat(np.expand_dims(np.arange(self.nfold), 0), len(points), axis=0)
         y_indices = np.reshape(y_indices, (-1))
-        pullbacks[x_indices, y_indices, z_indices] = \
-            np.ones(self.nfold * len(points), dtype=np.complex128)
+        pullbacks[x_indices, y_indices, z_indices] = np.ones(self.nfold * len(points), dtype=np.complex128)
         # next fill the dzdz from every hypersurface
         B_matrix = np.zeros((len(points), self.nhyper, self.nhyper), dtype=np.complex128)
         dz_hyper = np.zeros((len(points), self.nhyper, self.nfold), dtype=np.complex128)
