@@ -267,11 +267,11 @@ class PointGenerator:
         elif self.nfold > 4:
             raise NotImplementedError("Computation of intersection numbers is not supported for {}-folds".format(self.nfold))
 
-        comb = itertools.combinations_with_replacement(range(len(self.kmoduli)), self.nfold)
-        d = np.zeros([len(self.kmoduli)] * self.nfold, dtype=int)
+        comb = itertools.combinations_with_replacement(range(len(self.kmoduli)), int(self.nfold))
+        d = np.zeros([len(self.kmoduli)] * int(self.nfold), dtype=int)
         for x in comb:
             d_int = get_int(*x)
-            entries = itertools.permutations(x, self.nfold)
+            entries = itertools.permutations(x, int(self.nfold))
             # there will be some redundant elements, but they will only have to be calculated once.
             for b in entries:
                 d[b] = d_int
