@@ -257,33 +257,160 @@ class PointGenerator:
 
     def _generate_intersection_tensor(self):
         if self.nfold == 1:
-            d = np.zeros([1])   # TODO: implement this
+            get_int = self._dr
         elif self.nfold == 2:
-            d = np.zeros([2, 2])   # TODO: implement this
+            get_int = self._drs
         elif self.nfold == 3:
-            comb = itertools.combinations_with_replacement(range(len(self.kmoduli)), 3)
-            d = np.zeros((len(self.kmoduli), len(self.kmoduli), len(self.kmoduli)), dtype=int)
-            for x in comb:
-                drst = self._drst(x[0], x[1], x[2])
-                entries = itertools.permutations(x, 3)
-                # there will be some redundant elements,
-                # but they will only have to be calculated once.
-                for b in entries:
-                    d[b] = drst
+            get_int = self._drst
         elif self.nfold == 4:
-            comb = itertools.combinations_with_replacement(range(len(self.kmoduli)), 4)
-            d = np.zeros((len(self.kmoduli), len(self.kmoduli), len(self.kmoduli), len(self.kmoduli)))
-            for x in comb:
-                drstu = self._drstu(x[0], x[1], x[2], x[3])
-                entries = itertools.permutations(x, 4)
-                # there will be some redundant elements,
-                # but they will only have to be calculated once.
-                for b in entries:
-                    d[b] = drstu
-        else:
+            get_int = self._drstu
+        elif self.nfold > 4:
             raise NotImplementedError("Computation of intersection numbers is not supported for {}-folds".format(self.nfold))
-        
+
+        comb = itertools.combinations_with_replacement(range(len(self.kmoduli)), self.nfold)
+        d = np.zeros([len(self.kmoduli)] * self.nfold, dtype=int)
+        for x in comb:
+            d_int = get_int(*x)
+            entries = itertools.permutations(x, self.nfold)
+            # there will be some redundant elements, but they will only have to be calculated once.
+            for b in entries:
+                d[b] = d_int
         return d
+
+    def _dr(self, r):
+        r"""
+        Determines the intersection number d_r.
+        We use:
+        .. math::
+            \begin{align}
+             d_{r} = \int_X J_r = \int_A \mu \wedge J_r
+            \end{align}
+        where \mu is the top form
+
+        .. math::
+            \begin{align}
+            \mu = \bigwedge^K_{a=1} \left(  \sum_{p=1}^{m} q_a^p J_p  \right) \; .
+            \end{align}
+        Parameters
+        ----------
+        r : int
+            index r.
+
+        Returns
+        -------
+        dr: float
+            Returns the intersection number dr.
+
+        Example
+        -------
+        >>> M = CICY([[2,3]])
+        >>> M.drst(1)
+        3.0
+        """
+        dr = 0
+        i = 0
+        combination, count = np.zeros(len(self.monomials), dtype=int), np.zeros(len(self.kmoduli), dtype=int)
+        # now we want to fill combination and run over all m Projective spaces, and how often they occur
+        for j in range(len(self.kmoduli)):
+            if j == r:
+                count[j] = self.p_conf[j][0] - 1
+                combination[i:i + count[j]] = j
+                i += self.p_conf[j][0] - 1
+            else:
+                count[j] = self.p_conf[j][0]
+                combination[i:i + count[j]] = j
+                i += self.p_conf[j][0]
+        mu = sp.utilities.iterables.multiset_permutations(combination)
+        for a in mu:
+            v = 1
+            for j in range(len(self.monomials)):
+                if self.p_conf[a[j]][j + 1] == 0:
+                    v = 0
+                    break
+                else:
+                    v *= self.p_conf[a[j]][j + 1]
+            dr += v
+        return float(dr)
+
+    def _drs(self, r, s):
+        r"""
+        Determines the intersection number d_rs.
+        We use:
+        .. math::
+            \begin{align}
+             d_{rs} = \int_X J_r \wedge J_s = \int_A \mu \wedge J_r \wedge J_s
+            \end{align}
+        where \mu is the top form
+
+        .. math::
+            \begin{align}
+            \mu = \bigwedge^K_{a=1} \left(  \sum_{p=1}^{m} q_a^p J_p  \right) \; .
+            \end{align}
+        Parameters
+        ----------
+        r : int
+            index r.
+        s : int
+            index s.
+
+        Returns
+        -------
+        drs: float
+            Returns the intersection number drs.
+
+        Example
+        -------
+        >>> M = CICY([[3,4]])
+        >>> M.drst(0)
+        4.0
+        """
+        drs = 0
+        # Define the relevant part of \mu := \wedge^K_j \sum_r q_r^j J_r
+        combination, count = np.zeros(len(self.monomials), dtype=int), np.zeros(len(self.kmoduli), dtype=int)
+        # now there are 2 distinct cases:
+        # 1) r=s or 2) r != s
+        # 1)
+        if r == s:
+            if self.p_conf[r][0] < 2:
+                # then drs is zero
+                return 0
+            else:
+                i = 0
+                # now we want to fill combination and run over all m Projective spaces,
+                # and how often they occur
+                for j in range(len(self.kmoduli)):
+                    if j == r:
+                        count[j] = self.p_conf[j][0] - 2
+                        combination[i:i + count[j]] = j
+                        i += self.p_conf[j][0] - 2
+                    else:
+                        count[j] = self.p_conf[j][0]
+                        combination[i:i + count[j]] = j
+                        i += self.p_conf[j][0]
+        # 2)
+        else:
+            i = 0
+            for j in range(len(self.kmoduli)):
+                if j == r or j == s:
+                    count[j] = self.p_conf[j][0] - 1
+                    combination[i:i + count[j]] = j
+                    i += self.p_conf[j][0] - 1
+                else:
+                    count[j] = self.p_conf[j][0]
+                    combination[i:i + count[j]] = j
+                    i += self.p_conf[j][0]
+
+        mu = sp.utilities.iterables.multiset_permutations(combination)
+        for a in mu:
+            v = 1
+            for j in range(len(self.monomials)):
+                if self.p_conf[a[j]][j + 1] == 0:
+                    v = 0
+                    break
+                else:
+                    v *= self.p_conf[a[j]][j + 1]
+            drs += v
+        return drs
 
     def _drst(self, r, s, t):
         r"""
@@ -313,12 +440,6 @@ class PointGenerator:
         drst: float
             Returns the triple intersection number drst.
 
-        See also
-        --------
-        triple_intersection: Determines all triple intersection numbers.
-        second_chern: The second Chern class as a vector.
-        euler_characteristic: The euler_characteristicharacteristic.
-        quadruple_intersection: The quadruple intersection numbers for a four fold.
         Example
         -------
         >>> M = CICY([[2,2,1],[3,1,3]])
@@ -506,11 +627,7 @@ class PointGenerator:
         -------
         drstu: float
             The quadruple intersection number d_rstu.
-        See Also
-        --------
-        drst: Determines the triple intersection number d_rst.
-        euler_characteristic: The eulercharacteristic.
-        quadruple_intersection: All quadruple intersection numbers of a 4-fold.
+
         Example
         -------
         >>> M = CICY([[2,3],[2,3],[1,2]])
@@ -612,8 +729,17 @@ class PointGenerator:
             return drstu
 
     def get_volume_from_intersections(self, ts):
-        return np.einsum("abc,a,b,c", self.intersection_tensor, ts, ts, ts)
-        
+        if self.nfold == 1:
+            vol = np.einsum("a,a", self.intersection_tensor, ts)
+        elif self.nfold == 2:
+            vol = np.einsum("ab,a,b", self.intersection_tensor, ts, ts)
+        elif self.nfold == 3:
+            vol = np.einsum("abc,a,b,c", self.intersection_tensor, ts, ts, ts)
+        elif self.nfold == 4:
+            vol = np.einsum("abcd,a,b,c,d", self.intersection_tensor, ts, ts, ts, ts)
+        else:
+            raise NotImplementedError("Computation of intersection numbers is not supported for {}-folds".format(self.nfold))
+        return vol
         
     def _implicit_diff(self, i, j):
         r"""Compute the implicit derivative of
