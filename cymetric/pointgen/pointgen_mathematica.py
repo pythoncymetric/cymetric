@@ -186,10 +186,12 @@ class PointGeneratorMathematica(CICYPointGenerator):
             points = self.generate_points(n_pw)
             # Throw away points for which the patch is ambiguous, since too many coordiantes are too close to 1
             inv_one_mask = np.isclose(points, np.complex(1, 0))
-            bad_indices = np.where(np.sum(inv_one_mask, -1) != len(self.kmoduli))
-            point_mask = np.ones(len(points), dtype=bool)
-            point_mask[bad_indices] = False
-            points = points[point_mask]
+            good_indices = np.where(np.sum(inv_one_mask, -1) == len(self.kmoduli))
+            points = points[good_indices]
+            if self.verbose < 3 and len(points) != len(inv_one_mask):
+                print("Removed {} ambiguous points.".format(len(inv_one_mask) - len(points)))
+                print(len(points))
+            
         else:
             points = np.array(pickle.load(open(self.point_file_path, 'rb')))
         
@@ -197,6 +199,7 @@ class PointGeneratorMathematica(CICYPointGenerator):
         n_p = n_p if n_p < n_pw else n_pw
     
         weights = self.point_weight(points, normalize_to_vol_j=normalize_to_vol_j)
+        
         point_weights = np.zeros((n_p), dtype=dtype)
         point_weights['point'], point_weights['weight'] = points[0:n_p], weights[0:n_p]
         if omega:
