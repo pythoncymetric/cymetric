@@ -796,10 +796,10 @@ class ToricModel(FreeModel):
         pullbacks = self.pullbacks(points, j_elim=j_elim) if pb is None else pb
         cpoints = tf.complex(points[:, :self.ncoords], points[:, self.ncoords:])
 
-        Js = self._fubini_study_n_metrics(cpoints, n=0, t=self.kmoduli[0])
+        Js = self._fubini_study_n_metrics(cpoints, n=0, t=ts[0])
         if len(self.kmoduli) != 1:
             for i in range(1, len(self.kmoduli)):
-                Js += self._fubini_study_n_metrics(cpoints, n=i, t=self.kmoduli[i])
+                Js += self._fubini_study_n_metrics(cpoints, n=i, t=ts[i])
 
         gFSpb = tf.einsum('xai,xij,xbj->xab', pullbacks, Js, tf.math.conj(pullbacks))
         return gFSpb
