@@ -38,7 +38,7 @@ class AlphaCallback(tfk.callbacks.Callback):
 
 class KaehlerCallback(tfk.callbacks.Callback):
     """Callback that tracks the weighted Kaehler measure."""
-    def __init__(self, validation_data, nth=1, bSize=1000):
+    def __init__(self, validation_data, nth=1, bSize=1000, initial=False):
         r"""A callback which computes the kaehler measure for
         the validation data after every epoch end.
 
@@ -48,6 +48,8 @@ class KaehlerCallback(tfk.callbacks.Callback):
             validation_data (tuple(X_val, y_val)): Validation data.
             nth (int, optional): Run every n-th epoch. Defaults to 1.
             bSize (int, optional): Batch size. Defaults to 1000.
+            initial (bool, optional): If True does one iteration before training.
+                Defaults to False.
         """
         super(KaehlerCallback, self).__init__()
         self.X_val, self.y_val = validation_data
@@ -57,6 +59,7 @@ class KaehlerCallback(tfk.callbacks.Callback):
         self.omega = tf.cast(self.y_val[:, -1], tf.float32)
         self.nth = nth
         self.bSize = bSize
+        self.initial = initial
 
     def on_epoch_end(self, epoch, logs=None):
         r"""Computes kaehler measure.
@@ -95,12 +98,14 @@ class KaehlerCallback(tfk.callbacks.Callback):
         Args:
             logs (dict, optional): History. Defaults to None.
         """
-        self.on_epoch_end(-1, logs=logs)
+        if self.initial:
+            self.on_epoch_end(-1, logs=logs)
 
 
 class RicciCallback(tfk.callbacks.Callback):
     """Callback that tracks the Ricci measure."""
-    def __init__(self, validation_data, pullbacks, verbose=0, bSize=1000, nth=1, hlevel=0):
+    def __init__(self, validation_data, pullbacks, verbose=0,
+                 bSize=1000, nth=1, hlevel=0, initial=False):
         r"""A callback which computes the ricci measure for
         the validation data after every epoch end.
 
@@ -121,6 +126,8 @@ class RicciCallback(tfk.callbacks.Callback):
             nth (int, optional): Run every n-th epoch. Defaults to 1.
             hlevel (int, optional): if > 0 adds increasingly more statistics.
                 Defaults to 0.
+            initial (bool, optional): If True does one iteration before training.
+                Defaults to False.
         """
         super(RicciCallback, self).__init__()
         self.X_val, self.y_val = validation_data
@@ -134,6 +141,7 @@ class RicciCallback(tfk.callbacks.Callback):
         self.hlevel = hlevel
         self.nth = nth
         self.bSize = bSize
+        self.initial = initial
 
     def on_epoch_end(self, epoch, logs=None):
         r"""Computes ricci measure.
@@ -183,12 +191,13 @@ class RicciCallback(tfk.callbacks.Callback):
         Args:
             logs (dict, optional): History. Defaults to None.
         """
-        self.on_epoch_end(-1, logs=logs)
+        if self.initial:
+            self.on_epoch_end(-1, logs=logs)
 
 
 class SigmaCallback(tfk.callbacks.Callback):
     """Callback that tracks the sigma measure."""
-    def __init__(self, validation_data):
+    def __init__(self, validation_data, initial=False):
         r"""A callback which computes the sigma measure for
         the validation data after every epoch end.
 
@@ -203,11 +212,14 @@ class SigmaCallback(tfk.callbacks.Callback):
 
         Args:
             validation_data (tuple(X_val, y_val)): validation data
+            initial (bool, optional): If True does one iteration before training.
+                Defaults to False.
         """
         super(SigmaCallback, self).__init__()
         self.X_val, self.y_val = validation_data
         self.X_val = tf.cast(self.X_val, tf.float32)
         self.y_val = tf.cast(self.y_val, tf.float32)
+        self.initial = initial
 
     def on_epoch_end(self, epoch, logs=None):
         r"""Computes sigma measure.
@@ -231,22 +243,26 @@ class SigmaCallback(tfk.callbacks.Callback):
         Args:
             logs (dict, optional): History. Defaults to None.
         """
-        self.on_epoch_end(-1, logs=logs)
+        if self.initial:
+            self.on_epoch_end(-1, logs=logs)
 
 
 class TransitionCallback(tfk.callbacks.Callback):
     """Callback that tracks the transition loss weighted over the CY."""
-    def __init__(self, validation_data):
+    def __init__(self, validation_data, initial=False):
         r"""A callback which computes the transition measure for
         the validation data after every epoch end.
 
         Args:
             validation_data (tuple(X_val, y_val)): validation data
+            initial (bool, optional): If True does one iteration before training.
+                Defaults to False.
         """
         super(TransitionCallback, self).__init__()
         self.X_val, self.y_val = validation_data
         self.X_val = tf.cast(self.X_val, tf.float32)
         self.y_val = tf.cast(self.y_val, tf.float32)
+        self.initial = initial
         
     def on_epoch_end(self, epoch, logs=None):
         r"""Computes transition measure.
@@ -270,15 +286,14 @@ class TransitionCallback(tfk.callbacks.Callback):
         Args:
             logs (dict, optional): History. Defaults to None.
         """
-        self.on_epoch_end(-1, logs=logs)
+        if self.initial:
+            self.on_epoch_end(-1, logs=logs)
 
 
 class VolkCallback(tfk.callbacks.Callback):
     r"""Callback that computes the volume from the metric.
-    Has to be equal to 1 in order to stay at the same point in Kaehler moduli
-    space.
     """
-    def __init__(self, validation_data, nfold=3):
+    def __init__(self, validation_data, nfold=3, initial=False):
         r"""A callback which computes Volk of the validation data
         after every epoch end.
 
@@ -289,6 +304,8 @@ class VolkCallback(tfk.callbacks.Callback):
         Args:
             validation_data (tuple(X_val, y_val)): validation data
             nfold (int, optional): degree of CY. Defaults to 3.
+            initial (bool, optional): If True does one iteration before training.
+                Defaults to False.
         """
         super(VolkCallback, self).__init__()
         self.X_val, self.y_val = validation_data
@@ -299,6 +316,7 @@ class VolkCallback(tfk.callbacks.Callback):
         self.nfold = tf.cast(nfold, dtype=tf.float32)
         # NOTE: Check that convention is consistent with rest of code.
         self.factor = float(1.)
+        self.initial = initial
 
     def on_epoch_end(self, epoch, logs=None):
         r"""Tracks Volk during the training process.
@@ -323,7 +341,8 @@ class VolkCallback(tfk.callbacks.Callback):
         Args:
             logs (dict, optional): History. Defaults to None.
         """
-        self.on_epoch_end(-1, logs=logs)
+        if self.initial:
+            self.on_epoch_end(-1, logs=logs)
 
     @tf.function
     def compute_volk(self, pred, weights, omega, factor):
@@ -335,7 +354,7 @@ class VolkCallback(tfk.callbacks.Callback):
                 = \frac{1}{N} \sum_p \frac{\det(g)}{\Omega \wedge \bar\Omega} w
 
         Note:
-            This is different than the Volk-loss. It should integrate to 1.
+            This is different than the Volk-loss.
 
         Args:
             pred (tf.tensor([n_p, nfold, nfold], tf.complex)): 
