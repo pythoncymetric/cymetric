@@ -76,6 +76,12 @@ class ToricPointGenerator(PointGenerator):
             else:
                 level = logging.WARNING
             logger.setLevel(level=level)
+        logger.warning("This is outdated code. The integration weight computation\
+            has not been updated yet to match the ToricPointGeneratorMathematica.\
+            In it's current form the integration weights are computed wrongly and\
+            won't give you the correct volume in the MC integration. \
+            Get involved and translate the Mathematica functions to python!\
+            Proceed on your own risk, you have been warned.")
         self.toric_data = toric_data
         self.sections = [np.array(m) for m in self.toric_data['exps_sections']]
         self.nsections = len(self.sections)

@@ -4,6 +4,10 @@ import numpy as np
 import tensorflow as tf
 from cymetric.pointgen.nphelper import generate_monomials
 
+print("The HYM helper can help you with finding a solution to the HYM equation.\
+    They have not been thoroughly tested and documented yet. Procceed on your \
+    own risk.")
+
 @tf.function
 def function_basis_tf(points, points_bar, ambient_coords,
         section_degrees = None, deg = 1):
@@ -53,9 +57,9 @@ def function_basis_tf(points, points_bar, ambient_coords,
     return fbasis
 
 def get_section_degrees(ambient_coords, deg):
+    # e.g. ambient_coords=[0,3,6] for bicubic 
     nProj = len(ambient_coords)-1
     deg = 1
-    ambient_coords=[0,3,6]
     for i in range(nProj):
         ni_vars = ambient_coords[i+1] - ambient_coords[i]
         tmp_degrees = [tf.cast(np.array(list(
