@@ -50,7 +50,7 @@ def train_model(fsmodel, data, optimizer=None, epochs=50, batch_sizes=[64, 10000
     hist1 = {}
     hist1['opt'] = ['opt1' for _ in range(epochs)]
     hist2 = {}
-    hist2['opt'] = ['opt1' for _ in range(epochs)]
+    hist2['opt'] = ['opt2' for _ in range(epochs)]
     learn_kaehler = fsmodel.learn_kaehler
     learn_transition = fsmodel.learn_transition
     learn_ricci = fsmodel.learn_ricci
