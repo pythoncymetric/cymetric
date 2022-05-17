@@ -211,7 +211,7 @@ GeneratePointsToric::usage =
 TrainNN::usage = 
 "TrainNN[Options] trains a NN to approximate the CY metric. Many hyperparameters are specified in GlobalOptions. Run ?GlobalOptions for more Info
 * Options (run Options[TrainNN] to see default values):
-  - EvaluateModel (bool): If True, computes different quantities for the test set, such as the \[Sigma]-measure, Kahler Loss, Transition Loss, change of Kahler class, and Ricci Scalar. Especially the Kahler and Ricci evaluations can be very slow, so only activate if feasible performance-wise. YOu can also control which ones are computed on a more fine-grained level using GlobalOptions. See ?GlobalOptions for details.  
+  - EvaluateModel (bool): If True, computes different quantities for the test set, such as the \[Sigma]-measure, Kahler Loss, Transition Loss, change of Kahler class, and Ricci Scalar. Especially the Kahler and Ricci evaluations can be very slow, so only activate if feasible performance-wise. You can also control which ones are computed on a more fine-grained level using GlobalOptions. See ?GlobalOptions for details.  
   - Epochs (int): Number of training epochs
   - Verbose (int): Verbose level (the higher, the more info is printed). Defaults to the value set in GlobalOptions.;
 * Return:

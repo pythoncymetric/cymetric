@@ -16,7 +16,7 @@ import tensorflow.keras as tfk
 tf.get_logger().setLevel('ERROR')
 
 from cymetric.models.tfmodels import PhiFSModel, MultFSModel, FreeModel, MatrixFSModel, AddFSModel, PhiFSModelToric, MatrixFSModelToric
-from cymetric.models.tfhelper import prepare_tf_basis
+from cymetric.models.tfhelper import prepare_tf_basis, train_model
 from cymetric.models.callbacks import SigmaCallback, KaehlerCallback, TransitionCallback, RicciCallback, VolkCallback, AlphaCallback
 from cymetric.models.metrics import SigmaLoss, KaehlerLoss, TransitionLoss, RicciLoss, VolkLoss
 Complex = np.complex
@@ -149,17 +149,15 @@ def train_NN(my_args):
         tcb = TransitionCallback((data['X_val'], data['y_val']))
         rcb = RicciCallback((data['X_val'], data['y_val']), data['val_pullbacks'])
         volkck = VolkCallback((data['X_val'], data['y_val']))
-        cb_list1 = [scb, kcb, tcb, rcb]
-        cb_list1 = [x for x, y in zip(cb_list1, args['PrintMeasures']) if y]
-        cb_list2 = [] if not args['PrintMeasures'][-1] else [volkck]
+        cb_list = [scb, kcb, tcb, rcb, volkck]
+        cb_list = [x for x, y in zip(cb_list, args['PrintMeasures']) if y]
     else:
-        cb_list1, cb_list2 = [], []
+        cb_list = []
     
     # metrics
     args['PrintLosses'][3] = False  # Ricci loss not computed at the moment
-    cmetrics1 = [SigmaLoss(), KaehlerLoss(), TransitionLoss(), RicciLoss()]
-    cmetrics1 = [x for x, y in zip(cmetrics1, args['PrintLosses']) if y]
-    cmetrics2 = [] if not args['PrintLosses'][-1] else [VolkLoss()]
+    cmetrics = [SigmaLoss(), KaehlerLoss(), TransitionLoss(), RicciLoss(), VolkLoss()]
+    cmetrics = [x for x, y in zip(cmetrics, args['PrintLosses']) if y]
     
     # build model
     if args['Model'] == 'PhiFS' or args['Model'] == 'PhiFSToric':
@@ -221,36 +219,8 @@ def train_NN(my_args):
     model.summary(print_fn=mcy_logger.debug)
 
     # train model
-    training_history, alpha0_orig = {}, fsmodel.alpha[0]
-    for epoch in range(args['Epochs']):
-        batch_size = args['BatchSizes'][0]
-        fsmodel.learn_transition = tf.cast(True, dtype=tf.bool)
-        fsmodel.learn_volk = tf.cast(False, dtype=tf.bool)
-        fsmodel.alpha[0] = alpha0_orig
-        fsmodel.compile(custom_metrics=cmetrics1, optimizer=optimizer)
-        print("Epoch {:2d}/{:d}".format(epoch + 1, args['Epochs']))
-        history = fsmodel.fit(data['X_train'], data['y_train'], epochs=1, batch_size=batch_size, verbose=2, callbacks=cb_list1)
-        for k in history.history.keys():
-            if "volk" in k:
-                continue
-            if k not in training_history.keys():
-                training_history[k] = history.history[k]
-            else:
-                training_history[k] += history.history[k]
-        batch_size = min(args['BatchSizes'][1], len(data['X_train']))
-        fsmodel.learn_transition = tf.cast(False, dtype=tf.bool)
-        fsmodel.learn_volk = tf.cast(True, dtype=tf.bool)
-        fsmodel.alpha[0] = tf.Variable(0., dtype=tf.float32)
-        fsmodel.compile(custom_metrics=cmetrics2, optimizer=optimizer)
-        history = fsmodel.fit(data['X_train'], data['y_train'], epochs=1, batch_size=batch_size, verbose=2, callbacks=cb_list2)
-        for k in history.history.keys():
-            if "volk" not in k:
-                continue
-            if k not in training_history.keys():
-                training_history[k] = history.history[k]
-            else:
-                training_history[k] += history.history[k]
-
+    fsmodel, training_history = train_model(fsmodel, data, optimizer=optimizer, epochs=args['Epochs'], batch_sizes=args['BatchSizes'], verbose=2, custom_metrics=cmetrics, callbacks=cb_list)
+        
     # save trained model
     fsmodel.model.save(os.path.join(args['Dir'], 'model'))
     
