@@ -48,9 +48,9 @@ def train_model(fsmodel, data, optimizer=None, epochs=50, batch_sizes=[64, 10000
     """
     training_history = {}
     hist1 = {}
-    hist1['opt'] = ['opt1' for _ in range(epochs)]
+    # hist1['opt'] = ['opt1' for _ in range(epochs)]
     hist2 = {}
-    hist2['opt'] = ['opt2' for _ in range(epochs)]
+    # hist2['opt'] = ['opt2' for _ in range(epochs)]
     learn_kaehler = fsmodel.learn_kaehler
     learn_transition = fsmodel.learn_transition
     learn_ricci = fsmodel.learn_ricci
@@ -74,7 +74,7 @@ def train_model(fsmodel, data, optimizer=None, epochs=50, batch_sizes=[64, 10000
         history = fsmodel.fit(
             data['X_train'], data['y_train'],
             epochs=1, batch_size=batch_size, verbose=verbose,
-            callbacks=callbacks, sample_weight = sample_weights
+            callbacks=callbacks, sample_weight=sample_weights
         )
         for k in history.history.keys():
             if k not in hist1.keys():
@@ -91,15 +91,18 @@ def train_model(fsmodel, data, optimizer=None, epochs=50, batch_sizes=[64, 10000
         history = fsmodel.fit(
             data['X_train'], data['y_train'],
             epochs=1, batch_size=batch_size, verbose=verbose,
-            callbacks=callbacks, sample_weight = sample_weights
+            callbacks=callbacks, sample_weight=sample_weights
         )
         for k in history.history.keys():
             if k not in hist2.keys():
                 hist2[k] = history.history[k]
             else:
                 hist2[k] += history.history[k]
-    for k in hist1.keys():
-        training_history[k] = hist1[k]+hist2[k]
-    training_history['epochs'] = list(range(epochs)) + list(range(epochs))
+    # training_history['epochs'] = list(range(epochs)) + list(range(epochs))
+    # for k in hist1.keys():
+    #     training_history[k] = hist1[k] + hist2[k]
+    for k in set(list(hist1.keys()) + list(hist2.keys())):
+        training_history[k] = hist2[k] if k in hist2 else hist1[k]
+    training_history['epochs'] = list(range(epochs))
     return fsmodel, training_history
     
