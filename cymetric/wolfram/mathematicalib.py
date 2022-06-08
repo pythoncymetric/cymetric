@@ -19,7 +19,23 @@ from cymetric.models.tfmodels import PhiFSModel, MultFSModel, FreeModel, MatrixF
 from cymetric.models.tfhelper import prepare_tf_basis, train_model
 from cymetric.models.callbacks import SigmaCallback, KaehlerCallback, TransitionCallback, RicciCallback, VolkCallback, AlphaCallback
 from cymetric.models.metrics import SigmaLoss, KaehlerLoss, TransitionLoss, RicciLoss, VolkLoss
+
+from wolframclient.language import wl
+from wolframclient.serializers import export as wlexport
+from wolframclient.deserializers import WXFConsumer, binary_deserialize, WXFConsumerNumpy
 Complex = np.complex
+class wlConsumer(WXFConsumer):
+    def build_function(self, head, args, **kwargs):
+        # return a built in complex if head is Complex and argument length is 2.
+        if head == wl.Complex and len(args) == 2:
+            return np.complex(*args)
+        elif head == wl.NumericArray:
+            return np.array(*args[0])
+        # otherwise delegate to the super method (default case).
+        else:
+            return super().build_function(head, args, **kwargs)
+
+
 
 def point_vec_to_complex(p):
     if len(p) == 0: 
@@ -32,7 +48,12 @@ def point_vec_to_complex(p):
 def to_numpy_arrays(my_args):
     args_dict = {}
     for k, v in my_args.items():
-        args_dict[k] = np.array(v) if isinstance(v, list) or isinstance(v, tuple) else v
+        if isinstance(v, list) or isinstance(v, tuple):
+            args_dict[k] = np.array(v) 
+        elif type(v) == type(wl.NumericArray([0])):
+            args_dict[k] = binary_deserialize(wlexport(v, target_format='wxf'), consumer=wlConsumer())
+        else:
+            args_dict[k] = v
     
     args_dict['logger_level'] = eval(args_dict['logger_level'])
     return args_dict

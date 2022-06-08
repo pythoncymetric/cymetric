@@ -769,7 +769,7 @@ GeneratePoints[poly_, dimPs_, variables_List:{}, OptionsPattern[]] :=
       args["selected_t"] = numParamsInPn;
       args["point_file_path"] = pointsFile;
       args["monomials"] = NumericArray[monomials, "Integer32"];
-      args["coeffs"] = NumericArray[coeffs, "Real32"];
+      args["coeffs"] = NumericArray[coeffs, "ComplexReal64"];
       args["ambient_dims"] = dimPs;
       
       res = ExternalEvaluate[session, "mcy.generate_points" -> args];
