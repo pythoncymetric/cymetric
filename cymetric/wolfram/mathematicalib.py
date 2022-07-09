@@ -218,7 +218,7 @@ def train_NN(my_args):
             model.add(tfk.layers.Dense(n_hidden, activation=act))
         model.add(tfk.layers.Dense(n_out))
     
-    mcy_logger.debug("Using model ", args['Model'])
+    mcy_logger.debug("Using model {}".format(args['Model']))
     if args['Model'] == 'PhiFS':
         fsmodel = PhiFSModel(model, BASIS, alpha=args['Alphas'])
     elif args['Model'] == 'PhiFSToric':
