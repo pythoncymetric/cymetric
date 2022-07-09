@@ -146,7 +146,7 @@ def train_NN(my_args):
 
     # force GPU disable if argument is set:
     if args["DisableGPU"]:
-    	os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+        os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
     # check whether Keras is running on GPU or CPU:
     tf_devices = "GPU"
     if len(tf.config.list_physical_devices('GPU')) == 0:

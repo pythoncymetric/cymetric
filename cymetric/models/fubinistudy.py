@@ -111,9 +111,9 @@ class FSModel(tfk.Model):
         return int(nTransitions)
 
     def _target_slopes(self):
-    	ks = tf.eye(len(self.BASIS['KMODULI']), dtype=tf.complex64)
+        ks = tf.eye(len(self.BASIS['KMODULI']), dtype=tf.complex64)
         
-    	if self.nfold == 1:
+        if self.nfold == 1:
             slope = tf.einsum('a, xa->x', self.BASIS['INTNUMS'], ks)
 
         elif self.nfold == 2:
