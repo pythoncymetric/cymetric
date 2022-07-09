@@ -760,10 +760,6 @@ class ToricModel(FreeModel):
         # FS prediction
         return self.fubini_study_pb(input_tensor, j_elim=j_elim)
 
-    def _target_slopes(self):
-        ks = tf.eye(len(self.BASIS['KMODULI']), dtype=tf.complex64)
-        return tf.einsum('abc, a, b, xc->x', self.BASIS['INTNUMS'], self.BASIS['KMODULI'], self.BASIS['KMODULI'], ks)
-
     def fubini_study_pb(self, points, pb=None, j_elim=None, ts=None):
         r"""Computes the pullbacked Fubini-Study metric.
 

@@ -111,8 +111,28 @@ class FSModel(tfk.Model):
         return int(nTransitions)
 
     def _target_slopes(self):
-        ks = tf.eye(len(self.BASIS['KMODULI']), dtype=tf.complex64)
-        return tf.einsum('abc, a, b, xc->x', self.BASIS['INTNUMS'], self.BASIS['KMODULI'], self.BASIS['KMODULI'], ks)
+    	ks = tf.eye(len(self.BASIS['KMODULI']), dtype=tf.complex64)
+        
+    	if self.nfold == 1:
+            slope = tf.einsum('a, xa->x', self.BASIS['INTNUMS'], ks)
+
+        elif self.nfold == 2:
+            slope = tf.einsum('ab, a, xb->x', self.BASIS['INTNUMS'], self.BASIS['KMODULI'], ks)
+
+        elif self.nfold == 3:
+            slope = tf.einsum('abc, a, b, xc->x', self.BASIS['INTNUMS'], self.BASIS['KMODULI'], self.BASIS['KMODULI'], ks)
+        
+        elif self.nfold == 4:
+            slope = tf.einsum('abcd, a, b, c, xd->x', self.BASIS['INTNUMS'], self.BASIS['KMODULI'], self.BASIS['KMODULI'], self.BASIS['KMODULI'], ks)
+        
+        elif self.nfold == 5:
+            slope = tf.einsum('abcd, a, b, c, d, xe->x', self.BASIS['INTNUMS'], self.BASIS['KMODULI'], self.BASIS['KMODULI'], self.BASIS['KMODULI'], self.BASIS['KMODULI'], ks)
+
+        else:
+            self.logger.error('Only implemented for nfold <= 5. Run the tensor contraction yourself :).')
+            slope = tf.zeros(len(input_tensor), dtype=tf.complex64)
+        
+        return slope
 
     @tf.function
     def _calculate_slope(self, args):
