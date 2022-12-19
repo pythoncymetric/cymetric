@@ -23,7 +23,7 @@ from cymetric.models.metrics import SigmaLoss, KaehlerLoss, TransitionLoss, Ricc
 from wolframclient.language import wl
 from wolframclient.serializers import export as wlexport
 from wolframclient.deserializers import WXFConsumer, binary_deserialize, WXFConsumerNumpy
-Complex = np.complex
+Complex = np.complex64
 class wlConsumer(WXFConsumer):
     def build_function(self, head, args, **kwargs):
         # return a built in complex if head is Complex and argument length is 2.
