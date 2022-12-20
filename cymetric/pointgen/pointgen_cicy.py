@@ -198,13 +198,13 @@ class CICYPointGenerator(PointGenerator):
 
         Args:
             x (ndarray[nHyper, np.float64]): t-values
-            p (ndarray[(ncoords, t-max-deg), np.complex128]): Values 
+            p (ndarray[(ncoords, t-max-deg), complex]): Values 
                 for points on the spheres p, q, ...
 
         Returns:
             ndarray[2*nhyper, np.float64]: Difference from zero.
         """
-        c = x.view(np.complex)
+        c = x.view(np.complex128)
         p_e = np.concatenate((p.flatten(), c), axis=-1)
         poly = np.array(
             [np.sum(fact * np.multiply.reduce(np.power(p_e, poly), axis=-1))
@@ -216,7 +216,7 @@ class CICYPointGenerator(PointGenerator):
         # complex to real to complex messes with the argument shapes and
         # derivatives need not be real.
         # TODO: Work out a hack to make the shapes work.
-        c = x.view(np.complex)
+        c = x.view(np.complex128)
         p_e = np.concatenate((p.flatten(), c), axis=-1)
         poly = np.array(
             [[np.sum(fi * np.multiply.reduce(np.power(p_e, pi), axis=-1)) for pi, fi in zip(poly, fact)]
@@ -232,12 +232,12 @@ class CICYPointGenerator(PointGenerator):
             expensive. Work with `_point_from_sol()` instead.
 
         Args:
-            p (ndarray[(ncoords, t-max-deg), np.complex128]): Values 
+            p (ndarray[(ncoords, t-max-deg), complex]): Values 
                 for points on the spheres p, q, ...
-            sol (ndarray[(nhyper), np.complex128]): Complex t-values.
+            sol (ndarray[(nhyper), complex]): Complex t-values.
 
         Returns:
-            ndarray[(ncoords), np.complex128]: point on the CICY.
+            ndarray[(ncoords), complex]: point on the CICY.
         """
         p_matrix = self.root_vars['ps'].subs(
             tuple((pi, pj) for pi, pj in zip(self.root_vars['p'], p.flatten())))
@@ -390,7 +390,7 @@ class CICYPointGenerator(PointGenerator):
                 Defaults to None.
 
         Returns:
-            ndarray[(nCoords), np.complex]: (potential) Point on the CICY.
+            ndarray[(nCoords), np.complex128]: (potential) Point on the CICY.
         """
         # TODO: add more arguments to fsolve
         best_sol = np.random.randn(2 * self.nhyper)
@@ -542,7 +542,7 @@ class CICYPointGenerator(PointGenerator):
         Returns:
             ndarray[(n_p, nhyper), np.int64]: maxdQdz indices
         """
-        available_mask = ~np.isclose(points, np.complex(1, 0))
+        available_mask = ~np.isclose(points, complex(1, 0))
         max_coords = np.zeros((len(points), self.nhyper), dtype=np.int32)
         for i in range(self.nhyper):
             dQdz = np.abs(self._compute_dQdz(points, i))
@@ -560,7 +560,7 @@ class CICYPointGenerator(PointGenerator):
         Returns:
             ndarray[(n_p, ncoord), bool]: good coordinate mask
         """
-        mask = ~np.isclose(points, np.complex(1, 0))
+        mask = ~np.isclose(points, complex(1, 0))
         indices = self._find_max_dQ_coords(points)
         for i in range(self.nhyper):
             mask[np.arange(len(points)), indices[:, i]] = False
@@ -570,11 +570,11 @@ class CICYPointGenerator(PointGenerator):
         r"""Computes dQdz at each point.
 
         Args:
-            points (ndarray([n_p, ncoords], np.complex128)): Points.
+            points (ndarray([n_p, ncoords], complex)): Points.
             k (int): hypersurface index
 
         Returns:
-            ndarray([n_p, ncoords], np.complex128): dQdz at each point.
+            ndarray([n_p, ncoords], complex): dQdz at each point.
         """
         p_exp = np.expand_dims(np.expand_dims(points, 1), 1)
         dQdz = np.power(p_exp, self.BASIS['DQDZB' + str(k)])
@@ -610,10 +610,10 @@ class CICYPointGenerator(PointGenerator):
         r"""Computes the CY condition at each point.
 
         Args:
-            points (ndarray[(n_p, ncoords), np.complex128]): Points.
+            points (ndarray[(n_p, ncoords), complex]): Points.
 
         Returns:
-            ndarray([n_p, nhyper], np.complex128): CY condition
+            ndarray([n_p, nhyper], complex): CY condition
         """
         cy_cond = np.zeros((len(points), self.nhyper), dtype=points.dtype)
         for i, (c, m) in enumerate(zip(self.coefficients, self.monomials)):
