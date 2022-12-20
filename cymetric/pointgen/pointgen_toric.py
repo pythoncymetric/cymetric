@@ -438,7 +438,7 @@ class ToricPointGenerator(PointGenerator):
             degrees = degrees.astype(points.dtype)
             coeffs = np.einsum('xa,xb,ai,aj->xij', mss, mss, degrees, degrees)
             coeffs -= np.einsum('xa,xb,ai,bj->xij', mss, mss, degrees, degrees)
-            Js += J_alphas * coeffs * np.complex(kfactors[alpha]) / np.pi
+            Js += J_alphas * coeffs * complex(kfactors[alpha]) / np.pi
         return Js
 
     def prepare_dataset(self, n_p, dirname, val_split=0.1, ltails=0, rtails=0):

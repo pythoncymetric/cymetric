@@ -373,7 +373,7 @@ class ToricPointGeneratorMathematica(PointGeneratorMathematica):
             J_alphas = 1/(points[:, :, np.newaxis] * np.conj(points[:, np.newaxis, :]))
             J_alphas = np.einsum('x,xab->xab', 1/(kappa_alphas**2), J_alphas)
             coeffs = np.einsum('xa,xb,ai,aj->xij', mss, mss, np.array(self.sections[alpha], dtype=np.complex128), np.array(self.sections[alpha], dtype=np.complex128)) - np.einsum('xa,xb,ai,bj->xij', mss, mss, np.array(self.sections[alpha], dtype=np.complex128), np.array(self.sections[alpha], dtype=np.complex128))
-            Js += J_alphas * coeffs * complex(kfactors[alpha]) / np.complex(np.pi)
+            Js += J_alphas * coeffs * complex(kfactors[alpha]) / complex(np.pi)
         return Js
 
 

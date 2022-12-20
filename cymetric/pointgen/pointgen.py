@@ -1010,7 +1010,7 @@ class PointGenerator:
         points = self.generate_points(n_pw)
 
         # Throw away points for which the patch is ambiguous, since too many coordiantes are too close to 1
-        inv_one_mask = np.isclose(points, np.complex(1, 0))
+        inv_one_mask = np.isclose(points, complex(1, 0))
         bad_indices = np.where(np.sum(inv_one_mask, -1) != len(self.kmoduli))
         point_mask = np.ones(len(points), dtype=bool)
         point_mask[bad_indices] = False
@@ -1062,7 +1062,7 @@ class PointGenerator:
             ndarray[(n_p), np.int64]: max(dQdz) indices
         """
         dQdz = np.abs(self._compute_dQdz(points))
-        dQdz = dQdz * (~np.isclose(points, np.complex(1, 0)))
+        dQdz = dQdz * (~np.isclose(points, complex(1, 0)))
         return np.argmax(dQdz, axis=-1)
 
     def _find_good_coordinate_mask(self, points):
@@ -1075,7 +1075,7 @@ class PointGenerator:
         Returns:
             ndarray[(n_p, ncoords), bool]: good coordinate mask
         """
-        one_mask = ~np.isclose(points, np.complex(1, 0))
+        one_mask = ~np.isclose(points, complex(1, 0))
         dQdz = self._compute_dQdz(points)
         dQdz = dQdz * one_mask
         indices = np.argmax(np.abs(dQdz), axis=-1)
@@ -1194,7 +1194,7 @@ class PointGenerator:
             ndarray([n_p, nfold, ncoords], np.complex128): Pullback tensor 
                 at each point.
         """
-        inv_one_mask = ~np.isclose(points, np.complex(1, 0))
+        inv_one_mask = ~np.isclose(points, complex(1, 0))
         if j_elim is None:
             j_elim = self._find_max_dQ_coords(points)
         if len(j_elim.shape) == 1:
@@ -1234,7 +1234,7 @@ class PointGenerator:
             B_matrix[:, i, :] += pif
         all_dzdz = np.einsum('xij,xjk->xki',
                              np.linalg.inv(B_matrix),
-                             np.complex(-1., 0.) * dz_hyper)
+                             complex(-1., 0.) * dz_hyper)
         for i in range(self.nhyper):
             pullbacks[np.arange(len(points)), :, j_elim[:, i]] += all_dzdz[:, :, i]
         return pullbacks
@@ -1266,7 +1266,7 @@ class PointGenerator:
             self.dzdz_generated = True
             self._generate_dzdz_basis()
             self._generate_padded_basis()
-        one_mask = ~np.isclose(points, np.complex(1, 0))
+        one_mask = ~np.isclose(points, complex(1, 0))
         if j_elim is None:
             dQdz = self._compute_dQdz(points)
             dQdz = dQdz * one_mask
