@@ -263,7 +263,7 @@ class CICYPointGenerator(PointGenerator):
         for i in range(len(free_ts)):
             if good[i]:
                 for hyper in self.conf:
-                    involved = free_ts[i].astype(np.bool)
+                    involved = free_ts[i].astype(bool)
                     hyper = np.array(hyper)
                     if np.sum(hyper[involved]) == 0:
                         good[i] = False
@@ -416,7 +416,7 @@ class CICYPointGenerator(PointGenerator):
             for i, m in enumerate(np.eye(self.ncoords, dtype=np.int32)):
                 basis = self.monomials[j] - m
                 factors = self.monomials[j][:, i] * self.coefficients[j]
-                good = np.ones(len(basis), dtype=np.bool)
+                good = np.ones(len(basis), dtype=bool)
                 good[np.where(basis < 0)[0]] = False
                 self.dQdz_basis[j] += [basis[good]]
                 self.dQdz_factors[j] += [factors[good]]
@@ -558,7 +558,7 @@ class CICYPointGenerator(PointGenerator):
             points (ndarray[(n_p, ncoords), np.complex128]): Points.
 
         Returns:
-            ndarray[(n_p, ncoord), np.bool]: good coordinate mask
+            ndarray[(n_p, ncoord), bool]: good coordinate mask
         """
         mask = ~np.isclose(points, np.complex(1, 0))
         indices = self._find_max_dQ_coords(points)
