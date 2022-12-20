@@ -185,7 +185,7 @@ class PointGeneratorMathematica(CICYPointGenerator):
         if self.point_file_path is None or not os.path.exists(self.point_file_path):
             points = self.generate_points(n_pw)
             # Throw away points for which the patch is ambiguous, since too many coordiantes are too close to 1
-            inv_one_mask = np.isclose(points, np.complex(1, 0))
+            inv_one_mask = np.isclose(points, complex(1, 0))
             good_indices = np.where(np.sum(inv_one_mask, -1) == len(self.kmoduli))
             points = points[good_indices]
             if self.verbose < 3 and len(points) != len(inv_one_mask):
@@ -358,11 +358,11 @@ class ToricPointGeneratorMathematica(PointGeneratorMathematica):
         r"""Computes the FS metric of points.
 
         Args:
-            point (ndarray[(np, n), np.complex]): point
+            point (ndarray[(np, n), complex]): point
             kfactors (list): volume factor.
 
         Returns:
-            ndarray[(len(points), n, n), np.complex]: g^FS
+            ndarray[(len(points), n, n), complex]: g^FS
         """
         kfactors = self.kmoduli if kfactors is None else kfactors
         Js = np.zeros([len(points), len(self.sections[0][0]), len(self.sections[0][0])], dtype=np.complex128)
@@ -373,7 +373,7 @@ class ToricPointGeneratorMathematica(PointGeneratorMathematica):
             J_alphas = 1/(points[:, :, np.newaxis] * np.conj(points[:, np.newaxis, :]))
             J_alphas = np.einsum('x,xab->xab', 1/(kappa_alphas**2), J_alphas)
             coeffs = np.einsum('xa,xb,ai,aj->xij', mss, mss, np.array(self.sections[alpha], dtype=np.complex128), np.array(self.sections[alpha], dtype=np.complex128)) - np.einsum('xa,xb,ai,bj->xij', mss, mss, np.array(self.sections[alpha], dtype=np.complex128), np.array(self.sections[alpha], dtype=np.complex128))
-            Js += J_alphas * coeffs * np.complex(kfactors[alpha]) / np.complex(np.pi)
+            Js += J_alphas * coeffs * complex(kfactors[alpha]) / np.complex(np.pi)
         return Js
 
 

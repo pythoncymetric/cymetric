@@ -207,7 +207,7 @@ def get_all_patch_degrees(glsm_charges, patch_masks):
 
     Args:
         glsm_charges (ndarray([nscaling, ncoords], np.int)): GLSM charges.
-        patch_masks (ndarray([npatches, ncoords], np.bool)): Patch masks with
+        patch_masks (ndarray([npatches, ncoords], bool)): Patch masks with
             True at each coordinates, which is not allowed to vanish.
 
     Returns:
@@ -236,7 +236,7 @@ def compute_all_w_of_x(patch_degrees, patch_masks, dim_cy = 3):
     Args:
         patch_degrees (ndarray([npatches, ncoords, ncoords], np.int)): See also
             :py:func:`get_all_patch_degrees()`.
-        patch_masks (ndarray([npatches, ncoords], np.bool)): Patch masks with
+        patch_masks (ndarray([npatches, ncoords], bool)): Patch masks with
             True at each coordinates, which is not allowed to vanish.
         dim_cy (int, optional): Dimension of the Calabi-Yau. Defaults to 3.
 
@@ -257,11 +257,11 @@ def compute_all_w_of_x(patch_degrees, patch_masks, dim_cy = 3):
         for j in allowed_patches:
             for k in allowed_patches:
                 # good coordinates in patch 1
-                g1mask = np.ones(ncoords, dtype=np.bool)
+                g1mask = np.ones(ncoords, dtype=bool)
                 g1mask[patch_masks[j]] = False
                 g1mask[i] = False
                 # good coordinates in patch 2
-                g2mask = np.ones(ncoords, dtype=np.bool)
+                g2mask = np.ones(ncoords, dtype=bool)
                 g2mask[patch_masks[k]] = False
                 g2mask[i] = False
                 # rewrite each good coordinate in patch 2 in terms of patch2

@@ -87,7 +87,7 @@ class ToricPointGenerator(PointGenerator):
         self.nsections = len(self.sections)
         self.num_sections = [np.shape(m) for m in self.sections]
         self.patch_masks = np.array(self.toric_data['patch_masks'],
-                                    dtype=np.bool)
+                                    dtype=bool)
         self.glsm_charges = np.array(self.toric_data["glsm_charges"])
         self.nPatches = len(self.patch_masks)
         self.nProjective = len(self.toric_data["glsm_charges"])
@@ -169,7 +169,7 @@ class ToricPointGenerator(PointGenerator):
                 new_eq = np.add.reduce(coeff * section_monom, axis=-1)
                 eqs += [new_eq]
         final_eq = eqs
-        patches[~(patch_mask.astype(np.bool))] += np.array(final_eq)
+        patches[~(patch_mask.astype(bool))] += np.array(final_eq)
         return patches.view(np.float64)
 
     def _root_polynomial_old(self, x_guess, patch_mask, coeffs):
@@ -192,7 +192,7 @@ class ToricPointGenerator(PointGenerator):
         Returns:
             ndarray[2*num_eqns, np.float]: difference from zero.
         """
-        x = x_guess.view(np.complex)
+        x = x_guess.view(np.complex128)
         eqs = [np.add.reduce(self.coefficients * np.multiply.reduce(np.power(x, self.monomials), axis=-1), axis=-1)]
         num_eqns_in_pn = np.zeros(self.nsections, dtype=np.int32)
         # TODO: vectorize this.
@@ -400,7 +400,7 @@ class ToricPointGenerator(PointGenerator):
             ndarray([n_p, ncoords], np.complex128): Rescaled points.
         """
         scaled_points = np.zeros(points.shape, dtype=points.dtype)
-        missing_points = np.ones(len(points), dtype=np.bool)
+        missing_points = np.ones(len(points), dtype=bool)
         for i in range(len(self.patch_masks)):
             tmp_points = self._get_patch_coordinates(points[missing_points],
                                                      np.zeros(np.sum(missing_points), dtype=np.int32)+i)

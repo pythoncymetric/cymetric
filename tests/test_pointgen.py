@@ -31,13 +31,13 @@ class TestPointGenerator:
         weights = self.pg.point_weight(points)
         assert weights.dtype == np.float
         pbs = self.pg.pullbacks(points)
-        assert pbs.dtype == np.complex
+        assert pbs.dtype == complex
         assert np.all(np.array(pbs.shape) == \
             np.array([len(pbs), self.pg.nfold, self.pg.ncoords]))
         omegas = self.pg.holomorphic_volume_form(points)
-        assert omegas.dtype == np.complex
+        assert omegas.dtype == complex
         gfs = self.pg.fubini_study_metrics(points)
-        assert gfs.dtype == np.complex
+        assert gfs.dtype == complex
         gFSpb = np.einsum('xai,xij,xbj->xab', pbs,
                           gfs, np.conjugate(pbs))
         det = np.linalg.det(gFSpb)

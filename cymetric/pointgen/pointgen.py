@@ -188,7 +188,7 @@ class PointGenerator:
         t_mask = self.root_vars['t'] == all_vars
         t_index = np.where(t_mask)[0][0]
         # +1 because hypersurface
-        max_degree = int(self.ambient[self.selected_t.astype(np.bool)]) + 1
+        max_degree = int(self.ambient[self.selected_t.astype(bool)]) + 1
         # +1 for degree zero
         for j in range(max_degree + 1):
             good = root_monomials[:, t_index] == max_degree - j
@@ -231,7 +231,7 @@ class PointGenerator:
         for i, m in enumerate(np.eye(self.ncoords, dtype=np.int32)):
             basis = self.monomials - m
             factors = self.monomials[:, i] * self.coefficients
-            good = np.ones(len(basis), dtype=np.bool)
+            good = np.ones(len(basis), dtype=bool)
             good[np.where(basis < 0)[0]] = False
             self.dQdz_basis += [basis[good]]
             self.dQdz_factors += [factors[good]]
@@ -848,7 +848,7 @@ class PointGenerator:
             ndarray[(n_p, ncoords), np.complex128]: rescaled points
         """
         max_ts = np.max(self.selected_t)
-        max_degree = self.ambient[self.selected_t.astype(np.bool)] + 1
+        max_degree = self.ambient[self.selected_t.astype(bool)] + 1
         n_p_red = int(n_p / max_degree) + 1
         pn_pnts = np.zeros((n_p_red, self.ncoords, max_ts + 1),
                            dtype=np.complex128)
@@ -896,10 +896,10 @@ class PointGenerator:
         max(abs(coords_i)) == 1 + 0j.
 
         Args:
-            points (ndarray[(n_p, ncoords), np.complex]): Points.
+            points (ndarray[(n_p, ncoords), complex]): Points.
 
         Returns:
-            ndarray[(n_p, ncoords), np.complex]: rescaled points
+            ndarray[(n_p, ncoords), complex]: rescaled points
         """
         # iterate over all projective spaces and rescale in each
         for i in range(len(self.ambient)):
@@ -1073,7 +1073,7 @@ class PointGenerator:
             points (ndarray[(n_p, ncoords), np.complex128]): Points.
 
         Returns:
-            ndarray[(n_p, ncoords), np.bool]: good coordinate mask
+            ndarray[(n_p, ncoords), bool]: good coordinate mask
         """
         one_mask = ~np.isclose(points, np.complex(1, 0))
         dQdz = self._compute_dQdz(points)
@@ -1081,7 +1081,7 @@ class PointGenerator:
         indices = np.argmax(np.abs(dQdz), axis=-1)
         dQdz_mask = -1 * np.eye(self.ncoords)[indices]
         full_mask = one_mask + dQdz_mask
-        return full_mask.astype(np.bool)
+        return full_mask.astype(bool)
 
     def _compute_dQdz(self, points):
         r"""Computes dQdz at each point.
@@ -1201,7 +1201,7 @@ class PointGenerator:
             j_elim = np.reshape(j_elim, (-1, 1))
         full_mask = np.copy(inv_one_mask)
         for i in range(self.nhyper):
-            full_mask[np.arange(len(points)), j_elim[:, i]] = np.zeros(len(points), dtype=np.bool)
+            full_mask[np.arange(len(points)), j_elim[:, i]] = np.zeros(len(points), dtype=bool)
 
         # fill the diagonal ones in pullback
         x_indices, z_indices = np.where(full_mask)
@@ -1275,7 +1275,7 @@ class PointGenerator:
             dQdz_indices = j_elim
         dQdz_mask = np.eye(self.ncoords)[dQdz_indices]
         full_mask = one_mask - dQdz_mask
-        full_mask = full_mask.astype(np.bool)
+        full_mask = full_mask.astype(bool)
         x_indices, z_indices = np.where(full_mask)
         nrepeat = self.nfold
         dQdz_indices = np.repeat(dQdz_indices, nrepeat)

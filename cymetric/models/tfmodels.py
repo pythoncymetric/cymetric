@@ -731,7 +731,7 @@ class ToricModel(FreeModel):
             del kwargs['toric_data']
         self.nfold = self.toric_data['dim_cy']
         self.sections = [tf.cast(m, dtype=tf.complex64) for m in self.toric_data['exps_sections']]
-        self.patch_masks = np.array(self.toric_data['patch_masks'], dtype=np.bool)
+        self.patch_masks = np.array(self.toric_data['patch_masks'], dtype=bool)
         self.glsm_charges = np.array(self.toric_data["glsm_charges"])
         self.nPatches = len(self.patch_masks)
         self.nProjective = len(self.toric_data["glsm_charges"])

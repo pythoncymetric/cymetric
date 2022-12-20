@@ -28,7 +28,7 @@ class wlConsumer(WXFConsumer):
     def build_function(self, head, args, **kwargs):
         # return a built in complex if head is Complex and argument length is 2.
         if head == wl.Complex and len(args) == 2:
-            return np.complex(*args)
+            return complex(*args)
         elif head == wl.NumericArray:
             return np.array(*args[0])
         # otherwise delegate to the super method (default case).
