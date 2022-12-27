@@ -16,7 +16,6 @@ getPointsOnCY[varsUnflat_,numParamsInPn_,dimPs_,params_,pointsOnSphere_,eqns_,pr
     subst=Flatten[subst];
     (*Print[pointsOnSphere];Print[subst];*)
     (*res=Quiet[Solve[Table[eqns[[i]]==0,{i,Length[eqns]}]/.subst]];*)
-    
     res=FindInstance[Table[eqns[[i]]==0, {i,Length[eqns]}]/.subst,Variables[Flatten[params]],Complexes,1000,WorkingPrecision->precision];
     pts=Chop[(varsUnflat/.subst)/.res];
     (*go to patch where largest coordinate is 1*)
@@ -39,7 +38,7 @@ ClientLibrary`SetErrorLogLevel[];
 ];
 )];
 
-GeneratePointsM[numPts_, dimPs_, coefficients_, exponents_, precision_:20,verbose_:0,frontEnd_:False]:=Module[{varsUnflat,vars,eqns,i,j,conf,start,col,totalDeg,numParamsInPn,numPoints,ptsPartition,params,pointsOnSphere,pointsOnCY,numPtsPerSample},( 
+GeneratePointsM[numPts_, dimPs_, coefficients_, exponents_, precision_:20,verbose_:0,frontEnd_:False]:=Module[{varsUnflat,vars,eqns,i,j,conf,start,col,totalDeg,numParamsInPn,numPoints,ptsPartition,params,low,pointsOnSphere,pointsOnCY,numPtsPerSample},( 
     varsUnflat=Table[Subscript[x, i, a], {i, Length[dimPs]}, {a, 0, dimPs[[i]]}];
     vars=Flatten[varsUnflat];
     (*Reconstruct equations*)
@@ -117,11 +116,13 @@ pointsOnSphere=ParallelTable[SamplePointsOnSphere[dimPs[[i]]+1,numPoints (numPar
 If[frontEnd,
     (*pointsOnCY=ResourceFunction["MonitorProgress"][ParallelTable[getPointsOnCY[varsUnflat,numParamsInPn,dimPs,params,Table[pointsOnSphere[[i,p+(b-1) numPoints]],{i,Length[pointsOnSphere]},{b,1+numParamsInPn[[i]]}],eqns],{p,numPoints},DistributedContexts->Automatic]];*)
     pointsOnCY={};
+    low=1;
     Monitor[
-    For[i=1,i<=20,i++,
-    pointsOnCY=Join[pointsOnCY,ParallelTable[getPointsOnCY[varsUnflat,numParamsInPn,dimPs,params,Table[pointsOnSphere[[i,p+(b-1) numPoints]],{i,Length[pointsOnSphere]},{b,1+numParamsInPn[[i]]}],eqns],{p,Ceiling[numPoints/20]},DistributedContexts->Automatic]];
+    For[j=1,j<=20,j++,
+    pointsOnCY=Join[pointsOnCY,ParallelTable[getPointsOnCY[varsUnflat,numParamsInPn,dimPs,params,Table[pointsOnSphere[[i,p+(b-1) numPoints]],{i,Length[pointsOnSphere]},{b,1+numParamsInPn[[i]]}],eqns],{p,low, Floor[j numPoints/20]},DistributedContexts->Automatic]];
+    low +=Floor[numPoints/20];
     ];
-    ,Row[{ProgressIndicator[5(i-1),{1,100}],ToString[5 (i-1)]<>"/100"},"   "]
+    ,Row[{ProgressIndicator[5(j-1),{1,100}],ToString[5 (j-1)]<>"/100"},"   "]
    ];
     ,
     If[verbose==0,
@@ -129,9 +130,11 @@ If[frontEnd,
     ,
     (*Partition in order to provide progress feedback (WolframClient Library ignores messages from subkernels spawned from the kernel used in wl.evaluate(). This negatively impacts performance)*)
     pointsOnCY={};
-    For[i=1,i<=20,i++,
-    PrintMsg["Generated "<>ToString[5 (i-1)]<>"% of points",frontEnd,verbose];
-    pointsOnCY=Join[pointsOnCY,ParallelTable[getPointsOnCY[varsUnflat,numParamsInPn,dimPs,params,Table[pointsOnSphere[[i,p+(b-1) numPoints]],{i,Length[pointsOnSphere]},{b,1+numParamsInPn[[i]]}],eqns],{p,Ceiling[numPoints/20]},DistributedContexts->Automatic]];
+    low=1;
+    For[j=1,j<=20,j++,
+    PrintMsg["Generated "<>ToString[5 (j-1)]<>"% of points",frontEnd,verbose];
+    pointsOnCY=Join[pointsOnCY,ParallelTable[getPointsOnCY[varsUnflat,numParamsInPn,dimPs,params,Table[pointsOnSphere[[i,p+(b-1) numPoints]],{i,Length[pointsOnSphere]},{b,1+numParamsInPn[[i]]}],eqns],{p,low, Floor[j numPoints/20]},DistributedContexts->Automatic]];
+    low +=Floor[numPoints/20];
     ];
     ];
 ];
