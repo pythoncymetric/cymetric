@@ -90,7 +90,7 @@ class FSModel(tfk.Model):
             if len(all_patches) == self.nTransitions:
                 fixed_patches += [all_patches]
             else:
-                # need to padd if there are less than nTransitions.
+                # need to pad if there are less than nTransitions.
                 all_patches = np.tile(all_patches, (int(self.nTransitions/len(all_patches)) + 1, 1))
                 fixed_patches += [all_patches[0:self.nTransitions]]
         fixed_patches = np.array(fixed_patches)
@@ -598,7 +598,7 @@ class FSModel(tfk.Model):
             exp_points,
             tf.cast(other_patch_mask, dtype=tf.bool))
         fixed = tf.reshape(
-            tf.tile(fixed, [1,self.nTransitions]), (-1, self.nhyper))
+            tf.tile(fixed, [1, self.nTransitions]), (-1, self.nhyper))
         real_patch_points = tf.concat(
             (tf.math.real(patch_points), tf.math.imag(patch_points)),
             axis=-1)

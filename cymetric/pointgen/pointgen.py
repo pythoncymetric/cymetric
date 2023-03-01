@@ -110,8 +110,7 @@ class PointGenerator:
         self.monomials = old_monoms  # undo change
         
         self.vol_j_norm = self.get_volume_from_intersections(np.ones_like(self.kmoduli)) if vol_j_norm is None else vol_j_norm
-        
-        
+
         # some more internal variables
         self._set_seed(2021)
         self._generate_all_bases()
@@ -1117,7 +1116,7 @@ class PointGenerator:
 
                 .. math::
 
-                    \int_X \det(g) &= \sum_i \sqrt{\det(g)} \cdot w|_{x_i}\\
+                    \int_X \det(g) &= \sum_i \det(g) \cdot w|_{x_i}\\
                                 &= d^{ijk} t_i t_j t_k.
 
                 Defaults to False.
