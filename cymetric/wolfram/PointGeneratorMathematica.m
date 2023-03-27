@@ -180,14 +180,10 @@ pts=Flatten[toricVars/.toricVarSols,1];
 Clear[\[Lambda]];
 lambdas=Table[\[Lambda][k],{k,Length[GLSMcharges]}];
 (*go to patch where largest coordinate is 1*)
-For[l=1,l<=Length[pts],l++,
-For[i=1,i<=Length[patchMasks],i++,(*try all patches*)
-patchCoords=Flatten[Position[patchMasks[[i]],1]];(*find coordinates that are non-zero => can be scaled to 1*)
-eq={};
-scalings=Table[1,{k,Length[pts[[1]]]}];
-For[k=1,k<=Length[GLSMcharges],k++,(*perform scaling according to GLSM charges*)
-scalings*=lambdas[[k]]^GLSMcharges[[k]];
-];
+ParallelDo[
+Do[
+patchCoords=Flatten[Position[patchMasks[[i]],1]];
+scalings=Times@@Power[lambdas,GLSMcharges];
 eq=Table[1==pts[[l,patchCoords[[j]]]]*scalings[[patchCoords[[j]]]],{j,Length[patchCoords]}];
 scaleSol=Quiet[Solve[eq]];
 If[Length[scaleSol]>0,
@@ -197,8 +193,8 @@ If[Max[Abs[tmpPts]]==1,
 pts[[l]]=Chop[tmpPts];
 Break[];
 ];
-];
-];
+,{i,1,Length[patchMasks]}];
+,{l,1,Length[pts]}];
 Return[{pts,numEqnsInPn-Table[1,{i,Length[numEqnsInPn]}]}];
 )];
 
