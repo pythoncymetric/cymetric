@@ -67,7 +67,7 @@ def intersection_numbers(tv):
     for D in tv.Kaehler_cone().rays():
         J += [HH(D.lift())]
 
-    intersection_nums = np.zeros(tuple([len(J) for _ in range(int(dim_cy))]), dtype=np.int32)
+    intersection_nums = np.zeros(tuple([len(J) for _ in range(int(dim_cy))]), dtype=int)
     for inds in itertools.product(range(len(J)), repeat=dim_cy):
         integrand = c1
         for i in inds:
