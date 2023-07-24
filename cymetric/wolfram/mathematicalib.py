@@ -88,7 +88,7 @@ def generate_points(my_args):
     with open(os.path.join(os.path.abspath(args['Dir']), "point_gen.pickle"), 'wb') as hnd:
         pickle.dump(point_gen, hnd)
     
-    kappa = prepare_dataset(point_gen, args['num_pts'], args['Dir'], normalize_to_vol_j=True)
+    kappa = prepare_dataset(point_gen, args['num_pts'], args['Dir'], normalize_to_vol_j=True, ltails=0)
     mcy_logger.info("Computing derivatives of J_FS, Omega, ...")
     prepare_basis_pickle(point_gen, args['Dir'], kappa)
     mcy_logger.debug("done")
@@ -118,7 +118,7 @@ def generate_points_toric(my_args):
     with open(os.path.join(os.path.abspath(args['Dir']), "point_gen.pickle"), 'wb') as hnd:
         pickle.dump(point_gen, hnd)
     
-    kappa = prepare_dataset(point_gen, args['num_pts'], args['Dir'], normalize_to_vol_j=True)
+    kappa = prepare_dataset(point_gen, args['num_pts'], args['Dir'], normalize_to_vol_j=True, ltails=0)
     mcy_logger.info("Computing derivatives of J_FS, Omega, ...")
     prepare_basis_pickle(point_gen, args['Dir'], kappa)
     mcy_logger.debug("done")
