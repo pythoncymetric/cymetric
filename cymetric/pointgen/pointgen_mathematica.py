@@ -61,11 +61,11 @@ class PointGeneratorMathematica(CICYPointGenerator):
         r"""PointGeneratorMathematica uses Mathematica as a backend for computations.
 
             Args:
-                monomials (list(ndarray[(nMonomials, ncoord), np.int])): list of length nHyper with monomials for each
+                monomials (list(ndarray[(nMonomials, ncoord), int])): list of length nHyper with monomials for each
                                                                          defining equation.
                 coefficients (list(ndarray[(nMonomials)])): list of coefficients in front of each monomial.
                 kmoduli (ndarray[(nProj)]): The kaehler moduli.
-                ambient (ndarray[(nProj), np.int]): the direct product of  projective spaces making up the ambient space.
+                ambient (ndarray[(nProj), int]): the direct product of  projective spaces making up the ambient space.
                 vol_j_norm (float, optional): Normalization of the volume of the Calabi-Yau X as computed from
                     .. math:: \int_X J^n \; \text{ at } \; t_1=t_2=...=t_n = 1.
                     Defaults to 1.
@@ -90,7 +90,7 @@ class PointGeneratorMathematica(CICYPointGenerator):
         super(PointGeneratorMathematica, self).__init__(*args, **kwargs)
         
         # NOTE: This is computed in the constructor, but we need to use the distribution that the Mathematica point gen used
-        self.selected_t = selected_t if selected_t is not None else np.zeros((len(self.ambient)), dtype=np.int)
+        self.selected_t = selected_t if selected_t is not None else np.zeros((len(self.ambient)), dtype=int)
         
         self.verbose = kwargs.get('verbose', 1)
         if self.verbose == 0 or self.verbose == 1:
@@ -161,7 +161,7 @@ class PointGeneratorMathematica(CICYPointGenerator):
             # deserialize converting Mathamtica complex numbers to python complex numbers
             pts = binary_deserialize(pts, consumer=ComplexFunctionConsumer())
         
-        self.selected_t = np.array(pts[1], dtype=np.int)
+        self.selected_t = np.array(pts[1], dtype=int)
         return np.array(pts[0])
     
     def generate_point_weights(self, n_pw, omega=False, normalize_to_vol_j=False):
@@ -350,7 +350,7 @@ class ToricPointGeneratorMathematica(PointGeneratorMathematica):
             # deserialize converting Mathamtica complex numbers to python complex numbers
             pts = binary_deserialize(pts, consumer=ComplexFunctionConsumer())
         
-        self.selected_t = np.array(pts[1], dtype=np.int)
+        self.selected_t = np.array(pts[1], dtype=int)
         self.ambient = 2 * self.selected_t
         return np.array(pts[0])
         
