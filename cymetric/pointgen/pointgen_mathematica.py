@@ -155,7 +155,7 @@ class PointGeneratorMathematica(CICYPointGenerator):
             # so we need to deserialize the object without a consumer, serialize it to an wxf expression, and deserialize that with a consumer
 
             # compute and deserialize the points
-            pts = get_points_mathematica(n_p, self.ambient.tolist(), [x.tolist() for x in self.coefficients], [x.tolist() for x in self.monomials], self.precision, self.verbose, False)
+            pts = get_points_mathematica(n_p, self.ambient.tolist(), [x.tolist() for x in self.coefficients], [x.tolist() for x in self.monomials], self.precision, max(0, 3 - self.verbose), False)
             # serialize again to wxf
             pts = wlexport(pts, target_format='wxf')
             # deserialize converting Mathamtica complex numbers to python complex numbers
@@ -191,7 +191,6 @@ class PointGeneratorMathematica(CICYPointGenerator):
             if self.verbose < 3 and len(points) != len(inv_one_mask):
                 print("Removed {} ambiguous points.".format(len(inv_one_mask) - len(points)))
                 print(len(points))
-            
         else:
             points = np.array(pickle.load(open(self.point_file_path, 'rb')))
         
@@ -344,7 +343,7 @@ class ToricPointGeneratorMathematica(PointGeneratorMathematica):
 
             # compute and deserialize the points
             logger.debug("Initializing generation of {:} points...".format(n_p))
-            pts = get_points_mathematica(n_p, self.nfold, self.coefficients[0].tolist(), self.monomials[0].tolist(), self.sections, self.non_CI_coeffs, self.non_CI_exps, self.patch_masks, self.glsm_charges, self.precision, self.verbose, False)
+            pts = get_points_mathematica(n_p, self.nfold, self.coefficients[0].tolist(), self.monomials[0].tolist(), self.sections, self.non_CI_coeffs, self.non_CI_exps, self.patch_masks, self.glsm_charges, self.precision, max(0, 3 - self.verbose), False)
             # serialize again to wxf
             pts = wlexport(pts, target_format='wxf')
             # deserialize converting Mathamtica complex numbers to python complex numbers
