@@ -134,7 +134,7 @@ If[frontEnd,
     For[j=1,j<=20,j++,
     PrintMsg["Generated "<>ToString[5 (j-1)]<>"% of points",frontEnd,verbose];
     pointsOnCY=Join[pointsOnCY,ParallelTable[getPointsOnCY[varsUnflat,numParamsInPn,dimPs,params,Table[pointsOnSphere[[i,p+(b-1) numPoints]],{i,Length[pointsOnSphere]},{b,1+numParamsInPn[[i]]}],eqns],{p,low, Floor[j numPoints/20]},DistributedContexts->Automatic]];
-    low +=Floor[numPoints/20];
+    low = Floor[j numPoints/20];
     ];
     ];
 ];
