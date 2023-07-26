@@ -760,7 +760,6 @@ GeneratePoints[poly_, dimPs_, variables_List:{}, OptionsPattern[]] :=
         Print["An error occurred."];
         Print[res];
       ];
-      
       functionArgs = Keys[Options[GeneratePoints]];
       args = Join[GlobalOptions, Association[Table[functionArgs[[i]] -> OptionValue[functionArgs[[i]]],{i, Length[functionArgs]}]]];
       args["num_pts"] = numPts;
@@ -768,8 +767,8 @@ GeneratePoints[poly_, dimPs_, variables_List:{}, OptionsPattern[]] :=
       args["KahlerModuli"] = NumericArray[kahlerModuli, "Real32"];
       args["selected_t"] = numParamsInPn;
       args["point_file_path"] = pointsFile;
-      args["monomials"] = NumericArray[monomials, "Integer32"];
-      args["coeffs"] = NumericArray[coeffs, "ComplexReal64"];
+      args["monomials"] = Table[NumericArray[monomials[[i]], "Integer32"],{i,Length[monomials]}];
+      args["coeffs"] = Table[NumericArray[coeffs[[i]], "ComplexReal64"],{i,Length[coeffs]}];
       args["ambient_dims"] = dimPs;
       
       res = ExternalEvaluate[session, "mcy.generate_points" -> args];

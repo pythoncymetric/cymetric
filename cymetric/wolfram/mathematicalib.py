@@ -23,19 +23,20 @@ from cymetric.models.metrics import SigmaLoss, KaehlerLoss, TransitionLoss, Ricc
 from wolframclient.language import wl
 from wolframclient.serializers import export as wlexport
 from wolframclient.deserializers import WXFConsumer, binary_deserialize, WXFConsumerNumpy
-Complex = np.complex64
+Complex = complex
+
+
 class wlConsumer(WXFConsumer):
     def build_function(self, head, args, **kwargs):
         # return a built in complex if head is Complex and argument length is 2.
         if head == wl.Complex and len(args) == 2:
             return complex(*args)
         elif head == wl.NumericArray:
-            return np.array(*args[0])
+            return [np.array(x) for x in args[0]]            
         # otherwise delegate to the super method (default case).
         else:
             return super().build_function(head, args, **kwargs)
-
-
+            
 
 def point_vec_to_complex(p):
     if len(p) == 0: 
@@ -49,8 +50,11 @@ def to_numpy_arrays(my_args):
     args_dict = {}
     for k, v in my_args.items():
         if isinstance(v, list) or isinstance(v, tuple):
-            args_dict[k] = np.array(v) 
-        elif type(v) == type(wl.NumericArray([0])):
+            if k == 'monomials' or k == 'coeffs':    
+                args_dict[k] = [np.array(x) for x in v]
+            else:
+                args_dict[k] = np.array(v)
+        elif type(v) == type(wl.NumericArray([0])):        
             args_dict[k] = binary_deserialize(wlexport(v, target_format='wxf'), consumer=wlConsumer())
         else:
             args_dict[k] = v
@@ -81,7 +85,10 @@ def generate_points(my_args):
     if args['monomials'] == [] or args['coeffs'] == []:
         raise ValueError("You need to specify both the monomials and their coefficients")
 
-    point_gen = PointGeneratorMathematica([np.array(x) for x in args['monomials']], [np.array(x) for x in args['coeffs']], args['KahlerModuli'], args['ambient_dims'], precision=args['Precision'], point_file_path=args['point_file_path'], selected_t=args['selected_t'])
+    args['monomials'] = [x.astype(int) for x in args['monomials']]
+    args['coeffs'] = [x.astype(complex) for x in args['coeffs']]
+    
+    point_gen = PointGeneratorMathematica(args['monomials'], args['coeffs'], args['KahlerModuli'], args['ambient_dims'], precision=args['Precision'], point_file_path=args['point_file_path'], selected_t=args['selected_t'])
 
     # save point generator to pickle
     mcy_logger.info("Saving point generator to {:}".format(os.path.join(os.path.abspath(args['Dir']), "point_gen.pickle")))
@@ -381,6 +388,7 @@ def get_omegas(my_args):
     
     omega = point_gen.holomorphic_volume_form(pts)
     return omega * np.conj(omega)
+
 
 def get_pullbacks(my_args):
     global mcy_logger
