@@ -102,7 +102,7 @@ def train_model(fsmodel, data, optimizer=None, epochs=50, batch_sizes=[64, 10000
     # for k in hist1.keys():
     #     training_history[k] = hist1[k] + hist2[k]
     for k in set(list(hist1.keys()) + list(hist2.keys())):
-        training_history[k] = hist2[k] if k in hist2 else hist1[k]
+        training_history[k] = hist2[k] if k in hist2 and max(hist2[k]) != 0 else hist1[k]
     training_history['epochs'] = list(range(epochs))
     return fsmodel, training_history
     
