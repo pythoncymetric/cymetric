@@ -583,7 +583,7 @@ class CICYPointGenerator(PointGenerator):
         dQdz = np.add.reduce(dQdz, axis=-1)
         return dQdz
 
-    def prepare_dataset(self, n_p, dirname, ltails=0.05, **kwargs):
+    def prepare_dataset(self, n_p, dirname, ltails=0., **kwargs):
         r"""Prepares training and validation data.
 
         keyword arguments can be any from 
@@ -599,7 +599,7 @@ class CICYPointGenerator(PointGenerator):
             n_p (int): Number of points to generate.
             dirname (str): Directory name to save dataset in.
             ltails (float, optional): percentage discarded on the left tail
-                of weight distribution. Defaults to 0.05.
+                of weight distribution. Defaults to 0.
 
         Returns:
             int: 0
