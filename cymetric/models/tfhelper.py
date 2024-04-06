@@ -61,6 +61,8 @@ def train_model(fsmodel, data, optimizer=None, epochs=50, batch_sizes=[64, 10000
         sample_weights = None
     if optimizer is None:
         optimizer = tf.keras.optimizers.Adam()
+    # Compile once at start of training to avoid resetting optimizer
+    fsmodel.compile(custom_metrics=custom_metrics, optimizer=optimizer)
     for epoch in range(epochs):
         batch_size = batch_sizes[0]
         fsmodel.learn_kaehler = learn_kaehler
@@ -68,7 +70,6 @@ def train_model(fsmodel, data, optimizer=None, epochs=50, batch_sizes=[64, 10000
         fsmodel.learn_ricci = learn_ricci
         fsmodel.learn_ricci_val = learn_ricci_val
         fsmodel.learn_volk = tf.cast(False, dtype=tf.bool)
-        fsmodel.compile(custom_metrics=custom_metrics, optimizer=optimizer)
         if verbose > 0:
             print("\nEpoch {:2d}/{:d}".format(epoch + 1, epochs))
         history = fsmodel.fit(
@@ -87,7 +88,6 @@ def train_model(fsmodel, data, optimizer=None, epochs=50, batch_sizes=[64, 10000
         fsmodel.learn_ricci = tf.cast(False, dtype=tf.bool)
         fsmodel.learn_ricci_val = tf.cast(False, dtype=tf.bool)
         fsmodel.learn_volk = tf.cast(True, dtype=tf.bool)
-        fsmodel.compile(custom_metrics=custom_metrics, optimizer=optimizer)
         history = fsmodel.fit(
             data['X_train'], data['y_train'],
             epochs=1, batch_size=batch_size, verbose=verbose,
