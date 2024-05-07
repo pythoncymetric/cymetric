@@ -1,6 +1,6 @@
-tensorflow<=2.15.0; sys_platform == 'linux' or sys_platform == 'windows'
-tensorflow<=2.15.0; sys_platform == 'darwin' and platform_machine != 'arm64'
-tensorflow-macos<=2.15.0; sys_platform == 'darwin' and platform_machine == 'arm64'
+tensorflow>=2.7.0; sys_platform == 'linux' or sys_platform == 'windows'
+tensorflow>=2.7.0; sys_platform == 'darwin' and platform_machine != 'arm64'
+tensorflow-macos>=2.7.0; sys_platform == 'darwin' and platform_machine == 'arm64'
 scipy
 numpy
 sympy>=1.8
