@@ -7,24 +7,6 @@ randomPoints=RandomVariate[NormalDistribution[], {numPts, dimP, 2}];
     Return[randomPoints];
 )];
 
-getPointsOnCY[varsUnflat_,numParamsInPn_,dimPs_,params_,pointsOnSphere_,eqns_,precision_:20]:= Module[{subst, pts, i, j, a, b, res, maxPoss, absPts}, ( 
-    subst={};
-    pts={};
-    For[j=1,j<=Length[dimPs],j++,
-     AppendTo[subst,Table[varsUnflat[[j, a]]->Sum[params[[j,b]] pointsOnSphere[[j,b,a]],{b,Length[params[[j]]]}],{a,Length[varsUnflat[[j]]]}]];
-];
-    subst=Flatten[subst];
-    (*Print[pointsOnSphere];Print[subst];*)
-    (*res=Quiet[Solve[Table[eqns[[i]]==0,{i,Length[eqns]}]/.subst]];*)
-    res=FindInstance[Table[eqns[[i]]==0, {i,Length[eqns]}]/.subst,Variables[Flatten[params]],Complexes,1000,WorkingPrecision->precision];
-    pts=Chop[(varsUnflat/.subst)/.res];
-    (*go to patch where largest coordinate is 1*)
-absPts=Abs[pts];
-    For[i=1,i<=Length[pts],i++,
-     pts[[i]]=Chop[Flatten[Table[pts[[i,j]]/pts[[i,j,Ordering[absPts[[i,j]],-1][[1]]]],{j,Length[dimPs]}]]];
-];
-    Return[pts];
-    )];
     
 PrintMsg[msg_,frontEnd_,verbose_]:=Module[{},(
 If[verbose>0,
@@ -37,6 +19,25 @@ ClientLibrary`SetErrorLogLevel[];
 ];
 ];
 )];
+
+getPointsOnCY[varsUnflat_,numParamsInPn_,dimPs_,params_,pointsOnSphere_,eqns_,precision_:20]:= Module[{subst, pts, i, j, a, b, res, maxPoss, absPts}, ( 
+    subst={};
+    pts={};
+    For[j=1,j<=Length[dimPs],j++,
+     AppendTo[subst,Table[varsUnflat[[j, a]]->Sum[params[[j,b]] pointsOnSphere[[j,b,a]],{b,Length[params[[j]]]}],{a,Length[varsUnflat[[j]]]}]];
+     ];
+    subst=Flatten[subst];
+    (*Print[pointsOnSphere];Print[subst];*)
+    (*res=Quiet[Solve[Table[eqns[[i]]==0,{i,Length[eqns]}]/.subst]];*)
+    res=FindInstance[Table[eqns[[i]]==0, {i,Length[eqns]}]/.subst,Variables[Flatten[params]],Complexes,1000,WorkingPrecision->precision];
+    pts=Chop[(varsUnflat/.subst)/.res];
+    (*go to patch where largest coordinate is 1*)
+absPts=Abs[pts];
+    For[i=1,i<=Length[pts],i++,
+     pts[[i]]=Chop[Flatten[Table[pts[[i,j]]/pts[[i,j,Ordering[absPts[[i,j]],-1][[1]]]],{j,Length[dimPs]}]]];
+];
+    Return[pts];
+    )];
 
 GeneratePointsM[numPts_, dimPs_, coefficients_, exponents_, precision_:20,verbose_:0,frontEnd_:False]:=Module[{varsUnflat,vars,eqns,i,j,conf,start,col,totalDeg,numParamsInPn,numPoints,ptsPartition,params,low,pointsOnSphere,pointsOnCY,numPtsPerSample},( 
     varsUnflat=Table[Subscript[x, i, a], {i, Length[dimPs]}, {a, 0, dimPs[[i]]}];
@@ -61,8 +62,8 @@ PrintMsg["Configuration matrix: "<>ToString[Transpose[conf]],frontEnd,verbose];
     (*Need to get points upon intersection with equations, i.e. ] we need as many parameters as equations*)
     (*We want the degree in the parameters to be as small as possible, while at the same time ensuring that each equation has at least one parameter such that it can be solved. Instead of finding the optimal configuration for this, we content ourselfs with finding a good one (which can be found much faster)*)
     (*In a first pass, make sure that each equation gets a parameter*)
-    numParamsInPn=Table[0,{i,Length[dimPs]}];
-    For[i=1,i<=Length[eqns],i++,
+    numParamsInPn=Table[1,{i,Length[dimPs]}];
+    For[i=1,i<=Length[eqns]-Length[dimPs],i++,
 If[Union[numParamsInPn*conf[[i]]]=={0},
 numParamsInPn[[Ordering[conf[[i]], 1][[1]]]]++
 ];
@@ -125,7 +126,7 @@ If[frontEnd,
     ,Row[{ProgressIndicator[5(j-1),{1,100}],ToString[5 (j-1)]<>"/100"},"   "]
    ];
     ,
-    If[verbose==0,
+    If[verbose==0||numPoints<=20*numPtsPerSample,
     pointsOnCY=ParallelTable[getPointsOnCY[varsUnflat,numParamsInPn,dimPs,params,Table[pointsOnSphere[[i,p+(b-1) numPoints]],{i,Length[pointsOnSphere]},{b,1+numParamsInPn[[i]]}],eqns],{p,numPoints},DistributedContexts->Automatic];
     ,
     (*Partition in order to provide progress feedback (WolframClient Library ignores messages from subkernels spawned from the kernel used in wl.evaluate(). This negatively impacts performance)*)
