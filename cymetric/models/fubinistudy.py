@@ -158,7 +158,7 @@ class FSModel(tfk.Model):
             self.logger.error('Only implemented for nfold <= 5. Run the tensor contraction yourself :).')
             slope = tf.zeros(len(input_tensor), dtype=tf.complex64)
         
-        slope = tf.cast(1./tf.exp(tf.math.lgamma(tf.cast(self.BASIS['NFOLD'], dtype=tf.float32) + 1)), dtype=tf.complex64) * slope
+        slope = tf.cast(1./tf.exp(tf.math.lgamma(tf.cast(tf.math.real(self.BASIS['NFOLD']), dtype=tf.float32) + 1)), dtype=tf.complex64) * slope
         return slope
 
     def call(self, input_tensor, training=True, j_elim=None):
@@ -473,7 +473,7 @@ class FSModel(tfk.Model):
                 FS-metric in the ambient space coordinates.
         """
         point_square = tf.math.reduce_sum(tf.math.abs(points)**2, axis=-1)
-        return tf.cast(t/self.pi, tf.float32) * tf.cast(tf.math.log(point_square), tf.float32)
+        return tf.cast(tf.math.real(t/self.pi), tf.float32) * tf.cast(tf.math.real(tf.math.log(point_square)), tf.float32)
 
     @tf.function
     def _fubini_study_n_metrics(self, points, n=None, t=tf.complex(1., 0.)):
@@ -778,9 +778,9 @@ class FSModel(tfk.Model):
         """
         x_vars = points
         # take derivatives
-        with tf.GradientTape(persistent=True) as tape1:
+        with tf.GradientTape(persistent=False) as tape1:
             tape1.watch(x_vars)
-            with tf.GradientTape(persistent=True) as tape2:
+            with tf.GradientTape(persistent=False) as tape2:
                 tape2.watch(x_vars)
                 # training = false for batch_jacobian
                 prediction = self(x_vars, training=False)

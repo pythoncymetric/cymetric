@@ -112,7 +112,7 @@ class FreeModel(FSModel):
         self.learn_volk = tf.cast(True, dtype=tf.bool)
 
         self.custom_metrics = None
-        self.kappa = tf.cast(BASIS['KAPPA'], dtype=tf.float32)
+        self.kappa = tf.cast(tf.math.real(BASIS['KAPPA']), dtype=tf.float32)
         self.gclipping = float(5.0)
         # add to compile?
         self.sigma_loss = sigma_loss(self.kappa, tf.cast(self.nfold, dtype=tf.float32))
@@ -608,9 +608,9 @@ class PhiFSModel(FreeModel):
                 Prediction at each point.
         """
         # nn prediction
-        with tf.GradientTape(persistent=True) as tape1:
+        with tf.GradientTape(persistent=False) as tape1:
             tape1.watch(input_tensor)
-            with tf.GradientTape(persistent=True) as tape2:
+            with tf.GradientTape(persistent=False) as tape2:
                 tape2.watch(input_tensor)
                 # Need to disable training here, because batch norm
                 # and dropout mix the batches, such that batch_jacobian
@@ -1032,9 +1032,9 @@ class PhiFSModelToric(ToricModel):
                 Prediction at each point.
         """
         # nn prediction
-        with tf.GradientTape(persistent=True) as tape1:
+        with tf.GradientTape(persistent=False) as tape1:
             tape1.watch(input_tensor)
-            with tf.GradientTape(persistent=True) as tape2:
+            with tf.GradientTape(persistent=False) as tape2:
                 tape2.watch(input_tensor)
                 # see comment at other Phi model why training disabled.
                 phi = self.model(input_tensor, training=False)
@@ -1115,7 +1115,7 @@ class PhiFSModelToric(ToricModel):
         ms = tf.math.reduce_prod(ms, axis=int(-1))
         mss = ms * tf.math.conj(ms)
         kappa_alphas = tf.reduce_sum(mss, int(-1))
-        return tf.cast(t/np.pi, dtype=tf.float32) * tf.cast(tf.math.log(kappa_alphas), tf.float32)
+        return tf.cast(tf.math.real(t/np.pi), dtype=tf.float32) * tf.cast(tf.math.real(tf.math.log(kappa_alphas)), tf.float32)
 
     def get_kahler_potential(self, points):
         r"""Returns toric equivalent of the FS Kahler potential for each point.

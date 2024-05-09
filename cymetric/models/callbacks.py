@@ -73,18 +73,16 @@ class KaehlerCallback(tfk.callbacks.Callback):
             n_p = len(self.X_val)
             # kaehler loss measure already takes the mean
             kaehler_losses = []
-            for i in range(int(n_p/self.bSize)):
-                s = i*self.bSize
-                if i != int(n_p/self.bSize)-1:
-                    e = (i+1)*self.bSize
-                    kaehler_losses += [kaehler_measure_tf(
-                        self.model, self.X_val[s:e])]
-                else:
-                    e = n_p
-                    kaehler_losses += [kaehler_measure_tf(
-                        self.model, self.X_val[s:e])]
-                    # rescale last entry to give correct weight for mean
-                    kaehler_losses[-1] *= (e-s)/self.bSize
+            dataset = tf.data.Dataset.from_tensor_slices(self.X_val)
+            dataset = dataset.batch(self.bSize)
+
+            for batch in dataset:
+                loss = kaehler_measure_tf(self.model, batch)
+                kaehler_losses.append(loss)
+            last_batch_size = n_p % self.bSize
+            if last_batch_size != 0:
+                # rescale last entry to give correct weight for mean
+                kaehler_losses[-1] *= last_batch_size / self.bSize
             cb_res = np.mean(kaehler_losses).tolist()
             logs['kaehler_val'] = cb_res
             if cb_res <= 1e-3:
@@ -152,21 +150,20 @@ class RicciCallback(tfk.callbacks.Callback):
         """
         if epoch % self.nth == 0:
             n_p = len(self.X_val)
-            nfold = tf.cast(self.model.nfold, dtype=tf.float32)
-            ricci_scalars = np.zeros(n_p)
-            dets = np.zeros(n_p)
-            for i in range(int(n_p/self.bSize)):
-                s = i*self.bSize
-                e = (i+1)*self.bSize if i != int(n_p/self.bSize)-1 else n_p
-                ricci_scalars[s:e], dets[s:e] = ricci_scalar_tf(self.model,
-                                                                self.X_val[s:e],
-                                                                pullbacks=self.pullbacks[s:e],
-                                                                verbose=self.verbose,
-                                                                rdet=True)
+            nfold = tf.cast(tf.math.real(self.model.nfold), dtype=tf.float32)
+            ricci_scalars, dets = [], []
+            dataset = tf.data.Dataset.from_tensor_slices((self.X_val, tf.cast(self.pullbacks, dtype=tf.complex64)))
+            dataset = dataset.batch(self.bSize)
+            for X_batch, pullbacks_batch in dataset:
+                ricci_scalars_batch, dets_batch = ricci_scalar_tf(self.model, X_batch, pullbacks=pullbacks_batch, verbose=self.verbose, rdet=True)
+                ricci_scalars += ricci_scalars_batch.numpy().tolist()
+                dets += dets_batch.numpy().tolist()
+            
+            ricci_scalars = tf.cast(ricci_scalars, dtype=tf.float32)
+            dets = tf.cast(dets, dtype=tf.float32)
             ricci_scalars = tf.math.abs(ricci_scalars)
             det_over_omega = dets / self.omega
-            ricci_scalars = tf.cast(ricci_scalars, dtype=tf.float32)
-            det_over_omega = tf.cast(det_over_omega, dtype=tf.float32)
+            det_over_omega = tf.cast(tf.math.real(det_over_omega), dtype=tf.float32)
             vol_k = tf.math.reduce_mean(det_over_omega * self.weights, axis=-1)
             ricci = (vol_k**(1/nfold) / self.vol_cy) * tf.math.reduce_mean(
                 det_over_omega * ricci_scalars * self.weights, axis=-1)

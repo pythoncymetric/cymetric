@@ -65,9 +65,9 @@ def ricci_measure(model, points, y_true, pullbacks=None, verbose=0):
     # factorial = tf.exp(tf.math.lgamma(nfold+1))
     x_vars = points
     # take derivatives
-    with tf.GradientTape(persistent=True) as tape1:
+    with tf.GradientTape(persistent=False) as tape1:
         tape1.watch(x_vars)
-        with tf.GradientTape(persistent=True) as tape2:
+        with tf.GradientTape(persistent=False) as tape2:
             tape2.watch(x_vars)
             prediction = model(x_vars)
             det = tf.math.real(tf.linalg.det(prediction)) * 1.  # factorial / (2**nfold)
@@ -124,9 +124,9 @@ def ricci_scalar_fn(model, points, pullbacks=None, verbose=0, rdet=True):
     if pullbacks is None:
         pullbacks = model.pullbacks(points)
     # take derivatives
-    with tf.GradientTape(persistent=True) as tape1:
+    with tf.GradientTape(persistent=False) as tape1:
         tape1.watch(x_vars)
-        with tf.GradientTape(persistent=True) as tape2:
+        with tf.GradientTape(persistent=False) as tape2:
             tape2.watch(x_vars)
             prediction = model(x_vars)
             det = tf.math.real(tf.linalg.det(prediction)) * 1.  # factorial / (2**nfold)
