@@ -130,7 +130,7 @@ class FSModel(tfk.Model):
 
         else:
             self.logger.error('Only implemented for nfold <= 5. Run the tensor contraction yourself :).')
-            slope = tf.zeros(len(input_tensor), dtype=tf.complex64)
+            raise NotImplementedError
         
         return slope
 
@@ -156,7 +156,7 @@ class FSModel(tfk.Model):
                               pred, pred, pred, pred, f_a, self.lc, self.lc)
         else:
             self.logger.error('Only implemented for nfold <= 5. Run the tensor contraction yourself :).')
-            slope = tf.zeros(len(input_tensor), dtype=tf.complex64)
+            raise NotImplementedError
         
         slope = tf.cast(1./tf.exp(tf.math.lgamma(tf.cast(tf.math.real(self.BASIS['NFOLD']), dtype=tf.float32) + 1)), dtype=tf.complex64) * slope
         return slope
