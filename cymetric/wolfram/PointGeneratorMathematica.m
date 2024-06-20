@@ -59,7 +59,7 @@ AppendTo[conf, col];
 ];
 PrintMsg["Configuration matrix: "<>ToString[Transpose[conf]],frontEnd,verbose];
     (*Find lowest degree in each equation while ensuring that each equation gets at least one parameter*)
-    (*Need to get points upon intersection with equations, i.e. ] we need as many parameters as equations*)
+    (*Need to get points upon intersection with equations, i.e. we need as many parameters as equations*)
     (*We want the degree in the parameters to be as small as possible, while at the same time ensuring that each equation has at least one parameter such that it can be solved. Instead of finding the optimal configuration for this, we content ourselfs with finding a good one (which can be found much faster)*)
     (*In a first pass, make sure that each equation gets a parameter*)
     numParamsInPn=Table[1,{i,Length[dimPs]}];
@@ -69,14 +69,25 @@ numParamsInPn[[Ordering[conf[[i]], 1][[1]]]]++
 ];
 ];
 
-(*Now make sure that we have as many parameters as equations (we have at most as many atm.)*)
-    While[Length[eqns]!=Plus@@numParamsInPn,
+(*Now make sure that we have as many parameters as equations*)
+While[Length[eqns]>Plus@@numParamsInPn,
      For[i=1,i<=Length[eqns],i++,
-If[Length[eqns]==Plus @@ numParamsInPn, Break[];];
-numParamsInPn[[Ordering[conf[[i]], 1][[1]]]]++
-];
+     If[Length[eqns]==Plus @@ numParamsInPn, Break[];];
+     numParamsInPn[[Ordering[conf[[i]], 1][[1]]]]++
      ];
-
+];
+While[Length[eqns]<Plus@@numParamsInPn,
+	For[i=1, i<=Length[numParamsInPn],i++,
+	numParamsInPn[[i]]--;
+	If[Min[Transpose[conf . numParamsInPn]]==0,
+	(*Not at least one parameter in each equation*)
+	numParamsInPn[[i]]++;
+	,
+	Break[];
+	];
+    ];
+];
+     
 (*Finally, we make sure that there are at most n parameters in each P^n*)
 i=1;
 While[i<=Length[numParamsInPn],
