@@ -506,32 +506,31 @@ class CICYPointGenerator(PointGenerator):
     def holomorphic_volume_form(self, points, j_elim=None):
         r"""We compute the holomorphic volume form
         at all points by solving the residue theorem:
-
+    
         .. math::
-
+    
             \Omega &= \int_\rho \frac{1}{Q} \wedge^n dz_i \\
                    &= \frac{1}{\frac{\partial Q}{\partial z_j}}\wedge^{n-1} dz_a
-
+    
         where the index a runs over the local n-fold good coordinates.
-
+    
         Args:
             points (ndarray[(n_p, ncoords), np.complex128]): Points.
             j_elim (ndarray[(n_p, nhyper), np.int64]): Index to be eliminated. 
                 Defaults to None. If None eliminates max(dQdz).
-
+    
         Returns:
             ndarray[(n_p), np.complex128]: Omega evaluated at each point
         """
         indices = self._find_max_dQ_coords(points) if j_elim is None else j_elim
-        omega = np.ones_like(points[:, 0])
+        omega = np.zeros((len(points), self.nhyper, self.nhyper), dtype=np.complex128)
         for i in range(self.nhyper):
-            tmp_omega = np.power(np.expand_dims(points, 1),
-                                 self.BASIS['DQDZB' + str(i)][indices[:, i]])
-            tmp_omega = np.multiply.reduce(tmp_omega, axis=-1)
-            omega *= np.add.reduce(
-                self.BASIS['DQDZF' + str(i)][indices[:, i]] * tmp_omega, axis=-1)
+            for j in range(self.nhyper):
+                tmp_omega = np.power(np.expand_dims(points, 1), self.BASIS['DQDZB' + str(i)][indices[:, j]])
+                tmp_omega = np.multiply.reduce(tmp_omega, axis=-1)
+                omega[:, i, j] = np.add.reduce(self.BASIS['DQDZF' + str(i)][indices[:, j]] * tmp_omega, axis=-1)
         # compute (dQ/dzj)**-1
-        return 1 / omega
+        return 1 / np.linalg.det(omega)
 
     def _find_max_dQ_coords(self, points):
         r"""finds the coordinates for which |dQ/dzj| is largest.
