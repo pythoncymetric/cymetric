@@ -521,6 +521,7 @@ DiscoverPython[useForVENV_:False, OptionsPattern[]] :=
       For[i = 1, i <= Length[pythonEnvs], i++,
         If[!MemberQ[Keys[pythonEnvs[[i]]],"Version"],
           Print["Version information for Python not available, just using the first one..."];
+          exec = pythonEnvs[i]["Executable"];
           ,
           If[StringTake[pythonEnvs[i]["Version"], 1] != "3" || StringTake[pythonEnvs[i]["Version"], 3] == "3.10",
             Continue[]
