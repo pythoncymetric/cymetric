@@ -519,17 +519,21 @@ DiscoverPython[useForVENV_:False, OptionsPattern[]] :=
       Print[pythonEnvs];
       Print["Looking for Python 3"];
       For[i = 1, i <= Length[pythonEnvs], i++,
-        If[StringTake[pythonEnvs[i]["Version"], 1] != "3" || StringTake[pythonEnvs[i]["Version"], 3] == "3.10",
-          Continue[]
-        ];
-        If[!version === Null,
-          If[version != pythonEnvs[i]["Version"],
-            Continue[];
-          ]
-        ];
-        exec = pythonEnvs[i]["Executable"];
-        Print["Found Python version ", pythonEnvs[i]["Version"], " at ",
+        If[!MemberQ[Keys[pythonEnvs[[i]]],"Version"],
+          Print["Version information for Python not available, just using the first one..."];
+          ,
+          If[StringTake[pythonEnvs[i]["Version"], 1] != "3" || StringTake[pythonEnvs[i]["Version"], 3] == "3.10",
+            Continue[]
+          ];
+          If[!version === Null,
+            If[version != pythonEnvs[i]["Version"],
+              Continue[];
+            ]
+          ];
+          exec = pythonEnvs[i]["Executable"];
+          Print["Found Python version ", pythonEnvs[i]["Version"], " at ",
            exec, "."];
+          ];
         If[useForVENV,
           Return[exec]
         ];
