@@ -78,6 +78,7 @@ While[Length[eqns]>Plus@@numParamsInPn,
 ];
 While[Length[eqns]<Plus@@numParamsInPn,
 	For[i=1, i<=Length[numParamsInPn],i++,
+	If[numParamsInPn[[i]]<=0, Continue[];];
 	numParamsInPn[[i]]--;
 	If[Min[Transpose[conf . numParamsInPn]]==0,
 	(*Not at least one parameter in each equation*)
