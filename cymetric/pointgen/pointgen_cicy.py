@@ -2,9 +2,9 @@
 CICY PointGenerator. 
 
 :Authors:
-    Fabian Ruehle <fabian.ruehle@cern.ch> and 
-    Robin Schneider <robin.schneider@physics.uu.se>
+    Fabian Ruehle f.ruehle@northeastern.edu
 """
+
 import numpy as np
 import logging
 import sympy as sp

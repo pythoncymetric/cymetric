@@ -2,8 +2,7 @@
 Main PointGenerator module.
 
 :Authors:
-    Fabian Ruehle <fabian.ruehle@cern.ch> and 
-    Robin Schneider <robin.schneider@physics.uu.se>
+    Fabian Ruehle f.ruehle@northeastern.edu
 """
 import numpy as np
 import logging
@@ -18,10 +17,12 @@ logger = logging.getLogger('pointgen')
 
 
 class PointGenerator:
-    r"""The PointGenerator class.
+    r"""PointGenerator that computes mixture weights over all valid
+    parameter assignments, avoiding degenerate sampling near coverage-deficient
+    loci (see Appendix F of the accompanying thesis).
 
-    The numerics are entirely done in numpy; sympy is used for taking 
-    (implicit) derivatives.
+    ``point_weight`` averages the weight over every assignment in
+    ``self.all_ts`` instead of using a single ``self.selected_t``.
 
     Use this one if you want to generate points and data on a CY given by
     one hypersurface.
@@ -1098,17 +1099,72 @@ class PointGenerator:
         dQdz = np.add.reduce(dQdz, axis=-1)
         return dQdz
 
+    def _compute_detg_for_assignment(self, points, pbs, assignment):
+        r"""Computes the antisymmetric wedge product of pulled-back Fubini-Study
+        metrics for a single parameter assignment.
+
+        For a given ``assignment`` vector (n_1,...,n_F) with sum = K, the
+        remaining ``ambient - assignment`` directions each contribute one
+        Fubini-Study factor to the sampling measure.
+
+        Args:
+            points (ndarray([n_p, ncoords], complex)): Points.
+            pbs (ndarray([n_p, nfold, ncoords], complex)): Pullback tensors.
+            assignment (ndarray([nProj], int)): numParamsInPn assignment.
+
+        Returns:
+            ndarray([n_p], float): det(g) for this assignment.
+        """
+        all_omegas = self.ambient - assignment
+        ts = np.zeros((self.nfold, len(all_omegas)))
+        j = 0
+        for i in range(len(all_omegas)):
+            for _ in range(int(all_omegas[i])):
+                ts[j, i] += 1
+                j += 1
+        fs_pbs = []
+        for t in ts:
+            fs = self.fubini_study_metrics(points, vol_js=t)
+            fs_pbs.append(np.einsum('xai,xij,xbj->xab', pbs, fs, np.conj(pbs)))
+        if self.nfold == 1:
+            return np.einsum('xab->x', fs_pbs[0])
+        elif self.nfold == 2:
+            return np.einsum('xab,xcd,ac,bd->x',
+                             fs_pbs[0], fs_pbs[1], self.lc, self.lc)
+        elif self.nfold == 3:
+            return np.einsum('xab,xcd,xef,ace,bdf->x',
+                             fs_pbs[0], fs_pbs[1], fs_pbs[2], self.lc, self.lc)
+        elif self.nfold == 4:
+            return np.einsum('xab,xcd,xef,xgh,aceg,bdfh->x',
+                             fs_pbs[0], fs_pbs[1], fs_pbs[2], fs_pbs[3],
+                             self.lc, self.lc)
+        elif self.nfold == 5:
+            return np.einsum('xab,xcd,xef,xgh,xij,acegi,bdfhj->x',
+                             fs_pbs[0], fs_pbs[1], fs_pbs[2], fs_pbs[3],
+                             fs_pbs[4], self.lc, self.lc)
+        else:
+            logger.error('Weights are only implemented for nfold <= 5.'
+                         'Run the tensorcontraction yourself :).')
+            return np.ones(len(points))
+
     def point_weight(self, points, normalize_to_vol_j=False, j_elim=None):
-        r"""We compute the weight/mass of each point:
+        r"""Mixture weight: averages over all valid parameter assignments.
+
+        For each assignment t_m in ``self.all_ts``, the sampling weight is
 
         .. math::
 
-            w &= \frac{d\text{Vol}_\text{cy}}{dA}|_p \\
-              &\sim \frac{|\Omega|^2}{\det(g^\text{FS}_{ab})}|_p
+            w_m(p) = \frac{|\Omega(p)|^2}{\det g_m(p)}
 
-        the weight depends on the distribution of free parameters during 
-        point sampling. We employ a theorem due to Shiffman and Zelditch. 
-        See also: [9803052].
+        where :math:`\det g_m` is the antisymmetric wedge product of the
+        Fubini-Study metrics pulled back to X using the complement directions
+        ``ambient - t_m``.  The returned weight is the average
+
+        .. math::
+
+            w(p) = \frac{1}{M} \sum_{m=1}^M w_m(p)
+
+        so that no ambient factor is systematically excluded.
 
         Args:
             points (ndarray([n_p, ncoords], np.complex128)): Points.
@@ -1120,56 +1176,35 @@ class PointGenerator:
                                 &= d^{ijk} t_i t_j t_k.
 
                 Defaults to False.
-            j_elim (ndarray([n_p, nhyper], np.int64)): Index to be eliminated. 
+            j_elim (ndarray([n_p, nhyper], np.int64)): Index to be eliminated.
                 Defaults to None. If None eliminates max(dQdz).
 
         Returns:
-            ndarray([n_p], np.float64): weight at each point.
+            ndarray([n_p], np.float64): mixture weight at each point.
         """
         omegas = self.holomorphic_volume_form(points, j_elim=j_elim)
         pbs = self.pullbacks(points, j_elim=j_elim)
-        # find the nfold wedge product of omegas
-        all_omegas = self.ambient - self.selected_t
-        ts = np.zeros((self.nfold, len(all_omegas)))
-        j = 0
-        for i in range(len(all_omegas)):
-            for _ in range(all_omegas[i]):
-                ts[j, i] += 1
-                j += 1
-        fs_pbs = []
-        for t in ts:
-            fs = self.fubini_study_metrics(points, vol_js=t)
-            fs_pbs += [np.einsum('xai,xij,xbj->xab', pbs, fs, np.conj(pbs))]
-        # do antisymmetric tensor contraction. is there a nice way to do this
-        # in arbitrary dimensions? Not that anyone would study 6-folds ..
-        detg_norm = 1.
-        if self.nfold == 1:
-            detg_norm = np.einsum('xab->x', fs_pbs[0])
-        elif self.nfold == 2:
-            detg_norm = np.einsum('xab,xcd,ac,bd->x',
-                                  fs_pbs[0], fs_pbs[1],
-                                  self.lc, self.lc)
-        elif self.nfold == 3:
-            detg_norm = np.einsum('xab,xcd,xef,ace,bdf->x',
-                                  fs_pbs[0], fs_pbs[1], fs_pbs[2],
-                                  self.lc, self.lc)
-        elif self.nfold == 4:
-            detg_norm = np.einsum('xab,xcd,xef,xgh,aceg,bdfh->x',
-                                  fs_pbs[0], fs_pbs[1], fs_pbs[2], fs_pbs[3],
-                                  self.lc, self.lc)
-        elif self.nfold == 5:
-            detg_norm = np.einsum('xab,xcd,xef,xgh,xij,acegi,bdfhj->x',
-                                  fs_pbs[0], fs_pbs[1], fs_pbs[2], fs_pbs[3],
-                                  fs_pbs[4], self.lc, self.lc)
-        else:
-            logger.error('Weights are only implemented for nfold <= 5.'
-                         'Run the tensorcontraction yourself :).')
         omega_squared = np.real(omegas * np.conj(omegas))
-        weight = np.real(omega_squared / detg_norm)
+
+        all_detg = np.array([
+            self._compute_detg_for_assignment(points, pbs, t)
+            for t in self.all_ts
+        ])  # shape [M, n_p]
+        # Correct mixture weight: |Ω|² / mean_m(det g_m).
+        # Using the arithmetic mean in the *denominator* ensures that when one
+        # det(g_m) is small (near a singularity of that assignment), the other
+        # M-1 healthy terms keep the denominator away from zero.  The previous
+        # formula mean_m(|Ω|²/det g_m) is the arithmetic mean of reciprocals,
+        # which by Jensen blows up whenever *any* single det(g_m) is small.
+        mean_detg = np.mean(all_detg, axis=0)  # shape [n_p]
+        weight = np.real(omega_squared / mean_detg)
+
         if normalize_to_vol_j:
             fs_ref = self.fubini_study_metrics(points, vol_js=np.ones_like(self.kmoduli))
             fs_ref_pb = np.einsum('xai,xij,xbj->xab', pbs, fs_ref, np.conj(pbs))
-            norm_fac = self.vol_j_norm / np.mean(np.real(np.linalg.det(fs_ref_pb)) / detg_norm)
+            det_ref = np.real(np.linalg.det(fs_ref_pb))
+            mean_ratio = np.mean(det_ref / mean_detg)
+            norm_fac = self.vol_j_norm / mean_ratio
             weight = norm_fac * weight
         return weight
 
