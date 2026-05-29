@@ -1,10 +1,8 @@
 """
 Class to call Mathematica point generator. 
 
-Authors
--------
-Fabian Ruehle fabian.ruehle@cern.ch
-Robin Schneider robin.schneider@physics.uu.se
+:Authors:
+    Fabian Ruehle f.ruehle@northeastern.edu
 """
 import os
 import pickle
@@ -28,6 +26,11 @@ logging.basicConfig(format='%(name)s:%(levelname)s:%(message)s')
 
 class PointGeneratorMathematica(CICYPointGenerator):
     r"""PointGeneratorMathematica class.
+
+    Uses
+    PointGeneratorMathematica.m as the backend.  The Mathematica file
+    returns ALL valid numParamsInPn assignments; this class stores them in
+    ``self.all_assignments`` and computes mixture weights accordingly.
 
     This uses mathematica as a backand to carry out the computations
 
@@ -86,11 +89,23 @@ class PointGeneratorMathematica(CICYPointGenerator):
         selected_t = kwargs.get('selected_t', None)
         if 'selected_t' in kwargs.keys():
             del kwargs['selected_t']
-            
+        kernel_path = kwargs.get('kernel_path', None)
+        if 'kernel_path' in kwargs.keys():
+            del kwargs['kernel_path']  
         super(PointGeneratorMathematica, self).__init__(*args, **kwargs)
-        
+        self.kernel_path = kernel_path
+
         # NOTE: This is computed in the constructor, but we need to use the distribution that the Mathematica point gen used
         self.selected_t = selected_t if selected_t is not None else np.zeros((len(self.ambient)), dtype=int)
+        # all_assignments is populated by generate_points() once Mathematica returns
+        # the full list of valid numParamsInPn vectors.  Until then it is None and
+        # point_weight falls back to self.all_ts (Python-computed valid assignments).
+        self.all_assignments = None
+        # point_assignment_indices[i] is the 0-based index into all_assignments for
+        # point i.  Populated by generate_points(); used by point_weight for
+        # per-assignment weighting (each point gets the det(g_m) matching the
+        # assignment that generated it, giving single-assignment variance).
+        self.point_assignment_indices = None
         
         self.verbose = kwargs.get('verbose', 1)
         if self.verbose == 0 or self.verbose == 1:
@@ -140,9 +155,9 @@ class PointGeneratorMathematica(CICYPointGenerator):
             nproc (int, optional): # of processes used. Defaults to -1.
 
         Returns:
-            nd.array[(np, ncoord), np.complex128]: [description]
+            nd.array[(np, ncoord), np.complex128]: complex points on the manifold
         """
-        with WolframLanguageSession(kernel_loglevel=self.level) as mathematica_session:
+        with WolframLanguageSession(kernel=self.kernel_path, kernel_loglevel=self.level) as mathematica_session:
             self.wl_session = mathematica_session
             self._setup_session(mathematica_session)
             self._start_parallel_kernels(mathematica_session, nproc)
@@ -161,9 +176,88 @@ class PointGeneratorMathematica(CICYPointGenerator):
             # deserialize converting Mathamtica complex numbers to python complex numbers
             pts = binary_deserialize(pts, consumer=ComplexFunctionConsumer())
         
-        self.selected_t = np.array(pts[1], dtype=int)
-        return np.array(pts[0])
-    
+        # pts[1] is now a list of M valid assignment vectors (list-of-lists)
+        # returned by GeneratePointsM in PointGeneratorMathematica.m.
+        self.all_assignments = [np.array(a, dtype=int) for a in pts[1]]
+        # Keep selected_t as the first assignment for any code that still reads it.
+        self.selected_t = self.all_assignments[0] if self.all_assignments else np.zeros(len(self.ambient), dtype=int)
+        # pts[2] is the per-point assignment index (1-based from Mathematica).
+        # Convert to 0-based so it indexes directly into self.all_assignments.
+        self.point_assignment_indices = np.array(pts[2], dtype=int) - 1
+
+        # Filter out empty points that result from timeouts
+        points = pts[0]
+        if isinstance(points, list):
+            # Remove empty sublists that result from timeout failures
+            points = [p for p in points if p and len(p) > 0]
+            if not points:
+                raise ValueError("No valid points generated - all attempts resulted in timeouts")
+
+        return np.array(points)
+
+    def point_weight(self, points, normalize_to_vol_j=False, j_elim=None):
+        r"""Per-assignment weight using valid assignments returned by Mathematica.
+
+        When ``generate_points`` has been called and ``self.point_assignment_indices``
+        is available (and matches ``len(points)``), each point is weighted by the
+        single-assignment formula using the assignment that generated it:
+
+        .. math::
+
+            w(p_i) = \frac{|\Omega(p_i)|^2}{\det g_{m_i}(p_i)}
+
+        where :math:`m_i` is the assignment index stored in
+        ``self.point_assignment_indices[i]``.  This gives the same variance as
+        the original single-assignment approach (~2.8 std/mean on the
+        tetra-quadric) while distributing points across all M valid assignments
+        so every ambient factor is covered.
+
+        Falls back to the arithmetic-mean-of-densities formula when per-point
+        assignment indices are not available (e.g. when points were loaded from
+        a file rather than freshly generated).
+
+        Args:
+            points (ndarray([n_p, ncoords], np.complex128)): Points.
+            normalize_to_vol_j (bool, optional): Normalize weights. Defaults to False.
+            j_elim (ndarray([n_p, nhyper], np.int64)): Index to eliminate. Defaults to None.
+
+        Returns:
+            ndarray([n_p], np.float64): weight at each point.
+        """
+        assignments = self.all_assignments if self.all_assignments is not None else self.all_ts
+        omegas = self.holomorphic_volume_form(points, j_elim=j_elim)
+        pbs = self.pullbacks(points, j_elim=j_elim)
+        omega_squared = np.real(omegas * np.conj(omegas))
+
+        # Build the [M, n_p] array of per-assignment det(g_m) values.
+        all_detg = np.array([
+            self._compute_detg_for_assignment(points, pbs, np.asarray(t, dtype=int))
+            for t in assignments
+        ])  # shape [M, n_p]
+
+        use_per_assignment = (
+            self.point_assignment_indices is not None
+            and len(self.point_assignment_indices) == len(points)
+        )
+        if use_per_assignment:
+            # Each point uses the det(g_m) for the assignment that generated it.
+            # This preserves single-assignment variance while covering all factors.
+            weight_detg = all_detg[self.point_assignment_indices, np.arange(len(points))]
+        else:
+            # Fallback: arithmetic mean of densities across all assignments.
+            weight_detg = np.mean(all_detg, axis=0)
+
+        weight = np.real(omega_squared / weight_detg)
+
+        if normalize_to_vol_j:
+            fs_ref = self.fubini_study_metrics(points, vol_js=np.ones_like(self.kmoduli))
+            fs_ref_pb = np.einsum('xai,xij,xbj->xab', pbs, fs_ref, np.conj(pbs))
+            det_ref = np.real(np.linalg.det(fs_ref_pb))
+            mean_ratio = np.mean(det_ref / weight_detg)
+            norm_fac = self.vol_j_norm / mean_ratio
+            weight = norm_fac * weight
+        return weight
+
     def generate_point_weights(self, n_pw, omega=False, normalize_to_vol_j=False):
         r"""Generates a numpy dictionary of point weights. Uses computed data if Mathematica was used as a frontend.
 
@@ -188,6 +282,11 @@ class PointGeneratorMathematica(CICYPointGenerator):
             inv_one_mask = np.isclose(points, complex(1, 0))
             good_indices = np.where(np.sum(inv_one_mask, -1) == len(self.kmoduli))
             points = points[good_indices]
+            # Keep assignment indices in sync with filtered points so per-assignment
+            # weighting continues to work in point_weight.
+            if (self.point_assignment_indices is not None
+                    and len(self.point_assignment_indices) == len(inv_one_mask)):
+                self.point_assignment_indices = self.point_assignment_indices[good_indices]
             if self.verbose < 3 and len(points) != len(inv_one_mask):
                 print("Removed {} ambiguous points.".format(len(inv_one_mask) - len(points)))
                 print(len(points))
@@ -230,10 +329,11 @@ class ToricPointGeneratorMathematica(PointGeneratorMathematica):
         then we can start another python kernel or continue in sage with
 
         >>> import numpy as np
-        >>> from cymetric.pointgen.pointgen_mathematica import PointGeneratorMathematica
+        >>> from cymetric.pointgen.pointgen_mathematica import ToricPointGeneratorMathematica
         >>> kmoduli = np.ones(len(toric_data['exps_sections']))
         >>> # [...] load toric_data with pickle
-        >>> pg = PointGeneratorMathematica(toric_data, kmoduli)
+        >>> kernel_path = "/Applications/Wolfram.app/Contents/MacOS/WolframKernel"  # macOS example
+        >>> pg = ToricPointGeneratorMathematica(toric_data, kmoduli, kernel_path=kernel_path)
 
         Once the ToricPointGenerator is initialized you can generate a training dataset with
 
@@ -244,7 +344,7 @@ class ToricPointGeneratorMathematica(PointGeneratorMathematica):
         >>> pg.prepare_basis(dir_name)
 
     """
-    def __init__(self, toric_data, kmoduli,  verbose=2, precision=10, point_file_path=None, selected_t=None):
+    def __init__(self, toric_data, kmoduli, verbose=2, precision=10, point_file_path=None, selected_t=None, kernel_path=None):
         r"""PointGeneratorMathematica uses Mathematica as a backend for computations.
 
              Args:
@@ -256,12 +356,14 @@ class ToricPointGeneratorMathematica(PointGeneratorMathematica):
                                                   is also used as a frontend
                  selected_t (ndarray[(nProj)]): The ambient spaces from which the points were sampled.
                                                 This is only important if Mathematica is also used as a frontend
+                 kernel_path (str, optional): Path to the Wolfram kernel executable. If None, uses default kernel.
          """
         self.toric_data = toric_data
         self.nfold = toric_data['dim_cy']
         self.monomials = [np.array(toric_data['exp_aK'])]  # since we inherit from CICY pointgen, need array of monomials (one for each defining poly)
         self.coefficients = [np.array(toric_data['coeff_aK'])]  # since we inherit from CICY pointgen, need array of coefficients (one for each defining poly)
         self.kmoduli = kmoduli
+        self.kernel_path = kernel_path
         self.sections = toric_data['exps_sections']
         self.non_CI_coeffs = toric_data['non_ci_coeffs']
         self.non_CI_exps = toric_data['non_ci_exps']
@@ -286,8 +388,13 @@ class ToricPointGeneratorMathematica(PointGeneratorMathematica):
                
         self.nmonomials, self.ncoords = self.monomials[0].shape
         self.nhyper = 1
-        self.wl_session = None  
+        self.wl_session = None
         self.point_file_path = point_file_path
+        # Toric multi-assignment fix is deferred; keep single-assignment weights.
+        # all_assignments is populated by generate_points to [self.selected_t].
+        self.all_assignments = None
+        # Toric uses a single assignment, so all points have index 0.
+        self.point_assignment_indices = None
         
         # sympy variables
         self.x = sp.var('x0:' + str(self.ncoords))
@@ -329,7 +436,7 @@ class ToricPointGeneratorMathematica(PointGeneratorMathematica):
         Returns:
             nd.array[(np, ncoord), np.complex128]: [description]
         """
-        with WolframLanguageSession(kernel_loglevel=self.level) as mathematica_session:
+        with WolframLanguageSession(kernel=self.kernel_path, kernel_loglevel=self.level) as mathematica_session:
             self.wl_session = mathematica_session
             self._setup_session(mathematica_session)
             self._start_parallel_kernels(mathematica_session, nproc)
@@ -351,7 +458,21 @@ class ToricPointGeneratorMathematica(PointGeneratorMathematica):
         
         self.selected_t = np.array(pts[1], dtype=int)
         self.ambient = 2 * self.selected_t
-        return np.array(pts[0])
+        # Expose as a single-element assignment list so point_weight works.
+        self.all_assignments = [self.selected_t]
+        # All points come from the single toric assignment (index 0).
+        n_pts_toric = len([p for p in pts[0] if p and len(p) > 0]) if isinstance(pts[0], list) else len(pts[0])
+        self.point_assignment_indices = np.zeros(n_pts_toric, dtype=int)
+        
+        # Filter out empty points that result from timeouts
+        points = pts[0]
+        if isinstance(points, list):
+            # Remove empty sublists that result from timeout failures
+            points = [p for p in points if p and len(p) > 0]
+            if not points:
+                raise ValueError("No valid points generated - all attempts resulted in timeouts")
+
+        return np.array(points)
         
     def _fubini_study_n_metrics(self, points, kfactors=None):
         r"""Computes the FS metric of points.
@@ -366,7 +487,7 @@ class ToricPointGeneratorMathematica(PointGeneratorMathematica):
         kfactors = self.kmoduli if kfactors is None else kfactors
         Js = np.zeros([len(points), len(self.sections[0][0]), len(self.sections[0][0])], dtype=np.complex128)
         for alpha in range(len(kfactors)):
-            ms = np.transpose(np.product([np.power(points, self.sections[alpha][a]) for a in range(len(self.sections[alpha]))], axis=-1), [1, 0])
+            ms = np.transpose(np.prod([np.power(points, self.sections[alpha][a]) for a in range(len(self.sections[alpha]))], axis=-1), [1, 0])
             mss = ms*np.conj(ms)
             kappa_alphas = np.sum(mss, -1)
             J_alphas = 1/(points[:, :, np.newaxis] * np.conj(points[:, np.newaxis, :]))
