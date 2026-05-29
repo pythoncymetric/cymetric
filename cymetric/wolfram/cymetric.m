@@ -4,7 +4,7 @@ BeginPackage["cymetric`"]
 
 
 (*
-This package provides a Mathematica interface for the Python cymetric paper. Authors Fabian Ruehle and Robin Schneider. For more information visit https://github.com/pythoncymetric/cymetric 
+This package provides a Mathematica interface for the Python cymetric paper. Author Fabian Ruehle. For more information visit https://github.com/ruehlef/cymetric 
 *)
 GlobalOptions::usage = 
 "Global Options for the package. These are default values that hopefully work for you and need not be changed too often. You can see all with GetGlobalOptions[], and change them easily with ChangeSetting[<option>, <value>]
@@ -118,7 +118,7 @@ StyleBox[\")\",\nFontWeight->\"Bold\"]\)\!\(\*
 StyleBox[\":\",\nFontWeight->\"Bold\"]\)
 * GetPullbacks:                Calculates the pullbacks from the ambient space coordinates to the CY at the given points. You should not have to call this manually
 * GetSession:                   Resets the Python session. You should never have to call this manually
-* DiscoverPython:            Finds a Python executable for python3 with version <3.10. You should not have to call this manually
+* DiscoverPython:            Finds a Python executable for python3 with version <3.13. You should not have to call this manually
 * SetupPythonVENV:       Sets up a Python virtual environment. You should not have to call this manually
 * ToPython:                      Converts input to Python form. You should never have to call this manually.
 "
@@ -207,6 +207,32 @@ GeneratePointsToric::usage =
   - res (object): Null if no error occured, otherwise a string with the error
 * Example:
   - GeneratePointsToric[\"./toric_data.pickle\", {4}, \"Points\"\[Rule]200000, \"KahlerModuli\"\[Rule]{1}]"; 
+
+GeneratePointsMC::usage = 
+"GeneratePointsMC[poly, dimPs, variables, Options] generates points on the CY specified by poly using MCMC sampling (faster, but only statistically symmetric).
+* Input:
+  - poly (list of polynomials): list of polynomials that define the CY.
+  - dimPs (list of ints): list of dimensions of the product of projective ambient spaces.
+  - variables [optional] (list of list of vars): list of list of variables (one for each projective ambient space). If not provided, alphabetical ordering is assumed.
+* Options (run Options[GeneratePointsMC] to see default values):
+  - KahlerModuli (list of floats): Kahler moduli \!\(\*SubscriptBox[\(t\), \(i\)]\) of the i'th ambient space factor (defaults to all 1)
+  - Points (int): Number of points to generate (defaults to 200,000)
+* Return:
+  - res (object): Null if no error occured, otherwise a string with the error
+* Example:
+  - GeneratePointsMC[{\!\(\*SuperscriptBox[SubscriptBox[\(z\), \(0\)], \(5\)]\)+\!\(\*SuperscriptBox[SubscriptBox[\(z\), \(1\)], \(5\)]\)+\!\(\*SuperscriptBox[SubscriptBox[\(z\), \(2\)], \(5\)]\)+\!\(\*SuperscriptBox[SubscriptBox[\(z\), \(3\)], \(5\)]\)+\!\(\*SuperscriptBox[SubscriptBox[\(z\), \(4\)], \(5\)]\)},{4}, \"Points\"\[Rule]200000, \"KahlerModuli\"\[Rule]{1}]"; 
+
+GeneratePointsMCToric::usage = 
+"GeneratePointsMCToric[PathToToricInfo, Options] generates points on the CY specified by the toric variety using MCMC sampling (faster, but only statistically symmetric).
+* Input:
+  - PathToToricInfo (str): Path where SAGE stored the info on the toric CY.
+* Options (run Options[GeneratePointsMCToric] to see default values):
+  - KahlerModuli (list of floats): Kahler moduli \!\(\*SubscriptBox[\(t\), \(i\)]\) of the i'th ambient space factor (defaults to all 1)
+  - Points (int): Number of points to generate (defaults to 200,000)
+* Return:
+  - res (object): Null if no error occured, otherwise a string with the error
+* Example:
+  - GeneratePointsMCToric[\"./toric_data.pickle\", \"Points\"\[Rule]200000, \"KahlerModuli\"\[Rule]{1}]"; 
 
 TrainNN::usage = 
 "TrainNN[Options] trains a NN to approximate the CY metric. Many hyperparameters are specified in GlobalOptions. Run ?GlobalOptions for more Info
@@ -513,17 +539,22 @@ DiscoverPython[useForVENV_:False, OptionsPattern[]] :=
     (
       version = OptionValue["Version"];
       pythonEnvs = FindExternalEvaluators["Python", "ResetCache" -> True];
-      pythonEnvs = Reverse[SortBy[pythonEnvs, "Version"]]; (*Start with latest Python on the system and work your way down. ATM, there's no TF for python 3.10, so we skip that*)
+      pythonEnvs=Normal[FindExternalEvaluators["Python", "ResetCache" -> True]];
+	  pythonEnvs=AssociationThread[Keys[pythonEnvs],MapThread[Append,{Values[pythonEnvs],Map[<|"Version"->#|>&,Table[StringDrop[ResourceFunction["PythonVersion"][pythonEnvs[[i]]["Executable"]],7],{i,Length[pythonEnvs]}]]}]];
+	  parseVersion[ver_String]:=ToExpression@StringSplit[ver,"."];
+	  pythonEnvs=Dataset[pythonEnvs];
+	  pythonEnvs=pythonEnvs[All,Append[#,"ParsedVersion"->parseVersion[#Version]]&];
+	  pythonEnvs = Reverse[SortBy[pythonEnvs, "ParsedVersion"]]; (*Start with latest Python on the system and work your way down. ATM, there's no TF for python 3.13, so we skip that*)
       Print["Mathematica discovered the following Python environments on your system:"
         ];
       Print[pythonEnvs];
-      Print["Looking for Python 3"];
+      Print["Looking for Python"];
       For[i = 1, i <= Length[pythonEnvs], i++,
         If[!MemberQ[Keys[pythonEnvs[[i]]],"Version"],
           Print["Version information for Python not available, just using the first one..."];
           exec = pythonEnvs[i]["Executable"];
           ,
-          If[StringTake[pythonEnvs[i]["Version"], 1] != "3" || StringTake[pythonEnvs[i]["Version"], 3] == "3.10",
+          If[StringTake[pythonEnvs[i]["Version"], 1] != "3" || StringTake[pythonEnvs[i]["Version"], 4] == "3.13",
             Continue[]
           ];
           If[!version === Null,
@@ -603,7 +634,7 @@ SetupPythonVENV[exec_String, OptionsPattern[]] :=
         ];
       ];
       Print["Installing cymetric..."];
-      installPackages = RunProcess[{pip, "install", "git+https://github.com/pythoncymetric/cymetric.git"}];
+      installPackages = RunProcess[{pip, "install", "git+https://github.com/ruehlef/cymetric.git"}];
       If[installPackages["ExitCode"] != 0,
         Print["An error occurred. Here's the output"];
         Print[installPackages["StandardOutput"]];
@@ -850,6 +881,119 @@ GeneratePointsToric[PathToToricInfo_, OptionsPattern[]] :=
         Print[res];
         ,
         DeleteFile[pointsFile];
+      ];
+      Return[res];
+    )
+  ]; 
+
+
+Options[GeneratePointsMC] = {"KahlerModuli" -> {}, "Points" -> 200000}; 
+GeneratePointsMC[poly_, dimPs_, variables_List:{}, OptionsPattern[]] :=
+  Module[{python, numPts, verbose, session, outDir, res, startPos, monomials, coeffs, kahlerModuli, loggerLevel, functionArgs, args, vars, i},
+    (
+      python = GlobalOptions["Python"];
+      session = GetSession[python, GlobalPythonSession];
+      numPts = OptionValue["Points"];
+      kahlerModuli = OptionValue["KahlerModuli"];
+      verbose = GlobalOptions["Verbose"];
+      outDir = GlobalOptions["Dir"];
+      
+      If[session === Null,
+        Return["Could not start a Python Kernel with all dependencies installed."]
+      ];
+      loggerLevel = GetLoggerLevel[GlobalOptions["Verbose"]];
+      If[!ListQ[poly],
+        poly = {poly}
+      ];
+      If[variables == {},
+        If[verbose > 0,
+          Print["Warning: No variables specified, assuming alphabetical monomial ordering."];
+        ];
+        vars = Sort[Variables[Flatten[poly]]];
+        If[verbose > 1,
+          Print["Variables have been assigned to the ambient space factors as follows:"];
+          startPos = 1;
+          For[i = 1, i <= Length[dimPs], i++,
+            Print[i, ".) ", SymbolName[P]^ToString[dimPs[[i]]], ": ", vars[[startPos ;; startPos + dimPs[[i]]]]];
+            startPos += dimPs[[i]] + 1;
+          ];
+          ,
+          vars = Flatten[vars];
+        ];
+        ,
+        vars = Flatten[variables];
+      ];
+      
+      monomials = {};
+      coeffs = {};
+      For[i = 1, i <= Length[poly], i++,
+        res = Association[CoefficientRules[poly[[i]], vars]];
+        AppendTo[monomials, Keys[res]];
+        AppendTo[coeffs, Values[res]];
+      ];
+      If[kahlerModuli == {}, 
+        kahlerModuli = Table[1, {i, Length[dimPs]}];
+      ];
+      Print["Generating ", numPts, " points..."];
+      functionArgs = Keys[Options[GeneratePointsMC]];
+      args = Join[GlobalOptions, Association[Table[functionArgs[[i]] -> OptionValue[functionArgs[[i]]],{i, Length[functionArgs]}]]];
+      args["num_pts"] = numPts;
+      args["logger_level"] = loggerLevel;
+      args["KahlerModuli"] = NumericArray[kahlerModuli, "Real32"];
+      args["monomials"] = Table[NumericArray[monomials[[i]], "Integer32"],{i,Length[monomials]}];
+      args["coeffs"] = Table[NumericArray[coeffs[[i]], "ComplexReal64"],{i,Length[coeffs]}];
+      args["ambient_dims"] = dimPs;
+      
+      res = ExternalEvaluate[session, "mcy.generate_points_mc" -> args];
+      If[FailureQ[res],
+        Print["An error occurred."];
+        Print[res];
+      ];
+      Return[res];
+    )
+  ]; 
+
+
+Options[GeneratePointsMCToric] = {"KahlerModuli" -> {}, "Points" -> 200000}; 
+GeneratePointsMCToric[PathToToricInfo_, OptionsPattern[]] := 
+  Module[{python, numPts, verbose, session, outDir, res, kahlerModuli, loggerLevel, args, i, dimPs, functionArgs},
+    (
+      python = GlobalOptions["Python"];
+      numPts = OptionValue["Points"];
+      verbose = GlobalOptions["Verbose"];
+      session = GetSession[python, GlobalPythonSession];
+      outDir = GlobalOptions["Dir"];
+      kahlerModuli = OptionValue["KahlerModuli"];
+      If[session === Null,
+        Return["Could not start a Python Kernel with all dependencies installed."];
+      ];
+      ChangeSetting["ToricDataPath", PathToToricInfo];
+      
+      loggerLevel = GetLoggerLevel[GlobalOptions["Verbose"]];
+      
+      (*Read in toric data to determine ambient space dimension*)
+      res = ExternalEvaluate[session, "import pickle;import numpy as np;pickle.load(open(\"" <> PathToToricInfo <> "\",'rb'))"];
+      If[FailureQ[res],
+        Print["An error occurred."];
+        Print[res];
+        Return[res]
+      ];
+      dimPs = {Length[res[["exp_aK"]][[1]]]};
+      If[kahlerModuli == {},
+        kahlerModuli = Table[1, {i, Length[dimPs]}]
+      ];
+      
+      Print["Generating ", numPts, " points..."];
+      functionArgs = Keys[Options[GeneratePointsMCToric]];
+      args = Join[GlobalOptions, Association[Table[functionArgs[[i]] -> OptionValue[functionArgs[[i]]],{i, Length[functionArgs]}]]];
+      args["toric_file_path"] = PathToToricInfo;
+      args["num_pts"] = numPts;
+      args["logger_level"] = loggerLevel;
+      
+      res = ExternalEvaluate[session, "mcy.generate_points_mc_toric" -> args];
+      If[FailureQ[res],
+        Print["An error occurred."];
+        Print[res];
       ];
       Return[res];
     )
