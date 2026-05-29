@@ -138,7 +138,7 @@ If[frontEnd,
     ,Row[{ProgressIndicator[5(j-1),{1,100}],ToString[5 (j-1)]<>"/100"},"   "]
    ];
     ,
-    If[verbose==0||numPoints<=20*numPtsPerSample,
+    If[numPoints<=20*numPtsPerSample,
     pointsOnCY=ParallelTable[getPointsOnCY[varsUnflat,numParamsInPn,dimPs,params,Table[pointsOnSphere[[i,p+(b-1) numPoints]],{i,Length[pointsOnSphere]},{b,1+numParamsInPn[[i]]}],eqns],{p,numPoints},DistributedContexts->Automatic];
     ,
     (*Partition in order to provide progress feedback (WolframClient Library ignores messages from subkernels spawned from the kernel used in wl.evaluate(). This negatively impacts performance)*)
@@ -156,53 +156,71 @@ pointsOnCY=Flatten[pointsOnCY,1];
 Return[{pointsOnCY,numParamsInPn}];
 )];
 
-GetPointsOnCYToric[dimCY_,CYEqn_,vars_,sections_,patchMasks_,sectionCoords_,sectionMonoms_,GLSMcharges_,precision_]:=Module[{a,i,j,k,l,CYEqnInSections,eq,dimPs,numEqnsInPn,coeffs,newEqn,sectionSol,toricSol,sectionsToToric,toricVarSols,toricVars,pts,patchCoords,scalings,scaleSol,tmpPts,lambdas},( 
-dimPs=Table[Length[sections[[i]]],{i,Length[sections]}];(*Length[sections]=h^11 and Length[sections[[i]]]=Number of sections of the i^th KC generator*)
-numEqnsInPn=Table[1,{i,Length[dimPs]}]; (*We initialize with 1 since we include one patch constraint s[a,i]==1 per P^n factor*)
-(*This contains the toric hypersurface equation and the non-complete intersection relations*)
-eq=CYEqn;
-(* Choose a random patch, i.e. set a random s[a,i]-> 1 in each P^n *)
-For[a=1, a<=Length[sectionCoords],a++,
-AppendTo[eq,RandomChoice[sectionCoords[[a]]]==1.];
+GetPointsOnCYToric[dimCY_,CYEqn_,vars_,sections_,patchMasks_,sectionCoords_,sectionMonoms_,GLSMcharges_,precision_]:=Module[{a,i,j,k,l,eq,dimPs,numEqnsInPn,coeffs,newEqn,sectionSol,sectionCoordsFlat,expMatrix,expMatrixPinv,sVals,logS,logX,xVals,toricVarSols,pts,patchConstraints,patchCoordsList,patchMats,patchMatInverses,patchCoords,logLambda,lambdas,scalings,tmpPts,timeoutResult,validIdx},(
+dimPs=Table[Length[sections[[i]]],{i,Length[sections]}];
+numEqnsInPn=Table[1,{i,Length[dimPs]}];
+
+(*Precompute exponent matrix and its pseudoinverse for log-linear inversion sections->toric vars*)
+sectionCoordsFlat=Flatten[sectionCoords];
+expMatrix=Flatten[sections,1];
+expMatrixPinv=PseudoInverse[expMatrix];
+
+(*Precompute the per-patch charge matrices and their inverses for log-linear GLSM rescaling*)
+patchCoordsList=Table[Flatten[Position[patchMasks[[i]],1]],{i,Length[patchMasks]}];
+patchMats=Table[Transpose[GLSMcharges[[All,patchCoordsList[[i]]]]],{i,Length[patchMasks]}];
+patchMatInverses=Table[
+  Quiet[Check[Inverse[patchMats[[i]]],PseudoInverse[patchMats[[i]]]]],
+  {i,Length[patchMasks]}
 ];
 
-(*Now add random sections*)
-(*Need to get points upon intersection with equations i.e. we need to find the right number of sections. We need dimCY many conditions *)
+(*Build the equation system: CY + non-CI relations + random patch choices + random sections*)
+patchConstraints=Table[RandomChoice[sectionCoords[[a]]]==1.,{a,Length[sectionCoords]}];
+eq=Join[CYEqn,patchConstraints];
+
 For[i=1,i<=dimCY,i++,
-(*Search through sections and take the first one subject to the constraint that we do not overshoot the dimensionality*)
 For[j=1,j<=Length[sections],j++,
-(*already enough equations in this P^n*)
-If[numEqnsInPn[[j]] >= dimPs[[j]],Continue[];];
+If[numEqnsInPn[[j]]>=dimPs[[j]],Continue[];];
 coeffs=RandomVariate[NormalDistribution[],{Length[sectionMonoms[[j]]],2}];
-newEqn=Sum[(coeffs[[k,1]]+I coeffs[[k,2]]) sectionCoords[[j,k]] ,{k,Length[coeffs]}];
+newEqn=Sum[(coeffs[[k,1]]+I coeffs[[k,2]]) sectionCoords[[j,k]],{k,Length[coeffs]}];
 AppendTo[eq,newEqn==0];
 numEqnsInPn[[j]]+=1;
 Break[];
 ];
 ];
-(*Solve the equations in terms of the s[a,i]*)
-sectionSol=DeleteCases[Quiet[NSolve[eq]],{}];
-sectionsToToric=Flatten[Table[sectionCoords[[a,i]]->sectionMonoms[[a,i]],{a,Length[sectionCoords]},{i,Length[sectionCoords[[a]]]}]];
-(*Find solution in terms of the toric variables*)
-Clear[x];
-toricVars=vars;
-toricVarSols=DeleteCases[Table[FindInstance[(sectionSol[[i]]/. Rule->Equal)/.sectionsToToric,toricVars,Complexes,1]//Chop,{i,Length[sectionSol]}],{}];
-pts=Flatten[toricVars/.toricVarSols,1];
 
-(*pts=Quiet[vars/.NSolve[eq,vars,WorkingPrecision->precision]];*)
-Clear[\[Lambda]];
-lambdas=Table[\[Lambda][k],{k,Length[GLSMcharges]}];
-(*go to patch where largest coordinate is 1*)
-ParallelDo[
-Do[
-patchCoords=Flatten[Position[patchMasks[[i]],1]];
-scalings=Times@@Power[lambdas,GLSMcharges];
-eq=Table[1==pts[[l,patchCoords[[j]]]]*scalings[[patchCoords[[j]]]],{j,Length[patchCoords]}];
-scaleSol=Quiet[Solve[eq]];
-If[Length[scaleSol]>0,
-tmpPts=(scalings*pts[[l]])/.scaleSol[[1]];
+(*Solve for the section values, then invert to toric vars via log-linear algebra*)
+timeoutResult=TimeConstrained[
+  sectionSol=DeleteCases[Quiet[NSolve[eq]],{}];
+  toricVarSols=Table[
+    Module[{sv,lS,lX},
+      sv=sectionCoordsFlat/.sectionSol[[i]];
+      If[AnyTrue[sv,(#==0)||(Head[#]===Complex&&Abs[#]==0)&],
+        Nothing,
+        lS=Log[sv];
+        lX=expMatrixPinv . lS;
+        Chop[Exp[lX]]
+      ]
+    ],
+    {i,Length[sectionSol]}
+  ];
+  pts=DeleteCases[toricVarSols,Nothing];
+  "success"
+,30,$Failed];
+
+If[timeoutResult===$Failed,
+  Return[{{},numEqnsInPn-Table[1,{i,Length[numEqnsInPn]}]}];
 ];
-If[Max[Abs[tmpPts]]==1,
+
+(*Move each point to its canonical patch (largest coordinate = 1) via log-linear GLSM rescaling*)
+Do[
+Do[
+patchCoords=patchCoordsList[[i]];
+(*Skip the patch if any coordinate we'd normalize against is zero*)
+If[AnyTrue[pts[[l,patchCoords]],#==0&],Continue[];];
+logLambda=patchMatInverses[[i]] . (-Log[pts[[l,patchCoords]]]);
+scalings=Exp[logLambda . GLSMcharges];
+tmpPts=scalings*pts[[l]];
+If[Max[Abs[tmpPts]]<=1+10^-8,
 pts[[l]]=Chop[tmpPts];
 Break[];
 ];
@@ -211,67 +229,76 @@ Break[];
 Return[{pts,numEqnsInPn-Table[1,{i,Length[numEqnsInPn]}]}];
 )];
 
-GenerateToricPointsM[numPts_,dimCY_,coefficients_,exponents_,sections_,sectionRelationCoeffs_,sectionRelationExps_,patchMasks_,GLSMcharges_,precision_:20,verbose_:0,frontEnd_:False]:= Module[{vars,CYeqn,i,j,k,sectionCoords,sectionCoordsFlat,expSectionsFlat,nonCIRelations,secRel,linEqCoeffs,lineqs,toricToSections,sectionMonoms,numPoints,params,allEqns,pointsOnCY,newPoints,numPtsPerSample,numEqnsInPn},( 
+GenerateToricPointsM[numPts_,dimCY_,coefficients_,exponents_,sections_,sectionRelationCoeffs_,sectionRelationExps_,patchMasks_,GLSMcharges_,precision_:10,verbose_:0,frontEnd_:False]:=Module[{vars,CYeqn,i,j,k,sectionCoords,sectionCoordsFlat,expSectionsFlat,nonCIRelations,linEqCoeffs,lineqs,toricToSections,sectionMonoms,numPoints,pointsOnCY,numPtsPerSample,numEqnsInPn},(
 vars=Table[Subscript[x,i],{i,Length[sections]+dimCY+1}];
 
-(*Construct the CY equation in terms of the sections*)
 Clear[s];
 sectionCoords=Table[s[a-1,i-1],{a,Length[sections]},{i,Length[sections[[a]]]}];
 sectionCoordsFlat=Flatten[sectionCoords];
-(*Reconstruct the non-complete intersection relations*)
+
 nonCIRelations={};
 For[i=1,i<=Length[sectionRelationCoeffs],i++,
 AppendTo[nonCIRelations,0==Sum[sectionRelationCoeffs[[i,a]] Product[sectionCoordsFlat[[r]]^sectionRelationExps[[i,a,r]],{r,Length[sectionCoordsFlat]}],{a,Length[sectionRelationCoeffs[[i]]]}]];
 ];
 
 expSectionsFlat=Flatten[sections,1];
-linEqCoeffs=Table[Subscript[a, r],{r,Length[expSectionsFlat]}];
+linEqCoeffs=Table[Subscript[a,r],{r,Length[expSectionsFlat]}];
 CYeqn=0;
 For[i=1,i<=Length[exponents],i++,
 lineqs=Table[linEqCoeffs[[r]]>=0,{r,Length[linEqCoeffs]}];
-AppendTo[lineqs,exponents[[i]]==Sum[linEqCoeffs[[i]] expSectionsFlat[[i]] ,{i,Length[linEqCoeffs]}]];
-toricToSections=FindInstance[lineqs,linEqCoeffs,Integers,1];(*There can be more than one way of expressing a monomial in terms of the sections. However, the different cases are captured by the non-CI relations*)
+AppendTo[lineqs,exponents[[i]]==Sum[linEqCoeffs[[i]] expSectionsFlat[[i]],{i,Length[linEqCoeffs]}]];
+toricToSections=FindInstance[lineqs,linEqCoeffs,Integers,1];
 If[Length[toricToSections]==0,
  If[frontEnd,Print["Something is wrong. Cannot express anticanonical section through KC sections."];,ClientLibrary`error["Something is wrong. Cannot express anticanonical section through KC sections."]];
- Return[{},{0,0}](*Should never happen*)
+ Return[{},{0,0}]
  ];
-(*Add the expression to the CY*)
 CYeqn+=coefficients[[i]] Product[sectionCoordsFlat[[r]]^toricToSections[[1,r,2]],{r,Length[sectionCoordsFlat]}]
 ];
 CYeqn=Join[{CYeqn==0},nonCIRelations];
 
-(*Reconstruct sections*)
 sectionMonoms=Table[Table[Times@@(vars^sections[[i,j]]),{j,Length[sections[[i]]]}],{i,Length[sections]}];
-(*Get distribution of parameters*)
-{pointsOnCY,numEqnsInPn}=GetPointsOnCYToric[dimCY,CYeqn,vars,sections,patchMasks,sectionCoords,sectionMonoms,GLSMcharges,precision];
-(*Generate points on CY.Do 10 trial run to find how many points you get from one intersection*)
-pointsOnCY=ParallelTable[GetPointsOnCYToric[dimCY,CYeqn,vars,sections,patchMasks,sectionCoords,sectionMonoms,GLSMcharges,precision][[1]],{p,10},DistributedContexts->Automatic];
-numPtsPerSample=Min[Table[Length[pointsOnCY[[i]]],{i,Length[pointsOnCY]}]];
-pointsOnCY=Flatten[pointsOnCY,1];
-PrintMsg["Number of points on CY from one ambient space intersection: "<>ToString[numPtsPerSample],frontEnd,verbose];
 
-(*Now generate as many points as needed*)
-numPoints=Ceiling[(numPts-Length[pointsOnCY])/numPtsPerSample];
+(*Distribute the helper once so parallel calls do not re-serialize the context*)
+DistributeDefinitions[GetPointsOnCYToric];
+ParallelEvaluate[
+  Off[ParallelDo::subpar, ParallelTable::subpar, 
+      ParallelMap::subpar, ParallelCombine::subpar, ParallelSum::subpar]
+];
+
+{pointsOnCY,numEqnsInPn}=GetPointsOnCYToric[dimCY,CYeqn,vars,sections,patchMasks,sectionCoords,sectionMonoms,GLSMcharges,precision];
+
+pointsOnCY=ParallelTable[GetPointsOnCYToric[dimCY,CYeqn,vars,sections,patchMasks,sectionCoords,sectionMonoms,GLSMcharges,precision][[1]],{p,10},DistributedContexts->Automatic];
+If[Length[DeleteCases[Table[Length[pointsOnCY[[i]]],{i,Length[pointsOnCY]}],0]]==0,
+  PrintMsg["All trial runs returned 0 points; aborting.", frontEnd, verbose];
+  Return[{{}, numEqnsInPn}]
+];
+numPtsPerSample=Min[DeleteCases[Table[Length[pointsOnCY[[i]]],{i,Length[pointsOnCY]}],0]];
+PrintMsg["Number of points on CY from one ambient space intersection: "<>ToString[numPtsPerSample],frontEnd,verbose];
+pointsOnCY=Flatten[pointsOnCY,1];
+numPoints=Ceiling[numPts/numPtsPerSample];
 PrintMsg["Now generating "<>ToString[numPts]<>" points...",frontEnd,verbose];
 
-(*Create system of equations and solve it to find points on CY*)
 If[frontEnd,
-    newPoints=ResourceFunction["MonitorProgress"][ParallelTable[GetPointsOnCYToric[dimCY,CYeqn,vars,sections,patchMasks,sectionCoords,sectionMonoms,GLSMcharges,precision][[1]],{p,numPoints},DistributedContexts->Automatic]];
+    pointsOnCY={};
+    Monitor[
+    For[j=1,j<=20,j++,
+    pointsOnCY=Join[pointsOnCY,ParallelTable[GetPointsOnCYToric[dimCY,CYeqn,vars,sections,patchMasks,sectionCoords,sectionMonoms,GLSMcharges,precision][[1]],{p,Ceiling[numPoints/20]},DistributedContexts->Automatic]];
+    ];
+    ,Row[{ProgressIndicator[5(j-1),{1,100}],ToString[5(j-1)]<>"/100"},"   "]
+   ];
     ,
-    If[verbose==0,
-    newPoints=ParallelTable[GetPointsOnCYToric[dimCY,CYeqn,vars,sections,patchMasks,sectionCoords,sectionMonoms,GLSMcharges,precision][[1]],{p,numPoints},DistributedContexts->Automatic];
+    If[numPoints<=20*numPtsPerSample,
+    pointsOnCY=ParallelTable[GetPointsOnCYToric[dimCY,CYeqn,vars,sections,patchMasks,sectionCoords,sectionMonoms,GLSMcharges,precision][[1]],{p,numPoints},DistributedContexts->Automatic];
     ,
-    (*Partition in order to provide progress feedback (WolframClient Library ignores messages from subkernels spawned from the kernel used in wl.evaluate(). This negatively impacts performance)*)
-    newPoints={};
-    For[i=1,i<=20,i++,
-    PrintMsg["Generated "<>ToString[5 (i-1)]<>"% of points",frontEnd,verbose];
-    newPoints=Join[newPoints,ParallelTable[GetPointsOnCYToric[dimCY,CYeqn,vars,sections,patchMasks,sectionCoords,sectionMonoms,GLSMcharges,precision][[1]],{p,Ceiling[numPoints/20]},DistributedContexts->Automatic]];
+    pointsOnCY={};
+    For[j=1,j<=20,j++,
+    PrintMsg["Generated "<>ToString[5(j-1)]<>"% of points",frontEnd,verbose];
+    pointsOnCY=Join[pointsOnCY,ParallelTable[GetPointsOnCYToric[dimCY,CYeqn,vars,sections,patchMasks,sectionCoords,sectionMonoms,GLSMcharges,precision][[1]],{p,Ceiling[numPoints/20]},DistributedContexts->Automatic]];
     ];
     ];
 ];
-pointsOnCY=Join[pointsOnCY,Flatten[newPoints,1]];
-If[Length[pointsOnCY]>numPts,pointsOnCY=pointsOnCY[[1;;numPts]]];
 PrintMsg["done.",frontEnd,verbose];
-(*PrintMsg["Section distribution: "<>ToString[numEqnsInPn],frontEnd,verbose];*)
+pointsOnCY=Flatten[pointsOnCY,1];
+If[Length[pointsOnCY]>numPts,pointsOnCY=pointsOnCY[[1;;numPts]]];
 Return[{pointsOnCY,numEqnsInPn}];
 )];
