@@ -176,14 +176,10 @@ class PointGeneratorMathematica(CICYPointGenerator):
             # deserialize converting Mathamtica complex numbers to python complex numbers
             pts = binary_deserialize(pts, consumer=ComplexFunctionConsumer())
         
-        # pts[1] is now a list of M valid assignment vectors (list-of-lists)
-        # returned by GeneratePointsM in PointGeneratorMathematica.m.
-        self.all_assignments = [np.array(a, dtype=int) for a in pts[1]]
-        # Keep selected_t as the first assignment for any code that still reads it.
-        self.selected_t = self.all_assignments[0] if self.all_assignments else np.zeros(len(self.ambient), dtype=int)
-        # pts[2] is the per-point assignment index (1-based from Mathematica).
-        # Convert to 0-based so it indexes directly into self.all_assignments.
-        self.point_assignment_indices = np.array(pts[2], dtype=int) - 1
+        # pts[1] is the single numParamsInPn assignment vector used by Mathematica.
+        self.selected_t = np.array(pts[1], dtype=int)
+        self.all_ts = np.array([self.selected_t])
+        self.point_assignment_indices = None
 
         # Filter out empty points that result from timeouts
         points = pts[0]
@@ -195,7 +191,7 @@ class PointGeneratorMathematica(CICYPointGenerator):
 
         return np.array(points)
 
-    def point_weight(self, points, normalize_to_vol_j=False, j_elim=None):
+    def point_weight(self, points, normalize_to_vol_j=True, j_elim=None):
         r"""Per-assignment weight using valid assignments returned by Mathematica.
 
         When ``generate_points`` has been called and ``self.point_assignment_indices``
@@ -218,7 +214,7 @@ class PointGeneratorMathematica(CICYPointGenerator):
 
         Args:
             points (ndarray([n_p, ncoords], np.complex128)): Points.
-            normalize_to_vol_j (bool, optional): Normalize weights. Defaults to False.
+            normalize_to_vol_j (bool, optional): Normalize weights. Defaults to True.
             j_elim (ndarray([n_p, nhyper], np.int64)): Index to eliminate. Defaults to None.
 
         Returns:
@@ -258,14 +254,14 @@ class PointGeneratorMathematica(CICYPointGenerator):
             weight = norm_fac * weight
         return weight
 
-    def generate_point_weights(self, n_pw, omega=False, normalize_to_vol_j=False):
+    def generate_point_weights(self, n_pw, omega=False, normalize_to_vol_j=True):
         r"""Generates a numpy dictionary of point weights. Uses computed data if Mathematica was used as a frontend.
 
         Args:
             n_pw (int): # of point weights.
             omega (bool, optional): If True adds Omega to dict. Defaults to False.
             normalize_to_vol_j (bool, optional): Whether the weights should be normalized by the factor self.vol_j_norm.
-                                                 Defaults to False
+                                                 Defaults to True
 
         Returns:
             np.dict: point weights
@@ -299,7 +295,8 @@ class PointGeneratorMathematica(CICYPointGenerator):
         weights = self.point_weight(points, normalize_to_vol_j=normalize_to_vol_j)
         
         point_weights = np.zeros((n_p), dtype=dtype)
-        point_weights['point'], point_weights['weight'] = points[0:n_p], weights[0:n_p]
+        point_weights['point'] = points[0:n_p]
+        point_weights['weight'] = weights[0:n_p]
         if omega:
             point_weights['omega'] = self.holomorphic_volume_form(points[0:n_p])
         return point_weights

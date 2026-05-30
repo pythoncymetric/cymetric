@@ -12,7 +12,7 @@ from .pointgen_mathematica import PointGeneratorMathematica, ToricPointGenerator
 from .pointgen_cicy import CICYPointGenerator
 from .pointgen_toric import ToricPointGenerator
 from .pointgen import PointGenerator
-from .pointgen_mc import CICYPointGeneratorMC, ToricCICYPointGeneratorMC
+from .pointgen_mc import CICYPointGeneratorMC, ToricPointGeneratorMC
 from .nphelper import prepare_dataset, prepare_basis_pickle, get_levicivita_tensor
 
 __all__ = [
@@ -22,7 +22,7 @@ __all__ = [
     'ToricPointGenerator',
     'PointGenerator',
     'CICYPointGeneratorMC',
-    'ToricCICYPointGeneratorMC',
+    'ToricPointGeneratorMC',
     'prepare_dataset',
     'prepare_basis_pickle',
     'get_levicivita_tensor'
