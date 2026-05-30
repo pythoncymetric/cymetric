@@ -36,10 +36,10 @@ def conf_to_monomials(conf):
         >>> monomials = conf_to_monomials(conf)
 
     Args:
-        conf (ndarray([nProj,nHyper], np.int)): Configuration matrix.
+        conf (ndarray([nProj,nHyper], int)): Configuration matrix.
 
     Returns:
-        list(nHyper,ndarray([nMonomials, nVars], np.int)): Monomial basis for
+        list(nHyper,ndarray([nMonomials, nVars], int)): Monomial basis for
             each hypersurface.
     """
     ambient = np.sum(conf, axis=-1)-1
@@ -102,10 +102,10 @@ def prepare_dataset(point_gen, n_p, dirname, val_split=0.1, ltails=0, rtails=0, 
     if not os.path.exists(dirname):
         os.makedirs(dirname)
     new_np = int(round(n_p/(1-ltails-rtails)))
-    pwo = point_gen.generate_point_weights(new_np, omega=True)
+    pwo = point_gen.generate_point_weights(new_np, omega=True, normalize_to_vol_j=normalize_to_vol_j)
     if len(pwo) < new_np:
         new_np = int((new_np-len(pwo))/len(pwo)*new_np + 100)
-        pwo2 = point_gen.generate_point_weights(new_np, omega=True)
+        pwo2 = point_gen.generate_point_weights(new_np, omega=True, normalize_to_vol_j=normalize_to_vol_j)
         pwo = np.concatenate([pwo, pwo2], axis=0)
     new_np = len(pwo)
     sorted_weights = np.sort(pwo['weight'])
@@ -120,14 +120,6 @@ def prepare_dataset(point_gen, n_p, dirname, val_split=0.1, ltails=0, rtails=0, 
     new_np = len(weights)
     t_i = int((1-val_split)*new_np)
     points = pwo['point'][mask]
-
-    if normalize_to_vol_j:
-        pbs = point_gen.pullbacks(points)
-        fs_ref = point_gen.fubini_study_metrics(points, vol_js=np.ones_like(point_gen.kmoduli))
-        fs_ref_pb = np.einsum('xai,xij,xbj->xab', pbs, fs_ref, np.conj(pbs))
-        aux_weights = omega.flatten() / weights.flatten()
-        norm_fac = point_gen.vol_j_norm / np.mean(np.real(np.linalg.det(fs_ref_pb)) / aux_weights)
-        weights = norm_fac * weights
 
     X_train = np.concatenate((points[:t_i].real, points[:t_i].imag), axis=-1)
     y_train = np.concatenate((weights[:t_i], omega[:t_i]), axis=1)
@@ -206,17 +198,17 @@ def get_all_patch_degrees(glsm_charges, patch_masks):
     that the largest coordinates will be 1+0.j.
 
     Args:
-        glsm_charges (ndarray([nscaling, ncoords], np.int)): GLSM charges.
+        glsm_charges (ndarray([nscaling, ncoords], int)): GLSM charges.
         patch_masks (ndarray([npatches, ncoords], bool)): Patch masks with
             True at each coordinates, which is not allowed to vanish.
 
     Returns:
-        ndarray([npatches, ncoords, ncoords], np.int): degrees
+        ndarray([npatches, ncoords, ncoords], int): degrees
     """
     npatches, ncoords = np.shape(patch_masks)
-    all_patch_degrees = np.zeros((npatches, ncoords, ncoords), dtype=np.int)
+    all_patch_degrees = np.zeros((npatches, ncoords, ncoords), dtype=int)
     for i in range(npatches):
-        all_patch_degrees[i] = np.eye(ncoords, dtype=np.int)
+        all_patch_degrees[i] = np.eye(ncoords, dtype=int)
         patch_coords = np.where(patch_masks[i])[0]
         for j in range(ncoords):
             factors = np.linalg.solve(
@@ -224,7 +216,7 @@ def get_all_patch_degrees(glsm_charges, patch_masks):
             if not np.allclose(factors, np.round(factors)):
                 print('WARNING GLSM: NO INTEGER COEFFICIENTS.')
             for l, k in enumerate(patch_coords):
-                all_patch_degrees[i, j, k] -= np.round(factors[l]).astype(np.int)
+                all_patch_degrees[i, j, k] -= np.round(factors[l]).astype(int)
     return all_patch_degrees
 
 
@@ -234,7 +226,7 @@ def compute_all_w_of_x(patch_degrees, patch_masks, dim_cy = 3):
     homogeneous ambient space coordinates.
 
     Args:
-        patch_degrees (ndarray([npatches, ncoords, ncoords], np.int)): See also
+        patch_degrees (ndarray([npatches, ncoords, ncoords], int)): See also
             :py:func:`get_all_patch_degrees()`.
         patch_masks (ndarray([npatches, ncoords], bool)): Patch masks with
             True at each coordinates, which is not allowed to vanish.
@@ -245,11 +237,11 @@ def compute_all_w_of_x(patch_degrees, patch_masks, dim_cy = 3):
     """
     npatches, ncoords = np.shape(patch_masks)    
     w_of_x = np.zeros(
-        (ncoords, npatches, npatches, dim_cy, dim_cy), dtype=np.int)
+        (ncoords, npatches, npatches, dim_cy, dim_cy), dtype=int)
     del_w_of_x = np.zeros(
-        (ncoords, npatches, npatches, dim_cy, dim_cy, dim_cy), dtype=np.int)
+        (ncoords, npatches, npatches, dim_cy, dim_cy, dim_cy), dtype=int)
     del_w_of_z = np.zeros(
-        (ncoords, npatches, npatches, dim_cy, dim_cy, ncoords), dtype=np.int)
+        (ncoords, npatches, npatches, dim_cy, dim_cy, ncoords), dtype=int)
     # TODO: Add a warning for when the array becomes too large.
     # NOTE: There will be many zeros.
     for i in range(ncoords):
@@ -270,9 +262,9 @@ def compute_all_w_of_x(patch_degrees, patch_masks, dim_cy = 3):
                         patch_degrees[j][g1mask].T, v, rcond=None)
                     if not np.allclose(coeff, np.round(coeff)):
                         print('WARNING W(X): NO INTEGER COEFFICIENTS.')
-                    w_of_x[i, j, k, l] = np.round(coeff).astype(np.int)
+                    w_of_x[i, j, k, l] = np.round(coeff).astype(int)
                     # compute the derivative wrt to the g1 coordinates
-                    del_w_of_x[i, j, k, l] = w_of_x[i, j, k, l] - np.eye(dim_cy, dtype=np.int)
+                    del_w_of_x[i, j, k, l] = w_of_x[i, j, k, l] - np.eye(dim_cy, dtype=int)
                     # re-express everything in terms of degrees of the homogeneous
                     # ambient space coordinates
                     for m in range(dim_cy):

@@ -11,7 +11,7 @@ import sympy as sp
 from sympy.geometry.util import idiff
 import scipy.optimize as opt
 from joblib import Parallel, delayed
-from cymetric.pointgen.pointgen import PointGenerator
+from cymetric.pointgen.pointgen import PointGenerator, tqdm
 from cymetric.pointgen.nphelper import generate_monomials, prepare_dataset, get_levicivita_tensor
 
 logging.basicConfig(format='%(name)s:%(levelname)s:%(message)s')
@@ -322,8 +322,12 @@ class CICYPointGenerator(PointGenerator):
         return points[cy_mask]
 
     def generate_points(self, n_p, nproc=-1, nattempts=1, acc=1e-8, fprime=None, batch_size=1000):
-        r"""Generates n_p complex points from the t-selection in
-        'self.selected_t' with accuracy 'acc'.
+        r"""Generates n_p complex points distributed uniformly across all valid
+        parameter assignments in ``self.all_ts``.
+
+        Each of the M = len(self.all_ts) valid assignments gets an equal share
+        of ceil(n_p / M) points, ensuring that every ambient projective factor
+        is represented in the sampling distribution.
 
         Args:
             n_p (int): # of points.
@@ -340,36 +344,50 @@ class CICYPointGenerator(PointGenerator):
         Returns:
             ndarray[(n_p, ncoord), np.complex128]: Points on the CICY.
         """
-        points = np.ones((n_p, self.ncoords), dtype=np.complex128)
-        logger.debug('Generating points for t-selections {}.'.format(
-            self.selected_t))
-        # NOTE: be careful if we give different lengths
-        new_points = self._generate_tselected_points(n_p, nproc=nproc, acc=acc, nattempts=nattempts, fprime=fprime,
-                                                     batch_size=batch_size)
-        n_p_found = len(new_points)
-        n_p_red = n_p
-        logger.debug('found {} out of {} expected.'.format(n_p_found, n_p_red))
-        points[0:n_p_found] = new_points
-        if n_p_found < n_p_red:
-            # sample more points
-            ratio = n_p_red / n_p_found
-            for _ in range(5):
-                # hopefully only need one iteration, but might get unlucky
-                missing = n_p_red - n_p_found
-                n_p_more = int(ratio * missing + 50)
-                logger.debug('generating {} more points.'.format(n_p_more))
-                new_points = self._generate_tselected_points(n_p_more, nproc=nproc, acc=acc, nattempts=nattempts,
-                                                             fprime=fprime, batch_size=batch_size)
-                logger.debug('found {} out of {} expected.'.format(
-                    len(new_points), missing))
-                if n_p_found + len(new_points) > n_p_red:
-                    points[n_p_found:] = new_points[0:missing]
-                    break
-                else:
-                    points[n_p_found:n_p_found + len(new_points)] = new_points
-                    n_p_found += len(new_points)
-        npoints = self._rescale_points(points)
-        return npoints
+        M = len(self.all_ts)
+        n_per_t = int(np.ceil(n_p / M))
+
+        # Save root-basis state that _generate_root_basis will overwrite.
+        orig_t = self.selected_t.copy()
+        orig_rm = self.root_monomials
+        orig_rf = self.root_factors
+        orig_rv = self.root_vars
+        orig_tp = self.tpoly
+        all_points = []
+        try:
+            for idx, t in tqdm(enumerate(self.all_ts), total=M,
+                               desc='Generating points', unit='assignment'):
+                self.selected_t = t
+                self._generate_root_basis()
+                pts = self._generate_tselected_points(
+                    n_per_t, nproc=nproc, acc=acc,
+                    nattempts=nattempts, fprime=fprime, batch_size=batch_size)
+                n_found = len(pts)
+                ratio = n_per_t / max(1, n_found) if n_found > 0 else 2.0
+                for _ in range(5):
+                    if n_found >= n_per_t:
+                        break
+                    missing = n_per_t - n_found
+                    extra = self._generate_tselected_points(
+                        int(ratio * missing + 50), nproc=nproc, acc=acc,
+                        nattempts=nattempts, fprime=fprime, batch_size=batch_size)
+                    if len(extra):
+                        pts = np.concatenate([pts, extra])
+                    n_found = len(pts)
+                all_points.append(pts[:n_per_t])
+                logger.debug('Assignment {:d}/{:d}: collected {:d}/{:d} points.'.format(
+                    idx + 1, M, len(all_points[-1]), n_per_t))
+        finally:
+            # Restore original root-basis state unconditionally.
+            self.selected_t = orig_t
+            self.root_monomials = orig_rm
+            self.root_factors = orig_rf
+            self.root_vars = orig_rv
+            self.tpoly = orig_tp
+
+        points = np.concatenate(all_points, axis=0)
+        np.random.shuffle(points)
+        return self._rescale_points(points[:n_p])
 
     def _get_point(self, p, acc=1e-8, nattempts=1, fprime=None):
         r"""Generates a single point on the CICY

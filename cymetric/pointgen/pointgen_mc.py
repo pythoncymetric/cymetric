@@ -10,7 +10,7 @@ Two classes are provided:
     for CICY manifolds defined by multiple hypersurfaces in products of
     projective spaces.
 
-  - :class:`ToricCICYPointGeneratorMC`: same sampler adapted to toric CY
+  - :class:`ToricPointGeneratorMC`: same sampler adapted to toric CY
     hypersurfaces, using the GLSM structure produced by
     ``sage_lib.prepare_toric_cy_data``.
 
@@ -644,8 +644,7 @@ class CICYPointGeneratorMC(CICYPointGenerator):
                     len(samples), n_p))
         return np.array(samples[:n_p])
 
-    def generate_point_weights(self, n_pw, omega=False,
-                                normalize_to_vol_j=False):
+    def generate_point_weights(self, n_pw, omega=False, normalize_to_vol_j=True):
         r"""Generate points with their integration weights.
 
         Because the MCMC chain samples *exactly* from
@@ -673,7 +672,7 @@ class CICYPointGeneratorMC(CICYPointGenerator):
             omega (bool, optional): if True, also return
                 :math:`\Omega` at each point. Defaults to False.
             normalize_to_vol_j (bool, optional): normalise weights.
-                Defaults to False.
+                Defaults to True.
 
         Returns:
             ndarray: structured array with fields ``point``, ``weight``
@@ -736,10 +735,10 @@ class CICYPointGeneratorMC(CICYPointGenerator):
 
 
 # ---------------------------------------------------------------------------
-# ToricCICYPointGeneratorMC
+# ToricPointGeneratorMC
 # ---------------------------------------------------------------------------
 
-class ToricCICYPointGeneratorMC(CICYPointGeneratorMC):
+class ToricPointGeneratorMC(CICYPointGeneratorMC):
     r"""MCMC-based point generator for toric CY hypersurfaces.
 
     Mirrors :class:`~cymetric.pointgen.pointgen_mathematica.ToricPointGeneratorMathematica`
@@ -756,9 +755,9 @@ class ToricCICYPointGeneratorMC(CICYPointGeneratorMC):
         :func:`~cymetric.sage.sagelib.prepare_toric_cy_data` beforehand.
 
         >>> import numpy as np
-        >>> from cymetric.pointgen.pointgen_mc import ToricCICYPointGeneratorMC
+        >>> from cymetric.pointgen.pointgen_mc import ToricPointGeneratorMC
         >>> kmoduli = np.ones(len(toric_data['exps_sections']))
-        >>> pg = ToricCICYPointGeneratorMC(toric_data, kmoduli)
+        >>> pg = ToricPointGeneratorMC(toric_data, kmoduli)
         >>> points = pg.generate_points(1000)
 
         Generate a dataset with

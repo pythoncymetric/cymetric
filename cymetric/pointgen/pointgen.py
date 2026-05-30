@@ -11,6 +11,45 @@ from cymetric.pointgen.nphelper import prepare_basis_pickle, prepare_dataset, ge
 from sympy.geometry.util import idiff
 from joblib import Parallel, delayed
 import itertools
+try:
+    from tqdm import tqdm
+except ImportError:
+    class tqdm:  # noqa: N801
+        """Minimal fallback when tqdm is not installed.
+
+        Prints '5% done', '10% done', … at 5-percentage-point intervals.
+        Accepts the same positional/keyword arguments as ``tqdm.tqdm``.
+        """
+        def __init__(self, iterable=None, *, total=None, desc='',
+                     disable=False, **_kwargs):
+            self._iter = iter(iterable) if iterable is not None else iter([])
+            self._total = (total if total is not None
+                           else (len(iterable) if hasattr(iterable, '__len__')
+                                 else 0))
+            self._done = 0
+            self._desc = desc
+            self._disable = disable
+            self._next_report = 5
+
+        def __iter__(self):
+            return self
+
+        def __next__(self):
+            val = next(self._iter)  # propagates StopIteration naturally
+            self.update(1)
+            return val
+
+        def update(self, n=1):
+            self._done += n
+            if not self._disable and self._total > 0:
+                pct = int(100 * self._done / self._total)
+                while pct >= self._next_report:
+                    print('{}: {}% done'.format(self._desc, self._next_report),
+                          flush=True)
+                    self._next_report += 5
+
+        def close(self):
+            pass
 
 logging.basicConfig(format='%(name)s:%(levelname)s:%(message)s')
 logger = logging.getLogger('pointgen')
@@ -858,8 +897,17 @@ class PointGenerator:
                 e = np.sum(self.ambient[:i + 1]) + i + 1
                 pn_pnts[:, s:e, k] += self.generate_pn_points(n_p_red, self.ambient[i])
         # TODO: vectorize this nicely
-        points = Parallel(n_jobs=nproc, backend=self.backend, batch_size=batch_size)(
+        _pbar = tqdm(total=n_p, desc='Generating points', unit='pt')
+        result_gen = Parallel(n_jobs=nproc, backend='loky',
+                              batch_size=batch_size, return_as='generator')(
             delayed(self._take_roots)(pi) for pi in pn_pnts)
+        points = []
+        for pts in result_gen:
+            points.append(pts)
+            _pbar.update(int(max_degree))
+        _pbar.close()
+        points = np.vstack(points)
+        return self._rescale_points(points)
         points = np.vstack(points)
         return self._rescale_points(points)
 
@@ -989,14 +1037,14 @@ class PointGenerator:
             for m, c in zip(self.root_monomials_Q, self.root_factors_Q)]
         return np.array([p * t + q for t in np.roots(all_sums)])
 
-    def generate_point_weights(self, n_pw, omega=False, normalize_to_vol_j=False):
+    def generate_point_weights(self, n_pw, omega=False, normalize_to_vol_j=True):
         r"""Generates a numpy dictionary of point weights.
 
         Args:
             n_pw (int): # of point weights.
             omega (bool, optional): If True adds Omega to dict. Defaults to False.
             normalize_to_vol_j (bool, optional): Whether the weights should be normalized by the factor self.vol_j_norm.
-                                                 Defaults to False
+                                                 Defaults to True
 
         Returns:
             np.dict: point weights
@@ -1127,27 +1175,27 @@ class PointGenerator:
             fs = self.fubini_study_metrics(points, vol_js=t)
             fs_pbs.append(np.einsum('xai,xij,xbj->xab', pbs, fs, np.conj(pbs)))
         if self.nfold == 1:
-            return np.einsum('xab->x', fs_pbs[0])
+            return np.real(np.einsum('xab->x', fs_pbs[0]))
         elif self.nfold == 2:
-            return np.einsum('xab,xcd,ac,bd->x',
-                             fs_pbs[0], fs_pbs[1], self.lc, self.lc)
+            return np.real(np.einsum('xab,xcd,ac,bd->x',
+                             fs_pbs[0], fs_pbs[1], self.lc, self.lc))
         elif self.nfold == 3:
-            return np.einsum('xab,xcd,xef,ace,bdf->x',
-                             fs_pbs[0], fs_pbs[1], fs_pbs[2], self.lc, self.lc)
+            return np.real(np.einsum('xab,xcd,xef,ace,bdf->x',
+                             fs_pbs[0], fs_pbs[1], fs_pbs[2], self.lc, self.lc))
         elif self.nfold == 4:
-            return np.einsum('xab,xcd,xef,xgh,aceg,bdfh->x',
+            return np.real(np.einsum('xab,xcd,xef,xgh,aceg,bdfh->x',
                              fs_pbs[0], fs_pbs[1], fs_pbs[2], fs_pbs[3],
-                             self.lc, self.lc)
+                             self.lc, self.lc))
         elif self.nfold == 5:
-            return np.einsum('xab,xcd,xef,xgh,xij,acegi,bdfhj->x',
+            return np.real(np.einsum('xab,xcd,xef,xgh,xij,acegi,bdfhj->x',
                              fs_pbs[0], fs_pbs[1], fs_pbs[2], fs_pbs[3],
-                             fs_pbs[4], self.lc, self.lc)
+                             fs_pbs[4], self.lc, self.lc))
         else:
             logger.error('Weights are only implemented for nfold <= 5.'
                          'Run the tensorcontraction yourself :).')
             return np.ones(len(points))
 
-    def point_weight(self, points, normalize_to_vol_j=False, j_elim=None):
+    def point_weight(self, points, normalize_to_vol_j=True, j_elim=None):
         r"""Mixture weight: averages over all valid parameter assignments.
 
         For each assignment t_m in ``self.all_ts``, the sampling weight is
