@@ -1,7 +1,7 @@
 # ⚠️ NOTE ⚠️
 See https://github.com/ruehlef/cymetric for an up-to-date fork that
 - ✅ Is compatible with tensorflow 2.x
-- ✅ Has a pytorch implementation (generated with copilot in agent mode)
+- ✅ Has a pytorch and jax implementation (generated with copilot in agent mode)
 - ✅ Works with the latest Mathematica installations
 - ✅ a smart installer and a framework for switching between tensorflow and pytorch
 
