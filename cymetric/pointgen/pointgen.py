@@ -227,7 +227,7 @@ class PointGenerator:
         t_mask = self.root_vars['t'] == all_vars
         t_index = np.where(t_mask)[0][0]
         # +1 because hypersurface
-        max_degree = int(self.ambient[self.selected_t.astype(bool)]) + 1
+        max_degree = int(self.ambient[self.selected_t.astype(bool)].item()) + 1
         # +1 for degree zero
         for j in range(max_degree + 1):
             good = root_monomials[:, t_index] == max_degree - j
@@ -887,7 +887,7 @@ class PointGenerator:
             ndarray[(n_p, ncoords), np.complex128]: rescaled points
         """
         max_ts = np.max(self.selected_t)
-        max_degree = self.ambient[self.selected_t.astype(bool)] + 1
+        max_degree = int(self.ambient[self.selected_t.astype(bool)].item()) + 1
         n_p_red = int(n_p / max_degree) + 1
         pn_pnts = np.zeros((n_p_red, self.ncoords, max_ts + 1),
                            dtype=np.complex128)
