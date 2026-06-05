@@ -13,7 +13,13 @@ import scipy.optimize as opt
 from joblib import Parallel, delayed
 from cymetric.pointgen.pointgen import PointGenerator, tqdm
 from cymetric.pointgen.nphelper import generate_monomials, prepare_dataset, get_levicivita_tensor
+import warnings
 
+warnings.filterwarnings(
+    "ignore",
+    message="The iteration is not making good progress.*",
+    category=RuntimeWarning,
+)
 logging.basicConfig(format='%(name)s:%(levelname)s:%(message)s')
 logger = logging.getLogger('CICYpointgen')
 
@@ -605,12 +611,6 @@ class CICYPointGenerator(PointGenerator):
 
         keyword arguments can be any from 
         :py:func:`cymetric.pointgen.nphelper.prepare_dataset`.
-
-        NOTE:
-            By default we remove 0.05 of the points with vanishing 
-            weights. In our experience the numerics can become quite messy
-            at these points. Furthermore, they don't contribute much to the MC
-            integration and can thus more or less safely be removed.
 
         Args:
             n_p (int): Number of points to generate.
