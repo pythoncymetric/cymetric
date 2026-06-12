@@ -14,15 +14,11 @@ using neural networks implemented in TensorFlow.
 
 ## Features
 
-The current version is an alpha-release so not all features mentioned below
-are on the main branch yet. Features with an (*) will be released soonish.
-
 * Point Generators for Complete Intersection Calabi-Yau manifolds and hypersurfaces
  from the Kreuzer-Skarke list (requires SageMath and Mathematica).
 * A collection of custom TensorFlow models with different metric Ansätze.
 * A matehmatica API for the point generators and TensorFlow models.
-* Custom models for the bundle metric(*).
-* Documentation exists(*).
+
 
 ## Installation
 This guide assumes that you have a working Python 3 (preferably python 3.7 or above) installation (and Sage and Mathematica, if you want to use these features as well). So running ```python3``` should work on your system. Moreover, it assumes that you have installed git. Note that both are standard on Mac and most Linux distributions. For Windows, you will typically have to install them and make sure that for example Python works correctly with Mathematica if you are planing on using the Mathematica interface.
